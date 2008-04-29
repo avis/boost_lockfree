@@ -51,7 +51,10 @@
 #ifdef __i386__
     #define BOOST_LOCKFREE_DCAS_ALIGNMENT
 #elif defined(__x86_64__)
-    #define BOOST_LOCKFREE_PTR_COMPRESSION 1
+
+    #if !(defined (__GCC_HAVE_SYNC_COMPARE_AND_SWAP_16) || defined (__nocona__))
+        #define BOOST_LOCKFREE_PTR_COMPRESSION 1
+    #endif
     #define BOOST_LOCKFREE_DCAS_ALIGNMENT __attribute__((aligned(16)))
 #endif
 
