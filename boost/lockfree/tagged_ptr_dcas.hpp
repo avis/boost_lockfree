@@ -143,15 +143,10 @@ public:
         return boost::lockfree::CAS2(this, oldval.ptr, oldval.tag, newptr, t);
     }
 
-    bool CAS(const T * oldptr, tag_t oldtag, T * newptr)
+    bool CAS(T * oldptr, tag_t oldtag, T * newptr)
     {
-        return boost::lockfree::CAS2(oldptr, oldtag, newptr, oldtag + 1);
+        return boost::lockfree::CAS2(this, oldptr, oldtag, newptr, oldtag + 1);
     }
-
-/*     bool CAS(const T * oldptr, tag_t oldtag, T * newptr, tag_t newtag) */
-/*     { */
-/*         return lockfree::CAS2(const_cast<tagged_ptr*>(this), oldptr, oldtag, newptr, newtag); */
-/*     } */
     /* @} */
 
     /** smart pointer support  */

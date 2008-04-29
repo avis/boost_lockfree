@@ -162,17 +162,17 @@ public:
 
     bool CAS(tagged_ptr const & oldval, T * newptr)
     {
-        compressed_ptr_t new_compressed_ptr = pack_ptr(newptr, extract_tag(oldval.ptr));
-        return CAS(oldval, new_compressed_ptr);
+        compressed_ptr_t new_compressed_ptr = pack_ptr(newptr, extract_tag(oldval.ptr)+1);
+        return CAS(oldval.ptr, new_compressed_ptr);
     }
 
     bool CAS(tagged_ptr const & oldval, T * newptr, tag_t t)
     {
         compressed_ptr_t new_compressed_ptr = pack_ptr(newptr, t);
-        return CAS(oldval, new_compressed_ptr);
+        return boost::lockfree::CAS(&(this->ptr), oldval.ptr, new_compressed_ptr);
     }
 
-    bool CAS(const T * oldptr, tag_t oldtag, T * newptr)
+    bool CAS(T * oldptr, tag_t oldtag, T * newptr)
     {
         compressed_ptr_t old_compressed_ptr = pack_ptr(oldptr, oldtag);
         compressed_ptr_t new_compressed_ptr = pack_ptr(newptr, oldtag+1);

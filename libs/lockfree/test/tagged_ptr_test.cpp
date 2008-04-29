@@ -26,4 +26,34 @@ BOOST_AUTO_TEST_CASE( tagged_ptr_test )
         BOOST_REQUIRE_EQUAL(i.get_ptr(), j.get_ptr());
         BOOST_REQUIRE_EQUAL(i.get_tag(), j.get_tag());
     }
+
+    {
+        tagged_ptr<int> i (&a, 0);
+        tagged_ptr<int> j (i);
+
+        BOOST_REQUIRE(i.CAS(j, &b));
+
+        BOOST_REQUIRE_EQUAL(i.get_ptr(), &b);
+        BOOST_REQUIRE_EQUAL(i.get_tag(), 1);
+    }
+
+    {
+        tagged_ptr<int> i (&a, 0);
+        tagged_ptr<int> j (i);
+
+        BOOST_REQUIRE(i.CAS(j, &b, 5));
+
+        BOOST_REQUIRE_EQUAL(i.get_ptr(), &b);
+        BOOST_REQUIRE_EQUAL(i.get_tag(), 5);
+    }
+
+    {
+        tagged_ptr<int> i (&a, 0);
+
+        BOOST_REQUIRE(i.CAS(&a, 0, &b));
+
+        BOOST_REQUIRE_EQUAL(i.get_ptr(), &b);
+        BOOST_REQUIRE_EQUAL(i.get_tag(), 1);
+    }
+
 }
