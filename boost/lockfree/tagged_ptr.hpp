@@ -22,7 +22,7 @@ namespace lockfree
 {
 
 template <class T>
-class tagged_ptr
+class BOOST_LOCKFREE_DCAS_ALIGNMENT tagged_ptr
 {
     typedef std::size_t tag_t;
 
@@ -173,7 +173,7 @@ public:
     /* @} */
 
 protected:
-    T * ptr DCAS_ALIGNMENT_ATTRIBUTE;
+    T * ptr;
     tag_t tag;
 };
 

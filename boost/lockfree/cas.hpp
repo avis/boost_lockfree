@@ -12,13 +12,6 @@
 #include "prefix.hpp"
 #include <boost/detail/lightweight_mutex.hpp>
 
-#ifdef __x86_64__
-/* 16 byte aligned for cmpxchg16b! */
-#define DCAS_ALIGNMENT_ATTRIBUTE __attribute__((aligned(16)))
-#else
-#define DCAS_ALIGNMENT_ATTRIBUTE
-#endif
-
 namespace boost
 {
 namespace lockfree

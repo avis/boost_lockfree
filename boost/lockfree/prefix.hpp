@@ -24,13 +24,30 @@
     #endif
 #endif
 
-#if defined(_MSC_VER)
+#ifdef _MSC_VER
 // \note: Must use /Oi option for VC++ to enable intrinsics
     extern "C" {
         void __cdecl _ReadWriteBarrier();
         LONG __cdecl _InterlockedCompareExchange(LONG volatile* Dest,LONG Exchange, LONG Comp);
     }
+
+#ifdef defined(_M_IX86)
+    #define BOOST_LOCKFREE_DCAS_ALIGNMENT
+#elif defined(_M_X64) || defined(_M_IA64)
+    #define BOOST_LOCKFREE_DCAS_ALIGNMENT __declspec(align(16))
 #endif
+
+#endif /* _MSC_VER */
+
+#ifdef __GNUC__
+
+#ifdef __i386__
+    #define BOOST_LOCKFREE_DCAS_ALIGNMENT
+#elif __x86_64__
+    #define BOOST_LOCKFREE_DCAS_ALIGNMENT __attribute__((aligned(16)))
+#endif
+
+#endif /* __GNUC__ */
 
 
 #ifdef USE_ATOMIC_OPS
