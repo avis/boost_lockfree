@@ -9,7 +9,7 @@
 #ifndef BOOST_LOCKFREE_CAS_HPP_INCLUDED
 #define BOOST_LOCKFREE_CAS_HPP_INCLUDED
 
-#include "prefix.hpp"
+#include <boost/lockfree/prefix.hpp>
 #include <boost/detail/lightweight_mutex.hpp>
 
 namespace boost

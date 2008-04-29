@@ -36,6 +36,7 @@ testsuite = [
     env.Program("cas_test", "cas_test.cpp"),
     env.Program("fifo_test", "fifo_test.cpp"),
     env.Program("freelist_test", "freelist_test.cpp"),
+    env.Program("tagged_ptr_test", "tagged_ptr_test.cpp"),
     ]
 
 Default(testsuite)

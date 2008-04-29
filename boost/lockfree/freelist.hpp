@@ -38,7 +38,7 @@ struct dummy_freelist
 
 
 /** simple freelist implementation  */
-template <typename T, unsigned int max_size = 64>
+template <typename T, std::size_t max_size = 64>
 class freelist:
     public dummy_freelist<T>
 {

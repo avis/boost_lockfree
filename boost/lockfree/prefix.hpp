@@ -50,7 +50,8 @@
 
 #ifdef __i386__
     #define BOOST_LOCKFREE_DCAS_ALIGNMENT
-#elif __x86_64__
+#elif defined(__x86_64__)
+    #define BOOST_LOCKFREE_PTR_COMPRESSION 1
     #define BOOST_LOCKFREE_DCAS_ALIGNMENT __attribute__((aligned(16)))
 #endif
 
