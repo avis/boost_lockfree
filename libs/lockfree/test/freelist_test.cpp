@@ -1,8 +1,8 @@
+#include <boost/lockfree/freelist.hpp>
+
 #include <climits>
 #define BOOST_TEST_MODULE lockfree_tests
 #include <boost/test/included/unit_test.hpp>
-
-#include <boost/lockfree/freelist.hpp>
 
 #include <boost/foreach.hpp>
 

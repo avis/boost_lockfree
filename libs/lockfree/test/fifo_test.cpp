@@ -1,3 +1,5 @@
+#include <boost/lockfree/fifo.hpp>
+
 #include <climits>
 #define BOOST_TEST_MODULE lockfree_tests
 #include <boost/test/included/unit_test.hpp>
@@ -7,7 +9,6 @@
 #include <iostream>
 #include <memory>
 
-#include <boost/lockfree/fifo.hpp>
 
 #include "test_helpers.hpp"
 
@@ -18,7 +19,7 @@ using namespace std;
 
 BOOST_AUTO_TEST_CASE( simple_fifo_test )
 {
-    fifo<int> f;
+    fifo<int> f(64);
     BOOST_CHECK(f.empty());
     f.enqueue(1);
     f.enqueue(2);

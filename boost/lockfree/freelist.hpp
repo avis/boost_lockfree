@@ -14,6 +14,8 @@
 #include <boost/lockfree/tagged_ptr.hpp>
 #include <boost/lockfree/atomic_int.hpp>
 
+#include <algorithm>            /* for std::min */
+
 namespace boost
 {
 namespace lockfree
@@ -51,6 +53,16 @@ public:
     freelist(void):
         pool_(NULL)
     {}
+
+    freelist(std::size_t initial_nodes):
+        pool_(NULL)
+    {
+        for (int i = 0; i != std::min(initial_nodes, max_size); ++i)
+        {
+            T * node = dummy_freelist<T>::allocate();
+            deallocate(node);
+        }
+    }
 
     ~freelist(void)
     {
@@ -136,6 +148,16 @@ public:
     caching_freelist(void):
         pool_(NULL)
     {}
+
+    caching_freelist(std::size_t initial_nodes):
+        pool_(NULL)
+    {
+        for (int i = 0; i != initial_nodes; ++i)
+        {
+            T * node = dummy_freelist<T>::allocate();
+            deallocate(node);
+        }
+    }
 
     ~caching_freelist(void)
     {

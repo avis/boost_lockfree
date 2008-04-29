@@ -65,6 +65,14 @@ public:
         tail_.set_ptr(n);
     }
 
+    fifo(std::size_t initial_nodes):
+        pool(initial_nodes)
+    {
+        node * n = alloc_node();
+        head_.set_ptr(n);
+        tail_.set_ptr(n);
+    }
+
     ~fifo(void)
     {
         assert(empty());
@@ -138,8 +146,6 @@ public:
     }
 
 private:
-    boost::lockfree::caching_freelist<node> pool;
-
     node * alloc_node(void)
     {
         node * chunk = pool.allocate();
@@ -160,6 +166,8 @@ private:
         pool.deallocate(n);
     }
 
+    boost::lockfree::caching_freelist<node> pool;
+
     atomic_node_ptr head_;
     atomic_node_ptr tail_ __attribute__((aligned(64))); /* force head_ and tail_ to different cache lines! */
 };
@@ -174,6 +182,13 @@ template <typename T>
 class fifo:
     public detail::fifo<T>
 {
+public:
+    fifo(void)
+    {}
+
+    fifo(std::size_t initial_nodes):
+        detail::fifo<T>(initial_nodes)
+    {}
 };
 
 
@@ -200,6 +215,13 @@ class fifo<T*>:
     }
 
 public:
+    fifo(void)
+    {}
+
+    fifo(std::size_t initial_nodes):
+        detail::fifo<T>(initial_nodes)
+    {}
+
     void enqueue(T * t)
     {
         fifo_t::enqueue(t);

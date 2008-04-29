@@ -1,8 +1,8 @@
+#include <boost/lockfree/cas.hpp>
+
 #include <climits>
 #define BOOST_TEST_MODULE lockfree_tests
 #include <boost/test/included/unit_test.hpp>
-
-#include <boost/lockfree/cas.hpp>
 
 #include <cstddef>
 
