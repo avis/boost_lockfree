@@ -58,7 +58,7 @@ inline bool CAS(volatile C * addr,D old,D nw)
 #warning ("blocking cas emulation")
 
     boost::detail::lightweight_mutex guard;
-    boost::detail::lightweight_mutex::scoped_lock(guard);
+    boost::detail::lightweight_mutex::scoped_lock lock(guard);
 
     if (*addr == old)
     {
@@ -192,7 +192,7 @@ inline bool CAS2(volatile C * addr,D old1,E old2,D new1,E new2)
     volatile packed_c * packed_addr = reinterpret_cast<volatile packed_c*>(addr);
 
     boost::detail::lightweight_mutex guard;
-    boost::detail::lightweight_mutex::scoped_lock(guard);
+    boost::detail::lightweight_mutex::scoped_lock lock(guard);
 
     if (packed_addr->d == old1 &&
         packed_addr->e == old2)
