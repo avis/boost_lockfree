@@ -24,12 +24,16 @@
     #endif
 #endif
 
+#define BOOST_LOCKFREE_CACHELINE_BYTES 64
+
 #ifdef _MSC_VER
 // \note: Must use /Oi option for VC++ to enable intrinsics
     extern "C" {
         void __cdecl _ReadWriteBarrier();
         LONG __cdecl _InterlockedCompareExchange(LONG volatile* Dest,LONG Exchange, LONG Comp);
     }
+
+#define BOOST_LOCKFREE_CACHELINE_ALIGNMENT __declspec(align(BOOST_LOCKFREE_CACHELINE_ALIGNMENT))
 
 #ifdef defined(_M_IX86)
     #define BOOST_LOCKFREE_DCAS_ALIGNMENT
@@ -40,6 +44,9 @@
 #endif /* _MSC_VER */
 
 #ifdef __GNUC__
+
+//#define BOOST_LOCKFREE_CACHELINE_ALIGNMENT __attribute__((aligned(BOOST_LOCKFREE_CACHELINE_ALIGNMENT)))
+#define BOOST_LOCKFREE_CACHELINE_ALIGNMENT __attribute__((aligned(64)))
 
 #ifdef __i386__
     #define BOOST_LOCKFREE_DCAS_ALIGNMENT
@@ -58,5 +65,6 @@
         #include "../libatomic_ops/src/atomic_ops.h"
     }
 #endif
+
 
 #endif /* BOOST_LOCKFREE_PREFIX_HPP_INCLUDED */

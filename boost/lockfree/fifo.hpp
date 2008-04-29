@@ -40,7 +40,7 @@ class fifo
     BOOST_CLASS_REQUIRE(T, boost, CopyConstructibleConcept);
     BOOST_CLASS_REQUIRE(T, boost, DefaultConstructibleConcept);
 
-    struct node
+    struct BOOST_LOCKFREE_CACHELINE_ALIGNMENT node
     {
         node(T const & v):
             data(v), next(NULL)
@@ -169,7 +169,7 @@ private:
     boost::lockfree::caching_freelist<node> pool;
 
     atomic_node_ptr head_;
-    atomic_node_ptr tail_ __attribute__((aligned(64))); /* force head_ and tail_ to different cache lines! */
+    atomic_node_ptr tail_ BOOST_LOCKFREE_CACHELINE_ALIGNMENT; /* force head_ and tail_ to different cache lines! */
 };
 
 } /* namespace detail */
