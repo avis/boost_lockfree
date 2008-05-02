@@ -1,0 +1,12 @@
+import os
+
+qb_bld = Builder (action = ['quickbook $SOURCE'],  suffix = '.xml', \
+                  src_suffix = '.qbk')
+
+html_bld = Builder (action = 'xsltproc /home/tim/workspace/boost.git/tools/boostbook/xsl/docbook.xsl $SOURCE | xsltproc /home/tim/workspace/boost.git/tools/boostbook/xsl/html.xsl - > $TARGET',
+                    suffix = '.html', src_suffix = '.xml',
+                    src_builder=qb_bld)
+
+env = Environment (ENV = {'PATH' : os.environ['PATH']}, BUILDERS = {'qb' : qb_bld, 'html' : html_bld})
+
+env.html (target = 'lockfree.html', source = 'lockfree.qbk')
