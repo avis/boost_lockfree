@@ -50,6 +50,8 @@
 
 #ifdef __i386__
     #define BOOST_LOCKFREE_DCAS_ALIGNMENT
+#elif defined(__ppc__)
+    #define BOOST_LOCKFREE_DCAS_ALIGNMENT
 #elif defined(__x86_64__)
 
     #if !(defined (__GCC_HAVE_SYNC_COMPARE_AND_SWAP_16) || defined (__nocona__))

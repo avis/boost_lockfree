@@ -33,7 +33,7 @@ inline void memory_barrier()
 }
 
 template <class C, class D>
-inline bool CAS(volatile C * addr,D old,D nw)
+inline bool CAS(volatile C * addr, D old, D nw)
 {
 #if defined(__GNUC__) && ( (__GNUC__ > 4) || ((__GNUC__ >= 4) && (__GNUC_MINOR__ >= 1)) )
     return __sync_bool_compare_and_swap(addr, old, nw);
@@ -42,7 +42,7 @@ inline bool CAS(volatile C * addr,D old,D nw)
 #elif defined(_WIN32)
     return InterlockedCompareExchange(addr,old,nw) == old;
 #elif defined(__APPLE__)
-    return OSAtomicCompareAndSwap32(old,nw,addr);
+    return OSAtomicCompareAndSwap32((int32_t) old, (int32_t)nw, (int32_t*)addr);
 #elif defined(AO_HAVE_compare_and_swap_full)
     return AO_compare_and_swap_full(reinterpret_cast<volatile AO_t*>(addr),
                                     reinterpret_cast<AO_t>(old),
@@ -65,7 +65,7 @@ inline bool CAS(volatile C * addr,D old,D nw)
 
 
 template <class C, class D, class E>
-inline bool CAS2(volatile C * addr,D old1,E old2,D new1,E new2)
+inline bool CAS2(volatile C * addr, D old1, E old2, D new1, E new2)
 {
 #if defined(__GNUC__) && ((__GNUC__ >  4) || ( (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 2) ) ) && defined(__i386__) && \
     (defined(__i686__) || defined(__pentiumpro__) || defined(__nocona__ ) || \
