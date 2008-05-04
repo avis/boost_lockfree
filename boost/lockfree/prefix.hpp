@@ -19,9 +19,7 @@
 #ifdef __APPLE__
     #include <libkern/OSAtomic.h>
 
-    #if  defined(__GLIBCPP__) || defined(__GLIBCXX__)
-        #include <bits/atomicity.h>
-    #endif
+    #include <bits/atomicity.h>
 #endif
 
 #define BOOST_LOCKFREE_CACHELINE_BYTES 64

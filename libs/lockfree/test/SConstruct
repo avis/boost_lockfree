@@ -4,6 +4,7 @@ opt = Options('options.cache')
 opt.AddOptions(
     BoolOption('optimize', 'Build with build optimization', False),
     ('cxx', 'c++ compiler', None),
+    ('arch', 'architecture', None),
     )
 
 opt.Update(env)
@@ -19,9 +20,12 @@ conf.CheckLib('pthread')
 conf.Finish()
 
 if env.get('optimize', False):
-    env['CCFLAGS'] = "-O3 -g -march=nocona"
+    env['CCFLAGS'] = ["-O3 -g"]
 else:
-    env['CCFLAGS'] = "-g  -march=nocona"
+    env['CCFLAGS'] = ["-g"]
+
+if env.has_key('arch'):
+    env.Append(CCFLAGS = "-march="+env['arch'])
 
 env.Append(CPPPATH=["#../../.."])
 
