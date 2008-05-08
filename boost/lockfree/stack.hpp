@@ -16,6 +16,7 @@
 
 #include <boost/lockfree/tagged_ptr.hpp>
 #include <boost/lockfree/freelist.hpp>
+#include <boost/noncopyable.hpp>
 
 
 namespace boost
@@ -23,7 +24,8 @@ namespace boost
 namespace lockfree
 {
 template <typename T>
-class stack
+class stack:
+    boost::noncopyable
 {
     struct node
     {

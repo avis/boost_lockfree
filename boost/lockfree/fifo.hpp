@@ -26,6 +26,7 @@
 #include <memory>               /* std::auto_ptr */
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/noncopyable.hpp>
 
 namespace boost
 {
@@ -35,7 +36,8 @@ namespace detail
 {
 
 template <typename T>
-class fifo
+class fifo:
+    boost::noncopyable
 {
     BOOST_CLASS_REQUIRE(T, boost, CopyConstructibleConcept);
     BOOST_CLASS_REQUIRE(T, boost, DefaultConstructibleConcept);

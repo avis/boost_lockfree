@@ -10,6 +10,7 @@
 #define BOOST_LOCKFREE_ATOMIC_INT_HPP
 
 #include <boost/lockfree/prefix.hpp>
+#include <boost/noncopyable.hpp>
 
 namespace boost
 {
@@ -19,7 +20,8 @@ namespace lockfree
 #if defined(__GNUC__) && ( (__GNUC__ > 4) || ((__GNUC__ >= 4) && (__GNUC_MINOR__ >= 1)) )
 
 template <typename T>
-class atomic_int
+class atomic_int:
+    boost::noncopyable
 {
 public:
     explicit atomic_int(T v = 0):
@@ -78,7 +80,8 @@ private:
 #elif defined(__GLIBCPP__) || defined(__GLIBCXX__)
 
 template <typename T>
-class atomic_int
+class atomic_int:
+    boost::noncopyable
 {
 public:
     explicit atomic_int(T v = 0):
@@ -136,7 +139,8 @@ private:
 #else /* emulate via CAS */
 
 template <typename T>
-class atomic_int
+class atomic_int:
+    boost::noncopyable
 {
 public:
     explicit atomic_int(T v = 0)
