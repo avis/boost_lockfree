@@ -54,7 +54,7 @@ public:
         pool_(NULL)
     {}
 
-    freelist(std::size_t initial_nodes):
+    explicit freelist(std::size_t initial_nodes):
         pool_(NULL)
     {
         for (int i = 0; i != std::min(initial_nodes, max_size); ++i)
@@ -149,7 +149,7 @@ public:
         pool_(NULL)
     {}
 
-    caching_freelist(std::size_t initial_nodes):
+    explicit caching_freelist(std::size_t initial_nodes):
         pool_(NULL)
     {
         for (int i = 0; i != initial_nodes; ++i)

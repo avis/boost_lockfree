@@ -65,7 +65,7 @@ public:
         tail_.set_ptr(n);
     }
 
-    fifo(std::size_t initial_nodes):
+    explicit fifo(std::size_t initial_nodes):
         pool(initial_nodes)
     {
         node * n = alloc_node();
@@ -186,7 +186,7 @@ public:
     fifo(void)
     {}
 
-    fifo(std::size_t initial_nodes):
+    explicit fifo(std::size_t initial_nodes):
         detail::fifo<T>(initial_nodes)
     {}
 };
@@ -218,7 +218,7 @@ public:
     fifo(void)
     {}
 
-    fifo(std::size_t initial_nodes):
+    explicit fifo(std::size_t initial_nodes):
         detail::fifo<T>(initial_nodes)
     {}
 

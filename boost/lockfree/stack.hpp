@@ -42,7 +42,7 @@ public:
         tos(NULL)
     {}
 
-    stack(std::size_t n):
+    explicit stack(std::size_t n):
         tos(NULL), pool(n)
     {}
 
