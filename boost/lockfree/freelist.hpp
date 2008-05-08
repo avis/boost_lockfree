@@ -13,6 +13,7 @@
 
 #include <boost/lockfree/tagged_ptr.hpp>
 #include <boost/lockfree/atomic_int.hpp>
+#include <boost/noncopyable.hpp>
 
 #include <algorithm>            /* for std::min */
 
@@ -21,9 +22,10 @@ namespace boost
 namespace lockfree
 {
 
-/** dummy freelist  */
+/** dummy freelist */
 template <typename T, typename Alloc = std::allocator<T> >
-struct dummy_freelist
+class dummy_freelist:
+    boost::noncopyable
 {
     T * allocate (void)
     {
@@ -35,7 +37,24 @@ struct dummy_freelist
         allocator.deallocate(n, 1);
     }
 
+private:
     Alloc allocator;
+};
+
+/** dummy freelist, specialization fost std::allocator */
+template <typename T>
+struct dummy_freelist<T, std::allocator<T> >:
+    boost::noncopyable
+{
+    T * allocate (void)
+    {
+        return static_cast<T*>(operator new(sizeof(T)));
+    }
+
+    void deallocate (T * n)
+    {
+        operator delete(n);
+    }
 };
 
 
@@ -43,7 +62,8 @@ struct dummy_freelist
 template <typename T,
           std::size_t max_size = 64,
           typename Alloc = std::allocator<T> >
-class freelist
+class freelist:
+    private dummy_freelist<T, Alloc>
 {
     struct freelist_node
     {
@@ -62,7 +82,7 @@ public:
     {
         for (int i = 0; i != std::min(initial_nodes, max_size); ++i)
         {
-            T * node = allocator.allocate(1);
+            T * node = dummy_freelist<T, Alloc>::allocate();
             deallocate(node);
         }
     }
@@ -79,7 +99,7 @@ public:
             tagged_ptr old_pool(pool_);
 
             if (not old_pool)
-                return allocator.allocate(1);
+                return dummy_freelist<T, Alloc>::allocate();
 
             tagged_ptr new_pool (old_pool->next);
 
@@ -97,7 +117,7 @@ public:
     {
         if (free_list_size > max_size)
         {
-            allocator.deallocate(n, 1);
+            dummy_freelist<T, Alloc>::deallocate(n);
             return;
         }
 
@@ -128,17 +148,17 @@ private:
         {
             freelist_node * n = current.get_ptr();
             current.set(current->next);
-            allocator.deallocate(reinterpret_cast<T*>(n), 1);
+            dummy_freelist<T, Alloc>::deallocate(reinterpret_cast<T*>(n));
         }
     }
 
     tagged_ptr pool_;
     atomic_int<long> free_list_size;
-    Alloc allocator;
 };
 
 template <typename T, typename Alloc = std::allocator<T> >
-class caching_freelist
+class caching_freelist:
+    private dummy_freelist<T, Alloc>
 {
     struct freelist_node
     {
@@ -157,7 +177,7 @@ public:
     {
         for (int i = 0; i != initial_nodes; ++i)
         {
-            T * node = allocator.allocate(1);
+            T * node = dummy_freelist<T, Alloc>::allocate();
             deallocate(node);
         }
     }
@@ -174,7 +194,7 @@ public:
             tagged_ptr old_pool(pool_);
 
             if (not old_pool)
-                return allocator.allocate(1);
+                return dummy_freelist<T, Alloc>::allocate();
 
             tagged_ptr new_pool (old_pool->next);
 
@@ -211,12 +231,11 @@ private:
         {
             freelist_node * n = current.get_ptr();
             current.set(current->next);
-            allocator.deallocate(reinterpret_cast<T*>(n), 1);
+            dummy_freelist<T, Alloc>::deallocate(reinterpret_cast<T*>(n));
         }
     }
 
     tagged_ptr pool_;
-    Alloc allocator;
 };
 
 } /* namespace lockfree */
