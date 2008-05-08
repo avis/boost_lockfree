@@ -20,7 +20,7 @@ conf.CheckLib('pthread')
 conf.Finish()
 
 if env.get('optimize', False):
-    env['CCFLAGS'] = ["-O3 -g"]
+    env['CCFLAGS'] = Split("-O3 -g")
 else:
     env['CCFLAGS'] = ["-g"]
 
