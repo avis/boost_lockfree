@@ -50,7 +50,7 @@ Lock-free data structures can be used in real-time systems, where blocking algor
     {
     public:
         fifo(void);
-        fifo(std::size_t initial_nodes);
+        explicit fifo(std::size_t initial_nodes);
         ~fifo(void);
 
         bool empty(void) const;
@@ -66,7 +66,7 @@ Lockfree fifo class.
     {
     public:
         fifo(void);
-        fifo(std::size_t initial_nodes);
+        explicit fifo(std::size_t initial_nodes);
         ~fifo(void);
 
         bool empty(void) const;
@@ -103,7 +103,7 @@ The Boost.Lockfree library provides several building blocks, used in lockfree al
 
         /** copy constructor */
         tagged_ptr(tagged_ptr const & p);
-        tagged_ptr(T * p, tag_t t = 0);
+        explicit tagged_ptr(T * p, tag_t t = 0);
 
         /** atomic set operations */
         /* @{ */
@@ -172,7 +172,7 @@ Wrapper class with freelist api to operators new and delete.
     {   
     public:
         caching_freelist(void);
-        caching_freelist(std::size_t initial_nodes)
+        explicit caching_freelist(std::size_t initial_nodes)
         ~caching_freelist(void);
 
         T * allocate (void);
@@ -186,7 +186,7 @@ Caching freelist class. Uses an internal lockfree stack to cache objects. Deallo
     {
     public:
         freelist(void);
-        freelist(std::size_t initial_nodes);
+        explicit freelist(std::size_t initial_nodes);
         ~freelist(void);
 
         T * allocate (void);
