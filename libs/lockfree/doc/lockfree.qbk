@@ -38,13 +38,23 @@ _lockfree_ is NOT a boost library!
 
 [h2 What is _lockfree_?]
 _lockfree_ provides implementations of lock-free data structures. Lock-free data structures can be accessed by multiple threads without the necessity of blocking synchronization primitives such as guards. 
-Lock-free data structures can be used in real-time systems, where blocking algorithms may lead to high worst-case execution times, or to avoid priority inversion.
+Lock-free data structures can be used in real-time systems, where blocking algorithms may lead to high worst-case execution times, to avoid priority inversion, or to increase the scalability for multi-processor machines.
 
 [endsect]
 
 [section Reference]
 
 [section boost.lockfree fifo]
+
+[classref boost::lockfree::fifo boost::lockfree::fifo] provides a multi-writer/multi-reader lockfree fifo class, enqueueing and dequeueing is lockfree, construction/destruction has to be synchronized.
+
+[c++]
+
+``
+#include <boost/lockfree/fifo.hpp>
+``
+
+
     template <typename T>
     class boost::lockfree::fifo
     {
@@ -59,7 +69,8 @@ Lock-free data structures can be used in real-time systems, where blocking algor
         bool dequeue (T * ret);
     };
 
-Lockfree fifo class.
+
+A specialized [classref boost::lockfree::fifo fifo] class for pointer-arguments is provided, which supports dequeueing to stl/boost-style smart pointers.
 
     template <typename T>
     class boost::lockfree::fifo<T*>
@@ -74,15 +85,10 @@ Lockfree fifo class.
         void enqueue(T * t);
 
         bool dequeue (T ** ret);
-
         bool dequeue (std::auto_ptr<T> & ret);
-
         bool dequeue (boost::scoped_ptr<T> & ret);
-
         bool dequeue (boost::shared_ptr<T> & ret);
     };
-
-Specialization of fifo class for pointer argument. Dequeue support for smart boost- and stl-style smart pointer classes.
 
 [endsect]
 [endsect]
@@ -158,7 +164,7 @@ Tagged pointer implementation as smart pointer class, as it is required by sever
 
 [section Freelist]
 
-    template <typename T>
+    template <typename T, typename Alloc = std::allocator<T> >
     struct boost::lockfree::dummy_freelist
     {
         T * allocate (void);
@@ -167,7 +173,7 @@ Tagged pointer implementation as smart pointer class, as it is required by sever
 
 Wrapper class with freelist api to operators new and delete.
 
-    template <typename T>
+    template <typename T, typename Alloc = std::allocator<T> >
     class caching_freelist
     {   
     public:
@@ -181,7 +187,8 @@ Wrapper class with freelist api to operators new and delete.
 
 Caching freelist class. Uses an internal lockfree stack to cache objects. Deallocation never frees objects.
 
-    template <typename T, std::size_t max_size = 64>
+    template <typename T, std::size_t max_size = 64, 
+              typename Alloc = std::allocator<T> >
     class freelist
     {
     public:
@@ -203,21 +210,23 @@ Freelist class, with a maximum size of max_size.
 The Boost.Lockfree library provides platform-specific wrappers for low-level operations.
 
 [section Memory Barriers]
+Full Memory Barrier.
+
     void boost::lockfree::detail::memory_barrier(void);
 
-Full Memory Barrier.
 
 [endsect]
 
 [section Compare-and-Swap]
+Atomic compare-and-swap. Lockfree on supported platforms, otherwise blocking emulation. Versions for single-word and
+double-word machines. 
+
     template <class C, class D>
     inline bool boost::lockfree::detail::CAS(volatile C * addr, D old, D nw);
 
     template <class C, class D, class E>
     inline bool boost::lockfree::detail::CAS2(volatile C * addr, D old1, E old2, D new1, E new2);
 
-Atomic compare-and-swap. Lockfree on supported platforms, otherwise blocking emulation. Versions for single-word and
-double-word machines. 
 
 [endsect]
 
@@ -266,3 +275,11 @@ Tested operating systems:
 
 [endsect]
 
+[section Acknowledgements]
+
+Thanks for suggestions, porting, testing:
+
+# Thomas Grill, original win32/osx code pieces
+# Shiwei Xu, api suggestions
+
+[endsect]
