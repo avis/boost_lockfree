@@ -35,7 +35,7 @@ namespace lockfree
 namespace detail
 {
 
-template <typename T>
+template <typename T, typename Alloc>
 class fifo:
     boost::noncopyable
 {
@@ -168,7 +168,9 @@ private:
         pool.deallocate(n);
     }
 
-    boost::lockfree::caching_freelist<node> pool;
+    typedef typename Alloc::template rebind<node>::other node_allocator;
+
+    boost::lockfree::caching_freelist<node, node_allocator> pool;
 
     atomic_node_ptr head_;
     atomic_node_ptr tail_ BOOST_LOCKFREE_CACHELINE_ALIGNMENT; /* force head_ and tail_ to different cache lines! */
@@ -180,16 +182,17 @@ private:
  *
  *  - wrapper for detail::fifo
  * */
-template <typename T>
+template <typename T,
+          typename Alloc = std::allocator<T> >
 class fifo:
-    public detail::fifo<T>
+    public detail::fifo<T, Alloc>
 {
 public:
     fifo(void)
     {}
 
     explicit fifo(std::size_t initial_nodes):
-        detail::fifo<T>(initial_nodes)
+        detail::fifo<T, Alloc>(initial_nodes)
     {}
 };
 
@@ -199,11 +202,11 @@ public:
  *  - wrapper for detail::fifo
  *  - overload dequeue to support smart pointers
  * */
-template <typename T>
-class fifo<T*>:
-    public detail::fifo<T*>
+template <typename T, typename Alloc>
+class fifo<T*, Alloc>:
+    public detail::fifo<T*, Alloc>
 {
-    typedef detail::fifo<T*> fifo_t;
+    typedef detail::fifo<T*, Alloc> fifo_t;
 
     template <typename smart_ptr>
     bool dequeue_smart_ptr(smart_ptr & ptr)
@@ -221,7 +224,7 @@ public:
     {}
 
     explicit fifo(std::size_t initial_nodes):
-        detail::fifo<T>(initial_nodes)
+        fifo_t(initial_nodes)
     {}
 
     void enqueue(T * t)
