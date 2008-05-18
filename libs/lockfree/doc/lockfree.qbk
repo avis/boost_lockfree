@@ -166,6 +166,87 @@ The specialized class for pointer objects provides an api for dequeuing objects 
 
 
 [endsect]
+
+[section boost.lockfree stack]
+
+[classref boost::lockfree::stack boost::lockfree::stack] provides a multi-writer/multi-reader lockfree stack class,
+push and pop is lockfree, construction/destruction has to be synchronized.
+
+It uses a caching freelist for memory management, freed nodes are pushed to the freelist. This may result in leaking
+memory.
+
+[section Synopsis]
+
+[c++]
+
+
+``
+namespace boost {
+namespace lockfree {
+
+template <typename T>
+class stack:
+    boost::noncopyable
+{
+public:
+    stack(void);
+    explicit stack(std::size_t n);
+
+    void push(T const & v);
+
+    bool pop(T * ret);
+};
+
+
+} /* namespace lockfree */
+} /* namespace boost */
+``
+
+[endsect]
+
+[section Members]
+
+[heading Constructors]
+
+    stack(void);
+
+Default Constructor
+
+    explicit stack(std::size_t initial_nodes);
+
+Construct stack with a number of initially allocated stack nodes.
+
+
+[heading Destructor]
+
+    ~stack(void);
+
+Destroys stack, free all nodes from freelist.
+
+[heading Push]
+
+    void push(T const & t);
+
+Pushes object t to the stack.
+
+[note Thread-safe and non-blocking]
+[important May block, if node needs to be allocated from the operating system]
+
+[heading Pop]
+
+    bool pop (T * ret);
+
+Pop object from stack.
+
+Returns: true, if the pop operation is successful, false if stack was empty.
+Effect: if pop operation is successful, object is written to memory location denoted by ret.
+
+[note Thread-safe and non-blocking]
+
+[endsect]
+[endsect]
+
+
 [endsect]
 
 [section Building blocks]
