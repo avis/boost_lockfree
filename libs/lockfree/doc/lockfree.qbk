@@ -416,39 +416,76 @@ Returns: get_ptr() != 0
 
 [endsect]
 
-[section Freelist]
+[section Freelists]
 
-Wrapper class with freelist api to operators new and delete.
+[section Freelist Concept]
+
+``
+template <typename T, typename Alloc = std::allocator<T> >
+concept freelist
+{
+public:
+    freelist(void);
+    explicit freelist(std::size_t initial_nodes);
+    ~freelist(void);
+
+    T * allocate (void);
+    void deallocate (T * n);
+};
+``
+
+[endsect]
+
+[section Members]
+
+
+[heading Constructors]
+
+    freelist(void);
+
+Default Constructor
+
+    explicit freelist(std::size_t initial_nodes);
+
+Construct freelist, allocate a number of initial nodes
+
+
+[heading Destructor]
+
+    ~freelist(void);
+
+Free all nodes from the freelist to the OS
+
+
+[heading Allocation]
+
+    T * allocate (void);
+
+Allocate memory for one object. 
+
+
+[heading Deallocation]
+
+    void deallocate (T * n);
+
+Deallocate object to freelist
+
+[endsect]
+
+[section Freelist Implementations]
 
     template <typename T, typename Alloc = std::allocator<T> >
-    class caching_freelist
-    {   
-    public:
-        caching_freelist(void);
-        explicit caching_freelist(std::size_t initial_nodes)
-        ~caching_freelist(void);
-
-        T * allocate (void);
-        void deallocate (T * n);
-    };
+    class caching_freelist;
 
 Caching freelist class. Uses an internal lockfree stack to cache objects. Deallocation never frees objects.
 
     template <typename T, std::size_t max_size = 64, 
               typename Alloc = std::allocator<T> >
-    class freelist
-    {
-    public:
-        freelist(void);
-        explicit freelist(std::size_t initial_nodes);
-        ~freelist(void);
+    class freelist;
 
-        T * allocate (void);
-        void deallocate (T * n);
-    };
+Freelist class, with a maximum size of max_size. Uses an lockfree stack to cache max_size objects. 
 
-Freelist class, with a maximum size of max_size.
-
+[endsect]
 [endsect]
 [endsect]
 
