@@ -101,9 +101,7 @@ public:
             if (not old_pool)
                 return dummy_freelist<T, Alloc>::allocate();
 
-            tagged_ptr new_pool (old_pool->next);
-
-            new_pool.set_tag(old_pool.get_tag() + 1);
+            freelist_node * new_pool = old_pool->next.get_ptr();
 
             if (pool_.CAS(old_pool, new_pool))
             {
@@ -125,11 +123,9 @@ public:
         {
             tagged_ptr old_pool (pool_);
 
-            freelist_node * fl_node = reinterpret_cast<freelist_node*>(n);
+            freelist_node * new_pool = reinterpret_cast<freelist_node*>(n);
 
-            fl_node->next.set_ptr(old_pool.get_ptr());
-
-            tagged_ptr new_pool (fl_node, old_pool.get_tag() + 1);
+            new_pool->next.set_ptr(old_pool.get_ptr());
 
             if (pool_.CAS(old_pool, new_pool))
             {
@@ -196,9 +192,7 @@ public:
             if (not old_pool)
                 return dummy_freelist<T, Alloc>::allocate();
 
-            tagged_ptr new_pool (old_pool->next);
-
-            new_pool.set_tag(old_pool.get_tag() + 1);
+            freelist_node * new_pool = old_pool->next.get_ptr();
 
             if (pool_.CAS(old_pool, new_pool))
                 return reinterpret_cast<T*>(old_pool.get_ptr());
@@ -211,13 +205,11 @@ public:
         {
             tagged_ptr old_pool (pool_);
 
-            freelist_node * fl_node = reinterpret_cast<freelist_node*>(n);
+            freelist_node * new_pool = reinterpret_cast<freelist_node*>(n);
 
-            fl_node->next.set_ptr(old_pool.get_ptr());
+            new_pool->next.set_ptr(old_pool.get_ptr());
 
-            tagged_ptr new_pool (fl_node, old_pool.get_tag() + 1);
-
-            if (pool_.CAS(old_pool, new_pool))
+            if (pool_.CAS(old_pool,new_pool))
                 return;
         }
     }

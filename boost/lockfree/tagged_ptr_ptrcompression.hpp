@@ -150,16 +150,13 @@ public:
 
     /** compare and swap  */
     /* @{ */
+private:
     bool CAS(compressed_ptr_t const & oldval, compressed_ptr_t const & newval)
     {
         return boost::lockfree::CAS(&(this->ptr), oldval, newval);
     }
 
-    bool CAS(tagged_ptr const & oldval, tagged_ptr const & newval)
-    {
-        return CAS(oldval.ptr, newval.ptr);
-    }
-
+public:
     bool CAS(tagged_ptr const & oldval, T * newptr)
     {
         compressed_ptr_t new_compressed_ptr = pack_ptr(newptr, extract_tag(oldval.ptr)+1);
@@ -170,13 +167,6 @@ public:
     {
         compressed_ptr_t new_compressed_ptr = pack_ptr(newptr, t);
         return boost::lockfree::CAS(&(this->ptr), oldval.ptr, new_compressed_ptr);
-    }
-
-    bool CAS(T * oldptr, tag_t oldtag, T * newptr)
-    {
-        compressed_ptr_t old_compressed_ptr = pack_ptr(oldptr, oldtag);
-        compressed_ptr_t new_compressed_ptr = pack_ptr(newptr, oldtag+1);
-        return CAS(old_compressed_ptr, new_compressed_ptr);
     }
     /* @} */
 

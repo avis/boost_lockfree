@@ -128,11 +128,6 @@ public:
 
     /** compare and swap  */
     /* @{ */
-    bool CAS(tagged_ptr const & oldval, tagged_ptr const & newval)
-    {
-        return boost::lockfree::CAS2(this, oldval.ptr, oldval.tag, newval.ptr, newval.tag);
-    }
-
     bool CAS(tagged_ptr const & oldval, T * newptr)
     {
         return boost::lockfree::CAS2(this, oldval.ptr, oldval.tag, newptr, oldval.tag + 1);
@@ -141,11 +136,6 @@ public:
     bool CAS(tagged_ptr const & oldval, T * newptr, tag_t t)
     {
         return boost::lockfree::CAS2(this, oldval.ptr, oldval.tag, newptr, t);
-    }
-
-    bool CAS(T * oldptr, tag_t oldtag, T * newptr)
-    {
-        return boost::lockfree::CAS2(this, oldptr, oldtag, newptr, oldtag + 1);
     }
     /* @} */
 
