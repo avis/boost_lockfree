@@ -37,8 +37,11 @@ _lockfree_ is NOT a boost library!
 [section Introduction]
 
 [h2 What is _lockfree_?]
-_lockfree_ provides implementations of lock-free data structures. Lock-free data structures can be accessed by multiple threads without the necessity of blocking synchronization primitives such as guards. 
-Lock-free data structures can be used in real-time systems, where blocking algorithms may lead to high worst-case execution times, to avoid priority inversion, or to increase the scalability for multi-processor machines.
+
+_lockfree_ provides implementations of lock-free data structures. Lock-free data structures can be accessed by multiple
+threads without the necessity of blocking synchronization primitives such as guards.  Lock-free data structures can be
+used in real-time systems, where blocking algorithms may lead to high worst-case execution times, to avoid priority
+inversion, or to increase the scalability for multi-processor machines.
 
 [endsect]
 
@@ -46,49 +49,121 @@ Lock-free data structures can be used in real-time systems, where blocking algor
 
 [section boost.lockfree fifo]
 
-[classref boost::lockfree::fifo boost::lockfree::fifo] provides a multi-writer/multi-reader lockfree fifo class, enqueueing and dequeueing is lockfree, construction/destruction has to be synchronized.
+[classref boost::lockfree::fifo boost::lockfree::fifo] provides a multi-writer/multi-reader lockfree fifo class,
+enqueueing and dequeueing is lockfree, construction/destruction has to be synchronized. A specialized [classref
+boost::lockfree::fifo fifo] class for pointer-arguments is provided, which supports dequeueing to stl/boost-style smart
+pointers.
+
+It uses a caching freelist for memory management, freed nodes are pushed to the freelist. This may result in leaking
+memory. 
+
+[section Synopsis]
 
 [c++]
 
+
 ``
-#include <boost/lockfree/fifo.hpp>
+namespace boost {
+namespace lockfree {
+
+template <typename T>
+class fifo:
+    boost::noncopyable
+{
+public:
+    fifo(void);
+    explicit fifo(std::size_t initial_nodes);
+    ~fifo(void);
+
+    bool empty(void) const;
+
+    void enqueue(T const & t);
+    bool dequeue (T * ret);
+};
+
+template <typename T>
+class fifo<T*>:
+    boost::noncopyable
+{
+public:
+    fifo(void);
+    explicit fifo(std::size_t initial_nodes);
+    ~fifo(void);
+
+    bool empty(void) const;
+
+    void enqueue(T * t);
+
+    bool dequeue (T ** ret);
+    bool dequeue (std::auto_ptr<T> & ret);
+    bool dequeue (boost::scoped_ptr<T> & ret);
+    bool dequeue (boost::shared_ptr<T> & ret);
+};
+
+} /* namespace lockfree */
+} /* namespace boost */
 ``
 
+[endsect]
 
-    template <typename T>
-    class boost::lockfree::fifo
-    {
-    public:
-        fifo(void);
-        explicit fifo(std::size_t initial_nodes);
-        ~fifo(void);
+[section Members]
 
-        bool empty(void) const;
+[heading Constructors]
 
-        void enqueue(T const & t);
-        bool dequeue (T * ret);
-    };
+    fifo(void);
+
+Default Constructor
+
+    explicit fifo(std::size_t initial_nodes);
+
+Construct fifo with a number of initially allocated fifo nodes.
 
 
-A specialized [classref boost::lockfree::fifo fifo] class for pointer-arguments is provided, which supports dequeueing to stl/boost-style smart pointers.
+[heading Destructor]
 
-    template <typename T>
-    class boost::lockfree::fifo<T*>
-    {
-    public:
-        fifo(void);
-        explicit fifo(std::size_t initial_nodes);
-        ~fifo(void);
+    ~fifo(void);
 
-        bool empty(void) const;
+Destroys fifo, free all nodes from freelist.
 
-        void enqueue(T * t);
 
-        bool dequeue (T ** ret);
-        bool dequeue (std::auto_ptr<T> & ret);
-        bool dequeue (boost::scoped_ptr<T> & ret);
-        bool dequeue (boost::shared_ptr<T> & ret);
-    };
+[heading Empty]
+
+    bool empty(void) const;
+
+Returns: true, if fifo is empty.
+
+[warning Not thread-safe, use for debugging purposes only]
+
+
+[heading Enqueue]
+
+    void enqueue(T const & t);
+
+Enqueues object t to the fifo.
+
+[note Thread-safe and non-blocking]
+[important May block if node needs to be allocated from the operating system]
+
+[heading Dequeue]
+
+    bool dequeue (T * ret);
+
+Dequeue object from fifo.
+
+Returns: true, if the dequeue operation is successful, false if fifo was empty.
+Effect: if dequeue operation is successful, object is written to memory location denoted by ret.
+
+[note Thread-safe and non-blocking]
+
+    bool dequeue (std::auto_ptr<T> & ret);
+    bool dequeue (boost::scoped_ptr<T> & ret);
+    bool dequeue (boost::shared_ptr<T> & ret);
+
+The specialized class for pointer objects provides an api for dequeuing objects directly to smart pointers.
+
+[endsect]
+
+
 
 [endsect]
 [endsect]
