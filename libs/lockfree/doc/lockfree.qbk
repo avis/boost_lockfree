@@ -506,7 +506,6 @@ Full Memory Barrier.
 
 Lockfree on supported platforms, otherwise blocking emulation. 
 
-
     template <class C, class D>
     inline bool boost::lockfree::detail::CAS(volatile C * addr, D old, D nw);
 
@@ -664,5 +663,6 @@ structures. ACM Transactions on Computer Systems (TOCS), 23(2):146–196, 2005.
 
 # Compare-And-Swap instructions return the old value, one can make use of this in order to avoid an additional memory
 access (suggested by Cory Nelson).
+# Adapt algorithms to be lockfree on architectures with load-linked/store-conditional instructions.
 
 [endsect]
