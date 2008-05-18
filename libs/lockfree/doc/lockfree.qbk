@@ -650,6 +650,16 @@ Thanks for suggestions, porting, testing:
 
 [endsect]
 
+[section References]
+
+# Maged M. Michael and Michael L. Scott. Simple, Fast, and Practical Non-Blocking and Blocking Concurrent Queue Algorithms. In Symposium on Principles of Distributed Computing, pages 267–275, 1996.
+# M. Herlihy, V. Luchangco, P. Martin, and M. Moir. Nonblocking memory management support for dynamic-sized data
+structures. ACM Transactions on Computer Systems (TOCS), 23(2):146–196, 2005.
+
+
+[endsect]
+
+
 [section Todo]
 
 # Compare-And-Swap instructions return the old value, one can make use of this in order to avoid an additional memory
