@@ -30,6 +30,10 @@
 
 [def _lockfree_                      [^boost.lockfree]] 
 
+[/  unspecified stuff   ]
+[def __unspecified_int__ /unspecified-int-type/]
+[def __unspecified_bool__ /unspecified-bool-type/]
+
 [section:disclaimer Disclaimer]
 _lockfree_ is NOT a boost library!
 [endsect]
@@ -66,7 +70,7 @@ memory.
 namespace boost {
 namespace lockfree {
 
-template <typename T>
+template <typename T, typename Alloc = std::allocator<T> >
 class fifo:
     boost::noncopyable
 {
@@ -81,7 +85,7 @@ public:
     bool dequeue (T * ret);
 };
 
-template <typename T>
+template <typename T, typename Alloc = std::allocator<T> >
 class fifo<T*>:
     boost::noncopyable
 {
@@ -184,7 +188,7 @@ memory.
 namespace boost {
 namespace lockfree {
 
-template <typename T>
+template <typename T, typename Alloc = std::allocator<T> >
 class stack:
     boost::noncopyable
 {
@@ -196,7 +200,6 @@ public:
 
     bool pop(T * ret);
 };
-
 
 } /* namespace lockfree */
 } /* namespace boost */
@@ -254,78 +257,166 @@ The Boost.Lockfree library provides several building blocks, used in lockfree al
 
 
 [section tagged_ptr]
-    template <class T>
-    class boost::lockfree::tagged_ptr
-    {
-    public:
-        typedef int_type tag_t;
-
-        /** uninitialized constructor */
-        tagged_ptr(void);
-
-        /** copy constructor */
-        tagged_ptr(tagged_ptr const & p);
-        explicit tagged_ptr(T * p, tag_t t = 0);
-
-        /** atomic set operations */
-        /* @{ */
-        void operator= (tagged_ptr const & p);
-        void atomic_set(tagged_ptr const & p);
-        void atomic_set(T * p, tag_t t);
-        /* @} */
-
-        /** unsafe set operation */
-        /* @{ */
-        void set(tagged_ptr const & p);
-        void set(T * p, tag_t t);
-        /* @} */
-
-        /** comparing semantics */
-        /* @{ */
-        bool operator== (tagged_ptr const & p) const;
-        bool operator!= (tagged_ptr const & p) const;
-        /* @} */
-
-        /** pointer access */
-        /* @{ */
-        T * get_ptr() const;
-        void set_ptr(T * p);
-        /* @} */
-
-        /** tag access */
-        /* @{ */
-        tag_t get_tag() const;
-        void set_tag(tag_t t);
-        /* @} */
-
-        /** compare and swap  */
-        /* @{ */
-        bool CAS(tagged_ptr const & oldval, tagged_ptr const & newval);
-        bool CAS(tagged_ptr const & oldval, T * newptr);
-        bool CAS(tagged_ptr const & oldval, T * newptr, tag_t t);
-        bool CAS(T * oldptr, tag_t oldtag, T * newptr);
-        /* @} */
-
-        /** smart pointer support  */
-        /* @{ */
-        T & operator*() const;
-        T * operator->() const;
-        operator bool(void) const;
-        /* @} */
-    };
 
 Tagged pointer implementation as smart pointer class, as it is required by several lockfree algorithms.
+
+[section Synposis]
+``
+namespace boost
+{
+namespace lockfree
+{
+
+template <class T>
+class tagged_ptr
+{
+public:
+    typedef __unspecified_int__ tag_t;
+
+    tagged_ptr(void);
+    tagged_ptr(tagged_ptr const & p);
+    explicit tagged_ptr(T * p, tag_t t = 0);
+
+    void operator= (tagged_ptr const & p);
+    void atomic_set(tagged_ptr const & p);
+    void atomic_set(T * p, tag_t t);
+
+    void set(tagged_ptr const & p);
+    void set(T * p, tag_t t);
+
+    bool operator== (tagged_ptr const & p) const;
+    bool operator!= (tagged_ptr const & p) const;
+
+    T * get_ptr() const;
+    void set_ptr(T * p);
+
+    tag_t get_tag() const;
+    void set_tag(tag_t t);
+
+    bool CAS(tagged_ptr const & oldval, T * newptr);
+    bool CAS(tagged_ptr const & oldval, T * newptr, tag_t t);
+
+    T & operator*() const;
+    T * operator->() const;
+
+    operator __unspecified_bool__(void) const;
+};
+
+} /* namespace lockfree */
+} /* namespace boost */
+
+``
+[endsect]
+
+[section Members]
+
+[heading tag_t]
+
+    typedef __unspecified_int__ tag_t;
+
+Type of ABA-prevention tag
+
+[heading Constructors]
+
+    tagged_ptr(void);
+
+Uninitialized constructor
+
+    tagged_ptr(tagged_ptr const & p);
+
+Copy Constructor
+
+    explicit tagged_ptr(T * p, tag_t t = 0);
+
+Construct tagged_ptr from pointer and tag
+
+
+[heading Atomically Set] 
+
+    void operator= (tagged_ptr const & p);
+    void atomic_set(tagged_ptr const & p);
+
+Atomically set from tagged_ptr.
+
+    void atomic_set(T * p, tag_t t);
+
+Atomically set from pointer and tag
+
+[heading Set]
+    void set(tagged_ptr const & p);
+
+Set from tagged_ptr
+
+    void set(T * p, tag_t t);
+
+Set from pointer and tag
+
+[heading Comparison]
+    bool operator== (tagged_ptr const & p) const;
+    bool operator!= (tagged_ptr const & p) const;
+
+Returns: (get_ptr() == p.get_ptr()) && (get_tag() == p.get_tag())
+
+[heading Pointer access]
+
+    T * get_ptr() const;
+
+Get pointer
+
+    void set_ptr(T * p);
+
+Set pointer
+
+
+[heading Tag access]
+
+    tag_t get_tag() const;
+
+Get tag
+
+    void set_tag(tag_t t);
+
+Set tag
+
+[heading Compare-And-Swap]
+
+    bool CAS(tagged_ptr const & oldval, T * newptr);
+
+if (*this == oldval) {
+    this->set(newptr, oldval.get_tag() + 1);
+    return true;
+else
+    return false;
+
+    bool CAS(tagged_ptr const & oldval, T * newptr, tag_t t);
+
+if (*this == oldval) {
+    this->set(newptr, t);
+    return true;
+else
+    return false;
+
+[heading Indirection]
+    T & operator*() const;
+
+Returns: reference to object, undefined if get_ptr() == 0
+
+    T * operator->() const;
+
+Returns: pointer to object
+
+[heading Conversion]
+
+    operator __unspecified_bool__(void) const;
+
+Returns: get_ptr() != 0
+
+
+[endsect]
 
 [endsect]
 
 [section Freelist]
-
-    template <typename T, typename Alloc = std::allocator<T> >
-    struct boost::lockfree::dummy_freelist
-    {
-        T * allocate (void);
-        void deallocate (T * n);
-    };
 
 Wrapper class with freelist api to operators new and delete.
 
