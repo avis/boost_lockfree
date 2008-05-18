@@ -253,7 +253,7 @@ Effect: if pop operation is successful, object is written to memory location den
 [endsect]
 
 [section Building blocks]
-The Boost.Lockfree library provides several building blocks, used in lockfree algorithms.
+The _lockfree_ library provides several building blocks, used in lockfree algorithms.
 
 
 [section tagged_ptr]
@@ -491,58 +491,140 @@ Freelist class, with a maximum size of max_size. Uses an lockfree stack to cache
 
 
 [section Primitives]
-The Boost.Lockfree library provides platform-specific wrappers for low-level operations.
+The _lockfree_ library provides platform-specific wrappers for low-level operations.
 
 [section Memory Barriers]
+    void boost::lockfree::detail::memory_barrier(void);
+
 Full Memory Barrier.
 
-    void boost::lockfree::detail::memory_barrier(void);
 
 
 [endsect]
 
 [section Compare-and-Swap]
-Atomic compare-and-swap. Lockfree on supported platforms, otherwise blocking emulation. Versions for single-word and
-double-word machines. 
+
+Lockfree on supported platforms, otherwise blocking emulation. 
+
 
     template <class C, class D>
     inline bool boost::lockfree::detail::CAS(volatile C * addr, D old, D nw);
 
+Single-word compare-and-swap
+
     template <class C, class D, class E>
     inline bool boost::lockfree::detail::CAS2(volatile C * addr, D old1, E old2, D new1, E new2);
 
+Double-word compare-and-swap
 
 [endsect]
 
 [section atomic_int]
-    template <typename T>
-    class boost::lockfree::atomic_int
-    {
-    public:
-        explicit atomic_int(T v = 0);
-
-        operator T(void) const;
-        void operator =(T v);
-
-        T operator +=(T v);
-        T operator -=(T v);
-
-        /* prefix operators */
-        T operator ++(void);
-        T operator --(void);
-
-        /* postfix operators */
-        T operator ++(int);
-        T operator --(int);
-    };
 
 Atomic Integer Class.
+
+[section Synposis]
+
+``
+namespace boost {
+namespace lockfree {
+
+template <typename T>
+class boost::lockfree::atomic_int:
+{
+public:
+    explicit atomic_int(T v = 0);
+
+    operator T(void) const;
+    void operator =(T v);
+
+    T operator +=(T v);
+    T operator -=(T v);
+
+    T operator ++(void);
+    T operator --(void);
+
+    T operator ++(int);
+    T operator --(int);
+};
+
+} /* namespace lockfree */
+} /* namespace boost */
+``
+
+[endsect]
+
+[section Members]
+
+[heading Constructor]
+
+    explicit atomic_int(T v = 0);
+
+Initializes atomic_int to value v
+
+
+[heading Conversion]
+    operator T(void) const;
+
+Returns: Integer value of atomic_int
+
+[heading In-Place Operators]
+
+    T operator +=(T v);
+
+Returns: T(*this) + v
+
+Effect: T(*this) = T(*this) + v
+
+    T operator -=(T v);
+
+Returns: T(*this) - v
+
+Effect: T(*this) = T(*this) - v
+
+
+[heading Prefix Operators]
+
+    T operator ++(void);
+
+Effect: increments value
+
+Returns: value before incrementing
+
+    T operator --(void);
+
+Effect: decrements value
+
+Returns: value before decrementing
+
+[heading Postfix Operators]
+
+    T operator ++(int);
+
+Effect: increments value
+
+Returns: value after incrementing
+
+    T operator --(int);
+
+Effect: decrements value
+
+Returns: value after decrementing
+
+
+[endsect]
 
 [endsect]
 
 [endsect]
 
 [section Portability]
+
+Most data structures of _lockfree_ are written to use of Compare-And-Swap instructions. In order to implement the
+tagged_ptr, CAS instructions are required, that can operate on one pointer and one integer type. 
+
+The algorithms could be adapted for architectures, providing Load-Linked/Store-Conditional instructions, though. For
+non-supported platforms, a blocking emulation of the atomic instructions is provided.
 
 Tested architectures:
 
@@ -565,5 +647,12 @@ Thanks for suggestions, porting, testing:
 
 # Thomas Grill, original win32/osx code pieces
 # Shiwei Xu, api suggestions
+
+[endsect]
+
+[section Todo]
+
+# Compare-And-Swap instructions return the old value, one can make use of this in order to avoid an additional memory
+access (suggested by Cory Nelson).
 
 [endsect]
