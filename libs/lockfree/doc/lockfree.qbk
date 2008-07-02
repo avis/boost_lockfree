@@ -646,6 +646,7 @@ Thanks for suggestions, porting, testing:
 
 # Thomas Grill, original win32/osx code pieces
 # Shiwei Xu, api suggestions
+# Stefan Eilemann, bug fixes
 
 [endsect]
 
