@@ -176,8 +176,9 @@ public:
     {
         for(;;)
         {
-            T newv = value+v;
-            if(likely(CAS(&value,value,newv)))
+            T oldv = value;
+            T newv = oldv + v;
+            if(likely(CAS(&value, oldv, newv)))
                 return newv;
         }
     }
@@ -186,8 +187,10 @@ public:
     {
         for(;;)
         {
-            T newv = value-v;
-            if(likely(CAS(&value,value,newv)))
+            T oldv = value;
+            T newv = oldv + v;
+
+            if(likely(CAS(&value, oldv, newv)))
                 return newv;
         }
     }
@@ -198,7 +201,7 @@ public:
         for(;;)
         {
             T oldv = value;
-            if(likely(CAS(&value,oldv,oldv+1)))
+            if(likely(CAS(&value, oldv, oldv+1)))
                 return oldv;
         }
     }
@@ -209,7 +212,7 @@ public:
         for(;;)
         {
             T oldv = value;
-            if(likely(CAS(&value,oldv,oldv-1)))
+            if(likely(CAS(&value, oldv, oldv-1)))
                 return oldv;
         }
     }
