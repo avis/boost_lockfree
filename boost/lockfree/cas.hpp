@@ -11,6 +11,7 @@
 
 #include <boost/lockfree/prefix.hpp>
 #include <boost/detail/lightweight_mutex.hpp>
+#include <boost/static_assert.hpp>
 
 namespace boost
 {
