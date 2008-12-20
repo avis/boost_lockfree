@@ -27,20 +27,18 @@ namespace detail
 
 template <typename T, typename Alloc = std::allocator<T> >
 class dummy_freelist:
-    boost::noncopyable
+    private boost::noncopyable,
+    private Alloc
 {
     T * allocate (void)
     {
-        return allocator.allocate(1);
+        return Alloc::allocate(1);
     }
 
     void deallocate (T * n)
     {
-        allocator.deallocate(n, 1);
+        Alloc::deallocate(n, 1);
     }
-
-private:
-    Alloc allocator;
 };
 
 /** dummy freelist, specialization fost std::allocator */
