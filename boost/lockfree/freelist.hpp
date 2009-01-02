@@ -1,6 +1,6 @@
 //  lock-free freelist
 //
-//  Copyright (C) 2008 Tim Blechmann
+//  Copyright (C) 2008, 2009 Tim Blechmann
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -68,7 +68,7 @@ class freelist:
 {
     struct freelist_node
     {
-        tagged_ptr<struct freelist_node> next;
+        lockfree::tagged_ptr<struct freelist_node> next;
     };
 
     typedef lockfree::tagged_ptr<struct freelist_node> tagged_ptr;
@@ -159,7 +159,7 @@ class caching_freelist:
 {
     struct freelist_node
     {
-        tagged_ptr<struct freelist_node> next;
+        lockfree::tagged_ptr<struct freelist_node> next;
     };
 
     typedef lockfree::tagged_ptr<struct freelist_node> tagged_ptr;
