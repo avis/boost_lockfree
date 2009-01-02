@@ -1,4 +1,4 @@
-//  Copyright (C) 2007, 2008 Tim Blechmann & Thomas Grill
+//  Copyright (C) 2007, 2008, 2009 Tim Blechmann & Thomas Grill
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -33,7 +33,7 @@
 
 #define BOOST_LOCKFREE_CACHELINE_ALIGNMENT __declspec(align(BOOST_LOCKFREE_CACHELINE_ALIGNMENT))
 
-#ifdef defined(_M_IX86)
+#if defined(_M_IX86)
     #define BOOST_LOCKFREE_DCAS_ALIGNMENT
 #elif defined(_M_X64) || defined(_M_IA64)
     #define BOOST_LOCKFREE_DCAS_ALIGNMENT __declspec(align(16))
