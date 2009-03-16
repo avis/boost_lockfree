@@ -2,7 +2,7 @@
 [library Boost.Lockfree
     [quickbook 1.4]
     [authors [Blechmann, Tim]]
-    [copyright 2008 Tim Blechmann]
+    [copyright 2008-2009 Tim Blechmann]
     [category algorithms]
     [purpose 
         lockfree concurrent data structures
@@ -43,15 +43,20 @@ _lockfree_ is NOT a boost library!
 [h2 What is _lockfree_?]
 
 _lockfree_ provides implementations of lock-free data structures. Lock-free data structures can be accessed by multiple
-threads without the necessity of blocking synchronization primitives such as guards.  Lock-free data structures can be
+threads without the necessity of blocking synchronization primitives such as guards. Lock-free data structures can be
 used in real-time systems, where blocking algorithms may lead to high worst-case execution times, to avoid priority
 inversion, or to increase the scalability for multi-processor machines.
+
+The following data structures are provided:
+
+* [classref boost::lockfree::fifo], a lock-free fifo queue
+* [classref boost::lockfree::stack], a lock-free stack
 
 [endsect]
 
 [section Reference]
 
-[section boost.lockfree fifo]
+[section boost::lockfree::fifo]
 
 [classref boost::lockfree::fifo boost::lockfree::fifo] provides a multi-writer/multi-reader lockfree fifo class,
 enqueueing and dequeueing is lockfree, construction/destruction has to be synchronized. A specialized [classref
@@ -171,7 +176,7 @@ The specialized class for pointer objects provides an api for dequeuing objects 
 
 [endsect]
 
-[section boost.lockfree stack]
+[section boost::lockfree::stack]
 
 [classref boost::lockfree::stack boost::lockfree::stack] provides a multi-writer/multi-reader lockfree stack class,
 push and pop is lockfree, construction/destruction has to be synchronized.
@@ -520,7 +525,8 @@ Double-word compare-and-swap
 
 [section atomic_int]
 
-Atomic Integer Class.
+[classref boost::lockfree::stack boost::lockfree::atomic_int] provides an implementation for atomic integers. It does
+not provide the full interface of integer numbers, but a limited subset, that can be implemented with atomic operations.
 
 [section Synposis]
 
@@ -615,6 +621,8 @@ Returns: value after decrementing
 
 [endsect]
 
+
+
 [endsect]
 
 [section Portability]
@@ -647,6 +655,7 @@ Thanks for suggestions, porting, testing:
 # Thomas Grill, original win32/osx code pieces
 # Shiwei Xu, api suggestions
 # Stefan Eilemann, bug fixes
+# Mignon Belongie, bug fix
 
 [endsect]
 
