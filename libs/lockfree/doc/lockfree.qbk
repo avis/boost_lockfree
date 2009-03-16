@@ -656,6 +656,7 @@ Thanks for suggestions, porting, testing:
 # Shiwei Xu, api suggestions
 # Stefan Eilemann, bug fixes
 # Mignon Belongie, bug fix
+# Anthony Williams, found fifo race condition
 
 [endsect]
 

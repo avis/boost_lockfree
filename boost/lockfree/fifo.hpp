@@ -19,9 +19,8 @@
 #include <boost/lockfree/atomic_int.hpp>
 #include <boost/lockfree/freelist.hpp>
 
-#include <boost/concept_check.hpp>
 #include <boost/static_assert.hpp>
-
+#include <boost/type_traits/is_pod.hpp>
 
 #include <memory>               /* std::auto_ptr */
 #include <boost/scoped_ptr.hpp>
@@ -39,14 +38,15 @@ template <typename T, typename Alloc>
 class fifo:
     boost::noncopyable
 {
-    BOOST_CLASS_REQUIRE(T, boost, CopyConstructibleConcept);
-    BOOST_CLASS_REQUIRE(T, boost, DefaultConstructibleConcept);
+    BOOST_STATIC_ASSERT(boost::is_pod<T>::value);
 
     struct BOOST_LOCKFREE_CACHELINE_ALIGNMENT node
     {
         node(T const & v):
-            data(v), next(NULL)
-        {}
+            data(v)
+        {
+            next.set(NULL, next.get_tag()+1); /* increment tag to avoid ABA problem */
+        }
 
         node (void):
             next(NULL)
