@@ -10,6 +10,7 @@
 #define BOOST_LOCKFREE_ATOMIC_INT_HPP
 
 #include <boost/lockfree/prefix.hpp>
+#include <boost/lockfree/cas.hpp>
 #include <boost/noncopyable.hpp>
 
 namespace boost
@@ -188,7 +189,7 @@ public:
         for(;;)
         {
             T oldv = value;
-            T newv = oldv + v;
+            T newv = oldv - v;
 
             if(likely(CAS(&value, oldv, newv)))
                 return newv;

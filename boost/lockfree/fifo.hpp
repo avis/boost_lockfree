@@ -173,7 +173,7 @@ private:
     boost::lockfree::caching_freelist<node, node_allocator> pool;
 
     atomic_node_ptr head_;
-    atomic_node_ptr tail_ BOOST_LOCKFREE_CACHELINE_ALIGNMENT; /* force head_ and tail_ to different cache lines! */
+    atomic_node_ptr BOOST_LOCKFREE_CACHELINE_ALIGNMENT tail_; /* force head_ and tail_ to different cache lines! */
 };
 
 } /* namespace detail */

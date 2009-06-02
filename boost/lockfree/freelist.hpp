@@ -68,10 +68,10 @@ class freelist:
 {
     struct freelist_node
     {
-        lockfree::tagged_ptr<struct freelist_node> next;
+        lockfree::tagged_ptr<freelist_node> next;
     };
 
-    typedef lockfree::tagged_ptr<struct freelist_node> tagged_ptr;
+    typedef lockfree::tagged_ptr<freelist_node> tagged_ptr;
 
 public:
     freelist(void):
@@ -159,10 +159,10 @@ class caching_freelist:
 {
     struct freelist_node
     {
-        lockfree::tagged_ptr<struct freelist_node> next;
+        lockfree::tagged_ptr<freelist_node> next;
     };
 
-    typedef lockfree::tagged_ptr<struct freelist_node> tagged_ptr;
+    typedef lockfree::tagged_ptr<freelist_node> tagged_ptr;
 
 public:
     caching_freelist(void):
@@ -190,7 +190,7 @@ public:
         {
             tagged_ptr old_pool(pool_);
 
-            if (not old_pool)
+            if (!old_pool)
                 return detail::dummy_freelist<T, Alloc>::allocate();
 
             freelist_node * new_pool = old_pool->next.get_ptr();

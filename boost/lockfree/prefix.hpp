@@ -31,7 +31,7 @@
         LONG __cdecl _InterlockedCompareExchange(LONG volatile* Dest,LONG Exchange, LONG Comp);
     }
 
-#define BOOST_LOCKFREE_CACHELINE_ALIGNMENT __declspec(align(BOOST_LOCKFREE_CACHELINE_ALIGNMENT))
+#define BOOST_LOCKFREE_CACHELINE_ALIGNMENT __declspec(align(BOOST_LOCKFREE_CACHELINE_BYTES))
 
 #if defined(_M_IX86)
     #define BOOST_LOCKFREE_DCAS_ALIGNMENT
