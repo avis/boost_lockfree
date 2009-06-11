@@ -1,4 +1,4 @@
-//  Copyright (C) 2007, 2008 Tim Blechmann & Thomas Grill
+//  Copyright (C) 2007, 2008, 2009 Tim Blechmann & Thomas Grill
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -38,10 +38,14 @@ inline bool CAS(volatile C * addr, D old, D nw)
 {
 #if defined(__GNUC__) && ( (__GNUC__ > 4) || ((__GNUC__ >= 4) && (__GNUC_MINOR__ >= 1)) )
     return __sync_bool_compare_and_swap(addr, old, nw);
-#elif defined(_MSC_VER)
-    return _InterlockedCompareExchange(addr, nw, old) == old;
-#elif defined(_WIN32)
-    return InterlockedCompareExchange(addr, nw, old) == old;
+#elif defined(_M_IX86)
+    return InterlockedCompareExchange(reinterpret_cast<volatile LONG*>(addr),
+                                      reinterpret_cast<LONG>(nw),
+                                      reinterpret_cast<LONG>(old)) == old;
+#elif defined(_M_X64)
+    return InterlockedCompareExchange(reinterpret_cast<volatile LONG*>(addr),
+                                      reinterpret_cast<LONG>(nw),
+                                      reinterpret_cast<LONG>(old)) == old;
 #elif defined(__APPLE__)
     return OSAtomicCompareAndSwap32((int32_t) old, (int32_t)nw, (int32_t*)addr);
 #elif defined(AO_HAVE_compare_and_swap_full)
@@ -95,7 +99,7 @@ inline bool CAS2(volatile C * addr, D old1, E old2, D new1, E new2)
     return __sync_bool_compare_and_swap_8(reinterpret_cast<volatile long long*>(addr),
                                           old.l,
                                           nw.l);
-#elif defined(_MSC_VER)
+#elif defined(_M_IX86)
     bool ok;
     __asm {
         mov eax,[old1]
@@ -176,7 +180,13 @@ inline bool CAS2(volatile C * addr, D old1, E old2, D new1, E new2)
                            "c" (new2), "b" (new1) : "memory");
     return result != 0;
 #else
+
+#ifdef _MSC_VER
+#pragma message ("blocking CAS2 emulation")
+#else
 #warning ("blocking CAS2 emulation")
+#endif
+
     struct packed_c
     {
         D d;

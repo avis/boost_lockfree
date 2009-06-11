@@ -153,7 +153,7 @@ public:
 
     operator bool(void) const
     {
-        return bool (ptr);
+        return ptr != 0;
     }
     /* @} */
 

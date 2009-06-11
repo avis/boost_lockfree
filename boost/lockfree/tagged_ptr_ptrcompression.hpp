@@ -1,6 +1,6 @@
 //  tagged pointer, for aba prevention
 //
-//  Copyright (C) 2008 Tim Blechmann, based on code by Cory Nelson
+//  Copyright (C) 2008, 2009 Tim Blechmann, based on code by Cory Nelson
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -23,7 +23,7 @@ namespace boost
 namespace lockfree
 {
 
-#ifdef __x86_64__
+#if defined (__x86_64__) || defined (_M_X64)
 
 template <class T>
 class BOOST_LOCKFREE_DCAS_ALIGNMENT tagged_ptr
@@ -39,7 +39,7 @@ private:
     };
 
     static const int tag_index = 3;
-    static const compressed_ptr_t ptr_mask = (1L<<48)-1;
+    static const compressed_ptr_t ptr_mask = 0xffffffffffff; //(1L<<48L)-1;
 
     static T* extract_ptr(compressed_ptr_t const & i)
     {
@@ -184,7 +184,7 @@ public:
 
     operator bool(void) const
     {
-        return bool (get_ptr());
+        return get_ptr() != 0;
     }
     /* @} */
 

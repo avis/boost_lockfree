@@ -36,6 +36,7 @@
 #if defined(_M_IX86)
     #define BOOST_LOCKFREE_DCAS_ALIGNMENT
 #elif defined(_M_X64) || defined(_M_IA64)
+    #define BOOST_LOCKFREE_PTR_COMPRESSION 1
     #define BOOST_LOCKFREE_DCAS_ALIGNMENT __declspec(align(16))
 #endif
 
