@@ -690,8 +690,8 @@ Full Memory Barrier.
 
 Lockfree on supported platforms, otherwise blocking emulation.
 
-    template <class C, class D>
-    inline bool boost::lockfree::detail::CAS(volatile C * addr, D old, D nw);
+    template <class C>
+    inline bool boost::lockfree::detail::atomic_cas(volatile C * addr, C old, C nw);
 
 Single-word compare-and-swap
 

@@ -26,10 +26,10 @@ BOOST_AUTO_TEST_CASE( cas_test )
     {
         int i = 1;
 
-        BOOST_REQUIRE_EQUAL (CAS(&i, 1, 3), true);
+        BOOST_REQUIRE_EQUAL (atomic_cas(&i, 1, 3), true);
         BOOST_REQUIRE_EQUAL (i, 3);
 
-        BOOST_REQUIRE_EQUAL (CAS(&i, 1, 3), false);
+        BOOST_REQUIRE_EQUAL (atomic_cas(&i, 1, 3), false);
         BOOST_REQUIRE_EQUAL (i, 3);
     }
 

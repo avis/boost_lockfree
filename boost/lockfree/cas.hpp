@@ -13,6 +13,8 @@
 #include <boost/detail/lightweight_mutex.hpp>
 #include <boost/static_assert.hpp>
 
+#include <boost/interprocess/detail/atomic.hpp>
+
 namespace boost
 {
 namespace lockfree
@@ -33,8 +35,34 @@ inline void memory_barrier()
 #endif
 }
 
-template <class C, class D>
-inline bool CAS(volatile C * addr, D old, D nw)
+template <typename C>
+inline bool atomic_cas_emulation(volatile C * addr, C old, C nw)
+{
+    static boost::detail::lightweight_mutex guard;
+    boost::detail::lightweight_mutex::scoped_lock lock(guard);
+
+    if (*addr == old)
+    {
+        *addr = nw;
+        return true;
+    }
+    else
+        return false;
+}
+
+using boost::uint32_t;
+using boost::uint64_t;
+
+inline bool atomic_cas32(volatile uint32_t *  addr, uint32_t old, uint32_t nw)
+{
+#if defined(__GNUC__) && ( (__GNUC__ > 4) || ((__GNUC__ >= 4) && (__GNUC_MINOR__ >= 1)) )
+    return __sync_bool_compare_and_swap(addr, old, nw);
+#else
+    return boost::interprocess::detail::atomic_cas32(addr, old, nw) == old;
+#endif
+}
+
+inline bool atomic_cas64(volatile uint64_t * addr, uint64_t old, uint64_t nw)
 {
 #if defined(__GNUC__) && ( (__GNUC__ > 4) || ((__GNUC__ >= 4) && (__GNUC_MINOR__ >= 1)) )
     return __sync_bool_compare_and_swap(addr, old, nw);
@@ -46,26 +74,21 @@ inline bool CAS(volatile C * addr, D old, D nw)
     return InterlockedCompareExchange(reinterpret_cast<volatile LONG*>(addr),
                                       reinterpret_cast<LONG>(nw),
                                       reinterpret_cast<LONG>(old)) == old;
-#elif defined(__APPLE__)
-    return OSAtomicCompareAndSwap32((int32_t) old, (int32_t)nw, (int32_t*)addr);
-#elif defined(AO_HAVE_compare_and_swap_full)
-    return AO_compare_and_swap_full(reinterpret_cast<volatile AO_t*>(addr),
-                                    reinterpret_cast<AO_t>(old),
-                                    reinterpret_cast<AO_t>(nw));
 #else
-#warning ("blocking cas emulation")
-
-    static boost::detail::lightweight_mutex guard;
-    boost::detail::lightweight_mutex::scoped_lock lock(guard);
-
-    if (*addr == old)
-    {
-        *addr = nw;
-        return true;
-    }
-    else
-        return false;
+#warning ("blocking CAS2 emulation")
+    return atomic_cas_emulation(addr, old, nw);
 #endif
+}
+
+template <class C>
+inline bool atomic_cas(volatile C * addr, C old, C nw)
+{
+    if (sizeof(C) == 4)
+        return atomic_cas32((volatile uint32_t *)addr, (uint32_t)old, (uint32_t)nw);
+    else if (sizeof(C) == 8)
+        return atomic_cas64((volatile uint64_t *)addr, (uint64_t)old, (uint64_t)nw);
+    else
+        return atomic_cas_emulation(addr, old, nw);
 }
 
 
