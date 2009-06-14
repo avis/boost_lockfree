@@ -130,12 +130,12 @@ public:
     /* @{ */
     bool CAS(tagged_ptr const & oldval, T * newptr)
     {
-        return boost::lockfree::CAS2(this, oldval.ptr, oldval.tag, newptr, oldval.tag + 1);
+        return boost::lockfree::atomic_cas2(this, oldval.ptr, oldval.tag, newptr, oldval.tag + 1);
     }
 
     bool CAS(tagged_ptr const & oldval, T * newptr, tag_t t)
     {
-        return boost::lockfree::CAS2(this, oldval.ptr, oldval.tag, newptr, t);
+        return boost::lockfree::atomic_cas2(this, oldval.ptr, oldval.tag, newptr, t);
     }
     /* @} */
 

@@ -696,7 +696,7 @@ Lockfree on supported platforms, otherwise blocking emulation.
 Single-word compare-and-swap
 
     template <class C, class D, class E>
-    inline bool boost::lockfree::detail::CAS2(volatile C * addr, D old1, E old2, D new1, E new2);
+    inline bool boost::lockfree::detail::atomic_cas2(volatile C * addr, D old1, E old2, D new1, E new2);
 
 Double-word compare-and-swap
 

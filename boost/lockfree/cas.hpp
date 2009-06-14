@@ -75,7 +75,7 @@ inline bool atomic_cas64(volatile uint64_t * addr, uint64_t old, uint64_t nw)
                                       reinterpret_cast<LONG>(nw),
                                       reinterpret_cast<LONG>(old)) == old;
 #else
-#warning ("blocking CAS2 emulation")
+#warning ("blocking CAS emulation")
     return atomic_cas_emulation(addr, old, nw);
 #endif
 }
@@ -93,7 +93,7 @@ inline bool atomic_cas(volatile C * addr, C old, C nw)
 
 
 template <class C, class D, class E>
-inline bool CAS2(volatile C * addr, D old1, E old2, D new1, E new2)
+inline bool atomic_cas2(volatile C * addr, D old1, E old2, D new1, E new2)
 {
 #if defined(__GNUC__) && ((__GNUC__ >  4) || ( (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 2) ) ) && defined(__i386__) && \
     (defined(__i686__) || defined(__pentiumpro__) || defined(__nocona__ ) || \
@@ -134,7 +134,7 @@ inline bool CAS2(volatile C * addr, D old1, E old2, D new1, E new2)
             setz [ok]
             }
     return ok;
-#elif defined(__GNUC__) && (defined(__i686__) || defined(__pentiumpro__)  || defined(__nocona__ ))
+#elif defined(__GNUC__) && (defined(__i686__) || defined(__pentiumpro__) || defined(__nocona__ ))
     char result;
 #ifndef __PIC__
     __asm__ __volatile__("lock; cmpxchg8b %0; setz %1"
