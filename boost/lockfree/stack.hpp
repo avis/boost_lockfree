@@ -72,7 +72,7 @@ public:
             old_tos.set(tos);
             newnode->next.set_ptr(old_tos.get_ptr());
         }
-        while (!tos.CAS(old_tos, newnode));
+        while (!tos.cas(old_tos, newnode));
 
         return true;
     }
@@ -89,7 +89,7 @@ public:
 
             node * new_tos = old_tos->next.get_ptr();
 
-            if (tos.CAS(old_tos, new_tos))
+            if (tos.cas(old_tos, new_tos))
             {
                 *ret = old_tos->v;
                 dealloc_node(old_tos.get_ptr());

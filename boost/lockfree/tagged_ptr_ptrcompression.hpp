@@ -151,19 +151,19 @@ public:
     /** compare and swap  */
     /* @{ */
 private:
-    bool CAS(compressed_ptr_t const & oldval, compressed_ptr_t const & newval)
+    bool cas(compressed_ptr_t const & oldval, compressed_ptr_t const & newval)
     {
         return boost::lockfree::atomic_cas(&(this->ptr), oldval, newval);
     }
 
 public:
-    bool CAS(tagged_ptr const & oldval, T * newptr)
+    bool cas(tagged_ptr const & oldval, T * newptr)
     {
         compressed_ptr_t new_compressed_ptr = pack_ptr(newptr, extract_tag(oldval.ptr)+1);
-        return CAS(oldval.ptr, new_compressed_ptr);
+        return cas(oldval.ptr, new_compressed_ptr);
     }
 
-    bool CAS(tagged_ptr const & oldval, T * newptr, tag_t t)
+    bool cas(tagged_ptr const & oldval, T * newptr, tag_t t)
     {
         compressed_ptr_t new_compressed_ptr = pack_ptr(newptr, t);
         return boost::lockfree::atomic_cas(&(this->ptr), oldval.ptr, new_compressed_ptr);

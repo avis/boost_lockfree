@@ -54,7 +54,7 @@ public:
         {
             tagged_ptr old;
             old.set(*this);
-            if(likely(CAS(old, p.ptr, p.tag)))
+            if(likely(cas(old, p.ptr, p.tag)))
                 return;
         }
     }
@@ -66,7 +66,7 @@ public:
             tagged_ptr old;
             old.set(*this);
 
-            if(likely(CAS(old, p, t)))
+            if(likely(cas(old, p, t)))
                 return;
         }
     }
@@ -128,12 +128,12 @@ public:
 
     /** compare and swap  */
     /* @{ */
-    bool CAS(tagged_ptr const & oldval, T * newptr)
+    bool cas(tagged_ptr const & oldval, T * newptr)
     {
         return boost::lockfree::atomic_cas2(this, oldval.ptr, oldval.tag, newptr, oldval.tag + 1);
     }
 
-    bool CAS(tagged_ptr const & oldval, T * newptr, tag_t t)
+    bool cas(tagged_ptr const & oldval, T * newptr, tag_t t)
     {
         return boost::lockfree::atomic_cas2(this, oldval.ptr, oldval.tag, newptr, t);
     }

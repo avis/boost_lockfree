@@ -496,8 +496,8 @@ public:
     tag_t get_tag() const;
     void set_tag(tag_t t);
 
-    bool CAS(tagged_ptr const & oldval, T * newptr);
-    bool CAS(tagged_ptr const & oldval, T * newptr, tag_t t);
+    bool cas(tagged_ptr const & oldval, T * newptr);
+    bool cas(tagged_ptr const & oldval, T * newptr, tag_t t);
 
     T & operator*() const;
     T * operator->() const;
@@ -583,7 +583,7 @@ Set tag
 
 [heading Compare-And-Swap]
 
-    bool CAS(tagged_ptr const & oldval, T * newptr);
+    bool cas(tagged_ptr const & oldval, T * newptr);
 
 if (*this == oldval) {
     this->set(newptr, oldval.get_tag() + 1);
@@ -592,7 +592,7 @@ if (*this == oldval) {
 else
     return false;
 
-    bool CAS(tagged_ptr const & oldval, T * newptr, tag_t t);
+    bool cas(tagged_ptr const & oldval, T * newptr, tag_t t);
 
 if (*this == oldval) {
     this->set(newptr, t);

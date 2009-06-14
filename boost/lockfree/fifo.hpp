@@ -113,14 +113,14 @@ public:
             {
                 if (next.get_ptr() == 0)
                 {
-                    if ( tail->next.CAS(next, n) )
+                    if ( tail->next.cas(next, n) )
                     {
-                        tail_.CAS(tail, n);
+                        tail_.cas(tail, n);
                         return true;
                     }
                 }
                 else
-                    tail_.CAS(tail, next.get_ptr());
+                    tail_.cas(tail, next.get_ptr());
             }
         }
     }
@@ -143,12 +143,12 @@ public:
                     if (next == 0)
                         return false;
 
-                    tail_.CAS(tail, next);
+                    tail_.cas(tail, next);
                 }
                 else
                 {
                     *ret = next->data;
-                    if (head_.CAS(head, next))
+                    if (head_.cas(head, next))
                     {
                         dealloc_node(head.get_ptr());
 

@@ -93,7 +93,7 @@ public:
 
             freelist_node * new_pool = old_pool->next.get_ptr();
 
-            if (pool_.CAS(old_pool, new_pool))
+            if (pool_.cas(old_pool, new_pool))
             {
                 --free_list_size;
                 return reinterpret_cast<T*>(old_pool.get_ptr());
@@ -117,7 +117,7 @@ public:
 
             new_pool->next.set_ptr(old_pool.get_ptr());
 
-            if (pool_.CAS(old_pool, new_pool))
+            if (pool_.cas(old_pool, new_pool))
             {
                 --free_list_size;
                 return;
@@ -184,7 +184,7 @@ public:
 
             freelist_node * new_pool = old_pool->next.get_ptr();
 
-            if (pool_.CAS(old_pool, new_pool))
+            if (pool_.cas(old_pool, new_pool))
                 return reinterpret_cast<T*>(old_pool.get_ptr());
         }
     }
@@ -199,7 +199,7 @@ public:
 
             new_pool->next.set_ptr(old_pool.get_ptr());
 
-            if (pool_.CAS(old_pool,new_pool))
+            if (pool_.cas(old_pool,new_pool))
                 return;
         }
     }
@@ -259,7 +259,7 @@ public:
 
             freelist_node * new_pool = old_pool->next.get_ptr();
 
-            if (pool_.CAS(old_pool, new_pool))
+            if (pool_.cas(old_pool, new_pool))
                 return reinterpret_cast<T*>(old_pool.get_ptr());
         }
     }
@@ -274,7 +274,7 @@ public:
 
             new_pool->next.set_ptr(old_pool.get_ptr());
 
-            if (pool_.CAS(old_pool,new_pool))
+            if (pool_.cas(old_pool,new_pool))
                 return;
         }
     }
