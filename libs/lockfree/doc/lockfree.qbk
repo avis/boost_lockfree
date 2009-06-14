@@ -54,6 +54,186 @@ The following data structures are provided:
 
 [endsect]
 
+
+[section Examples]
+
+[h2 Atomic Integers]
+
+The [classref boost::lockfree::atomic_int boost::lockfree::atomic_int] class implements fully synchronized atomic
+integers numbers.
+
+``
+#include <boost/thread/thread.hpp>
+#include <boost/lockfree/atomic_int.hpp>
+#include <iostream>
+
+boost::lockfree::atomic_int<int> counter(0);
+
+const int iterations = 10000000;
+
+void increment_counter(void)
+{
+    for (int i = 0; i != iterations; ++i)
+        ++counter;
+}
+
+void decrement_counter(void)
+{
+    for (int i = 0; i != iterations; ++i)
+        --counter;
+}
+
+int main(int argc, char* argv[])
+{
+    // incrementing counter in one thread, decrementing in another
+    boost::thread thrd_inc(increment_counter);
+    boost::thread thrd_dec(decrement_counter);
+
+    thrd_inc.join();
+    thrd_dec.join();
+
+    std::cout << "counter value is " << counter << "." << std::endl;
+}
+``
+
+This program outputs the following:
+
+[pre
+Counter value is 0.
+]
+
+
+
+[h2 Fifo]
+
+The [classref boost::lockfree::fifo boost::lockfree::fifo] class implements a multi-writer/multi-reader fifo queue. The
+following example shows how integer values are produced and consumed by 2 threads each:
+
+``
+#include <boost/thread/thread.hpp>
+#include <boost/lockfree/atomic_int.hpp>
+#include <boost/lockfree/fifo.hpp>
+#include <iostream>
+
+boost::lockfree::atomic_int<int> producer_count(0);
+boost::lockfree::atomic_int<int> consumer_count(0);
+
+boost::lockfree::fifo<int> fifo;
+
+const int iterations = 1000000;
+
+void producer(void)
+{
+    for (int i = 0; i != iterations; ++i) {
+        int value = ++producer_count;
+        fifo.enqueue(value);
+    }
+}
+
+void consumer(void)
+{
+    int value;
+    while (producer_count != 2*iterations) {
+        while (fifo.dequeue(&value))
+            ++consumer_count;
+    }
+
+    while (fifo.dequeue(&value))
+        ++consumer_count;
+}
+
+int main(int argc, char* argv[])
+{
+    boost::thread thrd_p1(producer);
+    boost::thread thrd_p2(producer);
+    boost::thread thrd_c1(consumer);
+    boost::thread thrd_c2(consumer);
+
+    thrd_p1.join();
+    thrd_p2.join();
+    thrd_c1.join();
+    thrd_c2.join();
+
+    std::cout << "produced " << producer_count << " objects." << std::endl;
+    std::cout << "consumed " << consumer_count << " objects." << std::endl;
+}
+``
+
+The program output is:
+
+[pre
+produced 2000000 objects.
+consumed 2000000 objects.
+]
+
+
+[h2 Stack]
+
+The [classref boost::lockfree::stack boost::lockfree::stack] class implements a multi-writer/multi-reader stack. The
+following example shows how integer values are produced and consumed by 2 threads each:
+
+``
+#include <boost/thread/thread.hpp>
+#include <boost/lockfree/atomic_int.hpp>
+#include <boost/lockfree/stack.hpp>
+#include <iostream>
+
+boost::lockfree::atomic_int<int> producer_count(0);
+boost::lockfree::atomic_int<int> consumer_count(0);
+
+boost::lockfree::stack<int> fifo;
+
+const int iterations = 1000000;
+
+void producer(void)
+{
+    for (int i = 0; i != iterations; ++i) {
+        int value = ++producer_count;
+        fifo.push(value);
+    }
+}
+
+void consumer(void)
+{
+    int value;
+    while (producer_count != 2*iterations) {
+        while (fifo.pop(&value))
+            ++consumer_count;
+    }
+
+    while (fifo.pop(&value))
+        ++consumer_count;
+
+}
+
+int main(int argc, char* argv[])
+{
+    boost::thread thrd_p1(producer);
+    boost::thread thrd_p2(producer);
+    boost::thread thrd_c1(consumer);
+    boost::thread thrd_c2(consumer);
+
+    thrd_p1.join();
+    thrd_p2.join();
+    thrd_c1.join();
+    thrd_c2.join();
+
+    std::cout << "produced " << producer_count << " objects." << std::endl;
+    std::cout << "consumed " << consumer_count << " objects." << std::endl;
+}
+``
+The program output is:
+
+[pre
+produced 2000000 objects.
+consumed 2000000 objects.
+]
+
+
+
+[endsect]
+
+
 [section Reference]
 
 [section boost::lockfree::fifo]
@@ -61,7 +241,7 @@ The following data structures are provided:
 [classref boost::lockfree::fifo boost::lockfree::fifo] provides a multi-writer/multi-reader lockfree fifo class,
 enqueueing and dequeueing is lockfree, construction/destruction has to be synchronized. A specialized [classref
 boost::lockfree::fifo fifo] class for pointer-arguments is provided, which supports dequeueing to stl/boost-style smart
-pointers.
+pointers. Its used type argument is limited to PODs.
 
 It uses a caching freelist for memory management, freed nodes are pushed to the freelist. This may result in leaking
 memory. 
@@ -466,7 +646,7 @@ Free all nodes from the freelist to the OS
 
     T * allocate (void);
 
-Allocate memory for one object. 
+Allocate memory for one object.
 
 
 [heading Deallocation]
@@ -525,8 +705,9 @@ Double-word compare-and-swap
 
 [section atomic_int]
 
-[classref boost::lockfree::stack boost::lockfree::atomic_int] provides an implementation for atomic integers. It does
-not provide the full interface of integer numbers, but a limited subset, that can be implemented with atomic operations.
+[classref boost::lockfree::atomic_int boost::lockfree::atomic_int] provides an implementation for atomic integers. It does
+not provide the full interface of integer numbers, but a limited subset, that can be implemented with atomic
+operations. Modifying an atomic integer acts as full memory barrier.
 
 [section Synposis]
 
