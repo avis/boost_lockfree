@@ -1,10 +1,9 @@
-
 [library Boost.Lockfree
     [quickbook 1.4]
     [authors [Blechmann, Tim]]
     [copyright 2008-2009 Tim Blechmann]
     [category algorithms]
-    [purpose 
+    [purpose
         lockfree concurrent data structures
     ]
     [id lockfree]
@@ -16,7 +15,7 @@
     ]
 ]
 
-[c++] 
+[c++]
 
 
 [/  Images   ]
@@ -28,7 +27,7 @@
 
 [/  Links   ]
 
-[def _lockfree_                      [^boost.lockfree]] 
+[def _lockfree_                      [^boost.lockfree]]
 
 [/  unspecified stuff   ]
 [def __unspecified_int__ /unspecified-int-type/]
@@ -244,7 +243,7 @@ boost::lockfree::fifo fifo] class for pointer-arguments is provided, which suppo
 pointers. Its used type argument is limited to PODs.
 
 It uses a caching freelist for memory management, freed nodes are pushed to the freelist. This may result in leaking
-memory. 
+memory.
 
 [section Synopsis]
 
@@ -516,7 +515,7 @@ Copy Constructor
 Construct tagged_ptr from pointer and tag
 
 
-[heading Atomically Set] 
+[heading Atomically Set]
 
     void operator= (tagged_ptr const & p);
     void atomic_set(tagged_ptr const & p);
@@ -664,11 +663,11 @@ Deallocate object to freelist
 
 Caching freelist class. Uses an internal lockfree stack to cache objects. Deallocation never frees objects.
 
-    template <typename T, std::size_t max_size = 64, 
+    template <typename T, std::size_t max_size = 64,
               typename Alloc = std::allocator<T> >
     class freelist;
 
-Freelist class, with a maximum size of max_size. Uses an lockfree stack to cache max_size objects. 
+Freelist class, with a maximum size of max_size. Uses an lockfree stack to cache max_size objects.
 
 [endsect]
 [endsect]
@@ -689,7 +688,7 @@ Full Memory Barrier.
 
 [section Compare-and-Swap]
 
-Lockfree on supported platforms, otherwise blocking emulation. 
+Lockfree on supported platforms, otherwise blocking emulation.
 
     template <class C, class D>
     inline bool boost::lockfree::detail::CAS(volatile C * addr, D old, D nw);
@@ -809,7 +808,7 @@ Returns: value after decrementing
 [section Portability]
 
 Most data structures of _lockfree_ are written to use of Compare-And-Swap instructions. In order to implement the
-tagged_ptr, CAS instructions are required, that can operate on one pointer and one integer type. 
+tagged_ptr, CAS instructions are required, that can operate on one pointer and one integer type.
 
 The algorithms could be adapted for architectures, providing Load-Linked/Store-Conditional instructions, though. For
 non-supported platforms, a blocking emulation of the atomic instructions is provided.
