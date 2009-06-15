@@ -453,6 +453,8 @@ may fail.
 
 [endsect]
 
+[/
+
 [section Building blocks]
 The _lockfree_ library provides several building blocks, used in lockfree algorithms.
 
@@ -586,6 +588,7 @@ Set tag
 if (*this == oldval) {
     this->set(newptr, oldval.get_tag() + 1);
     return true;
+}
 else
     return false;
 
@@ -594,6 +597,7 @@ else
 if (*this == oldval) {
     this->set(newptr, t);
     return true;
+}
 else
     return false;
 
@@ -636,6 +640,7 @@ public:
 ``
 
 [endsect]
+
 
 [section Members]
 
@@ -690,6 +695,7 @@ Freelist class, with a maximum size of max_size. Uses an lockfree stack to cache
 [endsect]
 [endsect]
 
+]
 
 [section Primitives]
 The _lockfree_ library provides platform-specific wrappers for low-level operations.
@@ -825,10 +831,8 @@ Returns: value after decrementing
 [section Portability]
 
 Most data structures of _lockfree_ are written to use of Compare-And-Swap instructions. In order to implement the
-tagged_ptr, CAS instructions are required, that can operate on one pointer and one integer type.
-
-The algorithms could be adapted for architectures, providing Load-Linked/Store-Conditional instructions, though. For
-non-supported platforms, a blocking emulation of the atomic instructions is provided.
+tagged_ptr, CAS instructions are required, that can operate on one pointer and one integer type. For non-supported
+platforms, a blocking emulation of the atomic instructions is provided.
 
 Tested architectures:
 
