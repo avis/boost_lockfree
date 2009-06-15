@@ -15,6 +15,9 @@
 #include <boost/lockfree/atomic_int.hpp>
 #include <boost/noncopyable.hpp>
 
+#include <boost/mpl/vector.hpp>
+#include <boost/mpl/at.hpp>
+
 #include <algorithm>            /* for std::min */
 
 namespace boost
@@ -80,7 +83,7 @@ public:
     explicit freelist(std::size_t initial_nodes):
         pool_(NULL)
     {
-        for (int i = 0; i != std::min(initial_nodes, max_size); ++i)
+        for (std::size_t i = 0; i != std::min(initial_nodes, max_size); ++i)
         {
             T * node = detail::dummy_freelist<T, Alloc>::allocate();
             deallocate(node);
@@ -98,7 +101,7 @@ public:
         {
             tagged_ptr old_pool(pool_);
 
-            if (not old_pool)
+            if (!old_pool)
                 return detail::dummy_freelist<T, Alloc>::allocate();
 
             freelist_node * new_pool = old_pool->next.get_ptr();
@@ -171,7 +174,7 @@ public:
     explicit caching_freelist(std::size_t initial_nodes):
         pool_(NULL)
     {
-        for (int i = 0; i != initial_nodes; ++i)
+        for (std::size_t i = 0; i != initial_nodes; ++i)
         {
             T * node = detail::dummy_freelist<T, Alloc>::allocate();
             deallocate(node);
@@ -245,15 +248,15 @@ public:
     explicit static_freelist(std::size_t max_nodes):
         pool_(NULL), total_nodes(max_nodes)
     {
-        chunks = Alloc::allocate(max_nodes)
-        for (int i = 0; i != initial_nodes; ++i)
+        chunks = Alloc::allocate(max_nodes);
+        for (std::size_t i = 0; i != max_nodes; ++i)
         {
             T * node = chunks + i * sizeof(T);
             deallocate(node);
         }
     }
 
-    ~caching_freelist(void)
+    ~static_freelist(void)
     {
         Alloc::deallocate(chunks, total_nodes);
     }
@@ -309,6 +312,24 @@ private:
 };
 
 
+const int caching_freelist_t = 0;
+const int static_freelist_t = 1;
+
+namespace detail
+{
+template <typename T, typename Alloc, int tag>
+struct select_freelist
+{
+private:
+    typedef boost::mpl::vector<boost::lockfree::caching_freelist<T, Alloc>,
+                               boost::lockfree::static_freelist<T, Alloc> >
+    freelists;
+
+public:
+    typedef typename boost::mpl::at_c<freelists, tag>::type type;
+};
+
+} /* namespace detail */
 } /* namespace lockfree */
 } /* namespace boost */
 

@@ -24,7 +24,9 @@ namespace boost
 namespace lockfree
 {
 template <typename T,
-          typename Alloc = std::allocator<T> >
+          int freelist = caching_freelist_t,
+          typename Alloc = std::allocator<T>
+          >
 class stack:
     boost::noncopyable
 {
@@ -39,6 +41,9 @@ class stack:
     };
 
     typedef tagged_ptr<node> ptr_type;
+
+    typedef typename Alloc::template rebind<node>::other node_allocator;
+    typedef typename detail::select_freelist<node, node_allocator, freelist>::type pool_t;
 
 public:
     stack(void):
@@ -103,9 +108,7 @@ private:
     }
 
     ptr_type tos;
-
-    typedef typename Alloc::template rebind<node>::other node_allocator;
-    boost::lockfree::caching_freelist<node, node_allocator> pool;
+    pool_t pool;
 };
 
 
