@@ -1,4 +1,4 @@
-#include <boost/lockfree/tagged_ptr.hpp>
+#include <boost/lockfree/detail/tagged_ptr.hpp>
 
 #include <climits>
 #define BOOST_TEST_MODULE lockfree_tests

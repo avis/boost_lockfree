@@ -1,4 +1,4 @@
-#include <boost/lockfree/freelist.hpp>
+#include <boost/lockfree/detail/freelist.hpp>
 
 #include <climits>
 #define BOOST_TEST_MODULE lockfree_tests

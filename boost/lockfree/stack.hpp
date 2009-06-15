@@ -14,8 +14,8 @@
 #include <boost/static_assert.hpp>
 #include <boost/type_traits/is_base_of.hpp>
 
-#include <boost/lockfree/tagged_ptr.hpp>
-#include <boost/lockfree/freelist.hpp>
+#include <boost/lockfree/detail/tagged_ptr.hpp>
+#include <boost/lockfree/detail/freelist.hpp>
 #include <boost/noncopyable.hpp>
 
 
