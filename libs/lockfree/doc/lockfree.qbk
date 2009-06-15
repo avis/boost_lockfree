@@ -50,6 +50,7 @@ The following data structures are provided:
 
 * [classref boost::lockfree::fifo], a lock-free fifo queue
 * [classref boost::lockfree::stack], a lock-free stack
+* [classref boost::lockfree::atomic_int], an atomic integer class
 
 [endsect]
 
@@ -451,6 +452,105 @@ may fail.
 
 [endsect]
 
+[section boost::lockfree::atomic_int]
+
+[classref boost::lockfree::atomic_int boost::lockfree::atomic_int] provides an implementation for atomic integers. It
+does not provide the full interface of integer numbers, but a limited subset, that can be implemented with atomic
+operations. Modifying an atomic integer acts as full memory barrier.
+
+[section Synposis]
+
+``
+namespace boost {
+namespace lockfree {
+
+template <typename T>
+class boost::lockfree::atomic_int:
+{
+public:
+    explicit atomic_int(T v = 0);
+
+    operator T(void) const;
+    void operator =(T v);
+
+    T operator +=(T v);
+    T operator -=(T v);
+
+    T operator ++(void);
+    T operator --(void);
+
+    T operator ++(int);
+    T operator --(int);
+};
+
+} /* namespace lockfree */
+} /* namespace boost */
+``
+
+[endsect]
+
+[section Members]
+
+[heading Constructor]
+
+    explicit atomic_int(T v = 0);
+
+Initializes atomic_int to value v
+
+
+[heading Conversion]
+    operator T(void) const;
+
+Returns: Integer value of atomic_int
+
+[heading In-Place Operators]
+
+    T operator +=(T v);
+
+Returns: T(*this) + v
+
+Effect: T(*this) = T(*this) + v
+
+    T operator -=(T v);
+
+Returns: T(*this) - v
+
+Effect: T(*this) = T(*this) - v
+
+
+[heading Prefix Operators]
+
+    T operator ++(void);
+
+Effect: increments value
+
+Returns: value before incrementing
+
+    T operator --(void);
+
+Effect: decrements value
+
+Returns: value before decrementing
+
+[heading Postfix Operators]
+
+    T operator ++(int);
+
+Effect: increments value
+
+Returns: value after incrementing
+
+    T operator --(int);
+
+Effect: decrements value
+
+Returns: value after decrementing
+
+
+[endsect]
+
+[endsect]
+
 [endsect]
 
 [/
@@ -697,6 +797,8 @@ Freelist class, with a maximum size of max_size. Uses an lockfree stack to cache
 
 ]
 
+[/
+
 [section Primitives]
 The _lockfree_ library provides platform-specific wrappers for low-level operations.
 
@@ -704,8 +806,6 @@ The _lockfree_ library provides platform-specific wrappers for low-level operati
     void boost::lockfree::detail::memory_barrier(void);
 
 Full Memory Barrier.
-
-
 
 [endsect]
 
@@ -725,108 +825,9 @@ Double-word compare-and-swap
 
 [endsect]
 
-[section atomic_int]
-
-[classref boost::lockfree::atomic_int boost::lockfree::atomic_int] provides an implementation for atomic integers. It does
-not provide the full interface of integer numbers, but a limited subset, that can be implemented with atomic
-operations. Modifying an atomic integer acts as full memory barrier.
-
-[section Synposis]
-
-``
-namespace boost {
-namespace lockfree {
-
-template <typename T>
-class boost::lockfree::atomic_int:
-{
-public:
-    explicit atomic_int(T v = 0);
-
-    operator T(void) const;
-    void operator =(T v);
-
-    T operator +=(T v);
-    T operator -=(T v);
-
-    T operator ++(void);
-    T operator --(void);
-
-    T operator ++(int);
-    T operator --(int);
-};
-
-} /* namespace lockfree */
-} /* namespace boost */
-``
-
 [endsect]
 
-[section Members]
-
-[heading Constructor]
-
-    explicit atomic_int(T v = 0);
-
-Initializes atomic_int to value v
-
-
-[heading Conversion]
-    operator T(void) const;
-
-Returns: Integer value of atomic_int
-
-[heading In-Place Operators]
-
-    T operator +=(T v);
-
-Returns: T(*this) + v
-
-Effect: T(*this) = T(*this) + v
-
-    T operator -=(T v);
-
-Returns: T(*this) - v
-
-Effect: T(*this) = T(*this) - v
-
-
-[heading Prefix Operators]
-
-    T operator ++(void);
-
-Effect: increments value
-
-Returns: value before incrementing
-
-    T operator --(void);
-
-Effect: decrements value
-
-Returns: value before decrementing
-
-[heading Postfix Operators]
-
-    T operator ++(int);
-
-Effect: increments value
-
-Returns: value after incrementing
-
-    T operator --(int);
-
-Effect: decrements value
-
-Returns: value after decrementing
-
-
-[endsect]
-
-[endsect]
-
-
-
-[endsect]
+]
 
 [section Portability]
 
@@ -836,16 +837,13 @@ platforms, a blocking emulation of the atomic instructions is provided.
 
 Tested architectures:
 
-# x86
-# x86_64
+* x86
+* x86_64
 
 Tested compilers:
 
-# gcc-4.2, gcc-4.3
+* gcc-4.2, gcc-4.3, gcc-4.4
 
-Tested operating systems:
-
-# linux
 
 [endsect]
 
@@ -853,11 +851,13 @@ Tested operating systems:
 
 Thanks for suggestions, porting, testing:
 
-# Thomas Grill, original win32/osx code pieces
-# Shiwei Xu, api suggestions
-# Stefan Eilemann, bug fixes
-# Mignon Belongie, bug fix
-# Anthony Williams, found fifo race condition
+* Thomas Grill, original win32/osx code pieces
+* Shiwei Xu, api suggestions
+* Stefan Eilemann, bug fixes
+* Mignon Belongie, bug fix
+* Anthony Williams, found fifo race condition
+* Casey McCandless, msvc/icc fixes
+* Mark Bulas, msvc/x64 fixes
 
 [endsect]
 
