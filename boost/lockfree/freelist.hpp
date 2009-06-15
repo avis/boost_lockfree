@@ -15,9 +15,9 @@
 #include <boost/lockfree/atomic_int.hpp>
 #include <boost/noncopyable.hpp>
 
-#include <boost/mpl/vector.hpp>
+#include <boost/mpl/map.hpp>
+#include <boost/mpl/apply.hpp>
 #include <boost/mpl/at.hpp>
-#include <boost/mpl/if.hpp>
 #include <boost/type_traits/is_pod.hpp>
 
 #include <algorithm>            /* for std::min */
@@ -34,6 +34,7 @@ class dummy_freelist:
     private boost::noncopyable,
     private Alloc
 {
+public:
     T * allocate (void)
     {
         return Alloc::allocate(1);
@@ -42,22 +43,6 @@ class dummy_freelist:
     void deallocate (T * n)
     {
         Alloc::deallocate(n, 1);
-    }
-};
-
-/** dummy freelist, specialization fost std::allocator */
-template <typename T>
-struct dummy_freelist<T, std::allocator<T> >:
-    boost::noncopyable
-{
-    T * allocate (void)
-    {
-        return static_cast<T*>(operator new(sizeof(T)));
-    }
-
-    void deallocate (T * n)
-    {
-        operator delete(n);
     }
 };
 
@@ -237,7 +222,7 @@ private:
 
 template <typename T, typename Alloc = std::allocator<T> >
 class static_freelist:
-    private detail::dummy_freelist<T, Alloc>
+    private Alloc
 {
     struct freelist_node
     {
@@ -253,7 +238,7 @@ public:
         chunks = Alloc::allocate(max_nodes);
         for (std::size_t i = 0; i != max_nodes; ++i)
         {
-            T * node = chunks + i * sizeof(T);
+            T * node = chunks + i;
             deallocate(node);
         }
     }
@@ -295,18 +280,6 @@ public:
     }
 
 private:
-    void free_memory_pool(void)
-    {
-        tagged_ptr current (pool_);
-
-        while (current)
-        {
-            freelist_node * n = current.get_ptr();
-            current.set(current->next);
-            detail::dummy_freelist<T, Alloc>::deallocate(reinterpret_cast<T*>(n));
-        }
-    }
-
     tagged_ptr pool_;
 
     const std::size_t total_nodes;
@@ -320,18 +293,25 @@ struct static_freelist_t {};
 namespace detail
 {
 
-using namespace boost::mpl;
-
+#if 0
 template <typename T, typename Alloc, typename tag>
 struct select_freelist
 {
-    typedef typename if_<boost::is_same<tag, caching_freelist_t>,
-                         boost::lockfree::caching_freelist<T, Alloc>,
-                         if_<boost::is_same<tag, static_freelist_t>,
-                             boost::lockfree::static_freelist<T, Alloc>,
-                             int>
-                         >::type type;
+private:
+    typedef typename Alloc::template rebind<T>::other Allocator;
+
+    typedef typename boost::lockfree::caching_freelist<T, Allocator> cfl;
+    typedef typename boost::lockfree::static_freelist<T, Allocator> sfl;
+
+    typedef typename boost::mpl::map<
+        boost::mpl::pair < caching_freelist_t, cfl/* typename boost::lockfree::caching_freelist<T, Alloc> */ >,
+        boost::mpl::pair < static_freelist_t,  sfl/* typename boost::lockfree::static_freelist<T, Alloc> */ >,
+        int
+        > freelists;
+public:
+    typedef typename boost::mpl::at<freelists, tag>::type type;
 };
+#endif
 
 } /* namespace detail */
 } /* namespace lockfree */

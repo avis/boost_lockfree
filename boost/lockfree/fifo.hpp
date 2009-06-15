@@ -60,10 +60,16 @@ class fifo:
     typedef tagged_ptr<node> atomic_node_ptr;
 
     typedef typename Alloc::template rebind<node>::other node_allocator;
-    typedef typename select_freelist<node, node_allocator, freelist_t>::type pool_t;
+/*     typedef typename select_freelist<node, node_allocator, freelist_t>::type pool_t; */
+
+    typedef typename boost::mpl::if_<boost::is_same<freelist_t, caching_freelist_t>,
+                                     caching_freelist<node, node_allocator>,
+                                     static_freelist<node, node_allocator>
+                                     >::type pool_t;
 
 public:
-    fifo(void)
+    fifo(void):
+        pool(128)
     {
         node * n = alloc_node();
         head_.set_ptr(n);

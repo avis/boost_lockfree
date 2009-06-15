@@ -9,72 +9,95 @@
 #include <boost/thread.hpp>
 using namespace boost;
 
-const unsigned int buckets = 1<<10;
-static_hashed_set<long, buckets> data;
-boost::array<std::set<long>, buckets> returned;
-
-boost::lockfree::stack<long> stk;
-
-void add_items(void)
+template <typename freelist_t>
+struct stack_tester
 {
-    unsigned long count = 1000000;
+    static const unsigned int buckets = 1<<10;
+    static_hashed_set<long, buckets> data;
+    boost::array<std::set<long>, buckets> returned;
 
-    for (long i = 0; i != count; ++i)
+    boost::lockfree::stack<long, freelist_t> stk;
+
+    void add_items(void)
     {
-        thread::yield();
-        long id = generate_id<long>();
+        unsigned long count = 100000;
 
-        bool inserted = data.insert(id);
-
-        assert(inserted);
-
-        stk.push(id);
-    }
-}
-
-volatile bool running = true;
-
-void get_items(void)
-{
-    for (;;)
-    {
-        thread::yield();
-        long id;
-
-        bool got = stk.pop(&id);
-        if (got)
+        for (unsigned long i = 0; i != count; ++i)
         {
-            bool erased = data.erase(id);
-            assert(erased);
+            thread::yield();
+            long id = generate_id<long>();
+
+            bool inserted = data.insert(id);
+
+            assert(inserted);
+
+
+            while(stk.push(id) == false)
+            {
+                thread::yield();
+            }
         }
-        else
-            if (not running)
-                return;
     }
+
+    volatile bool running;
+
+    void get_items(void)
+    {
+        for (;;)
+        {
+            thread::yield();
+            long id;
+
+            bool got = stk.pop(&id);
+            if (got)
+            {
+                bool erased = data.erase(id);
+                assert(erased);
+            }
+            else
+                if (not running)
+                    return;
+        }
+    }
+
+    void run(void)
+    {
+        running = true;
+
+        thread_group writer;
+        thread_group reader;
+
+        for (int i = 0; i != 2; ++i)
+            reader.create_thread(boost::bind(&stack_tester::get_items, this));
+
+        for (int i = 0; i != 2; ++i)
+            writer.create_thread(boost::bind(&stack_tester::add_items, this));
+
+        using namespace std;
+        cout << "threads created" << endl;
+
+        writer.join_all();
+
+        cout << "writer threads joined, waiting for readers" << endl;
+
+        running = false;
+        reader.join_all();
+
+        cout << "reader threads joined" << endl;
+
+        BOOST_REQUIRE_EQUAL(data.count_nodes(), 0);
+    }
+};
+
+
+BOOST_AUTO_TEST_CASE( stack_test_caching )
+{
+    stack_tester<boost::lockfree::caching_freelist_t> tester;
+    tester.run();
 }
 
-BOOST_AUTO_TEST_CASE( stack_test )
+BOOST_AUTO_TEST_CASE( stack_test_static )
 {
-    thread_group writer;
-    thread_group reader;
-
-    for (int i = 0; i != 2; ++i)
-        reader.create_thread(&get_items);
-
-    for (int i = 0; i != 2; ++i)
-        writer.create_thread(&add_items);
-
-    using namespace std;
-    cout << "threads created" << endl;
-
-    writer.join_all();
-
-    cout << "writer threads joined, waiting for readers" << endl;
-
-    running = false;
-    reader.join_all();
-
-    cout << "reader threads joined" << endl;
-
-    BOOST_REQUIRE_EQUAL(data.count_nodes(), 0);
+    stack_tester<boost::lockfree::static_freelist_t> tester;
+    tester.run();
 }
