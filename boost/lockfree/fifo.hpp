@@ -86,9 +86,12 @@ public:
         return head_.get_ptr() == tail_.get_ptr();
     }
 
-    void enqueue(T const & t)
+    bool enqueue(T const & t)
     {
         node * n = alloc_node(t);
+
+        if (n == NULL)
+            return false;
 
         for (;;)
         {
@@ -104,7 +107,7 @@ public:
                     if ( tail->next.CAS(next, n) )
                     {
                         tail_.CAS(tail, n);
-                        return;
+                        return true;
                     }
                 }
                 else
@@ -227,9 +230,9 @@ public:
         fifo_t(initial_nodes)
     {}
 
-    void enqueue(T * t)
+    bool enqueue(T * t)
     {
-        fifo_t::enqueue(t);
+        return fifo_t::enqueue(t);
     }
 
     bool dequeue (T ** ret)

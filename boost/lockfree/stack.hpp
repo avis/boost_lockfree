@@ -49,9 +49,12 @@ public:
         tos(NULL), pool(n)
     {}
 
-    void push(T const & v)
+    bool push(T const & v)
     {
         node * newnode = alloc_node(v);
+
+        if (newnode == 0)
+            return false;
 
         ptr_type old_tos;
         do
@@ -60,6 +63,8 @@ public:
             newnode->next.set_ptr(old_tos.get_ptr());
         }
         while (!tos.CAS(old_tos, newnode));
+
+        return true;
     }
 
     bool pop(T * ret)

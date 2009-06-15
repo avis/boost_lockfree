@@ -21,7 +21,6 @@ namespace boost
 {
 namespace lockfree
 {
-
 namespace detail
 {
 
@@ -230,6 +229,85 @@ private:
 
     tagged_ptr pool_;
 };
+
+template <typename T, typename Alloc = std::allocator<T> >
+class static_freelist:
+    private detail::dummy_freelist<T, Alloc>
+{
+    struct freelist_node
+    {
+        lockfree::tagged_ptr<freelist_node> next;
+    };
+
+    typedef lockfree::tagged_ptr<freelist_node> tagged_ptr;
+
+public:
+    explicit static_freelist(std::size_t max_nodes):
+        pool_(NULL), total_nodes(max_nodes)
+    {
+        chunks = Alloc::allocate(max_nodes)
+        for (int i = 0; i != initial_nodes; ++i)
+        {
+            T * node = chunks + i * sizeof(T);
+            deallocate(node);
+        }
+    }
+
+    ~caching_freelist(void)
+    {
+        Alloc::deallocate(chunks, total_nodes);
+    }
+
+    T * allocate (void)
+    {
+        for(;;)
+        {
+            tagged_ptr old_pool(pool_);
+
+            if (!old_pool)
+                return 0;       /* allocation fails */
+
+            freelist_node * new_pool = old_pool->next.get_ptr();
+
+            if (pool_.CAS(old_pool, new_pool))
+                return reinterpret_cast<T*>(old_pool.get_ptr());
+        }
+    }
+
+    void deallocate (T * n)
+    {
+        for(;;)
+        {
+            tagged_ptr old_pool (pool_);
+
+            freelist_node * new_pool = reinterpret_cast<freelist_node*>(n);
+
+            new_pool->next.set_ptr(old_pool.get_ptr());
+
+            if (pool_.CAS(old_pool,new_pool))
+                return;
+        }
+    }
+
+private:
+    void free_memory_pool(void)
+    {
+        tagged_ptr current (pool_);
+
+        while (current)
+        {
+            freelist_node * n = current.get_ptr();
+            current.set(current->next);
+            detail::dummy_freelist<T, Alloc>::deallocate(reinterpret_cast<T*>(n));
+        }
+    }
+
+    tagged_ptr pool_;
+
+    const std::size_t total_nodes;
+    T* chunks;
+};
+
 
 } /* namespace lockfree */
 } /* namespace boost */
