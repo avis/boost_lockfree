@@ -17,6 +17,8 @@
 
 #include <boost/mpl/vector.hpp>
 #include <boost/mpl/at.hpp>
+#include <boost/mpl/if.hpp>
+#include <boost/type_traits/is_pod.hpp>
 
 #include <algorithm>            /* for std::min */
 
@@ -152,7 +154,7 @@ private:
     }
 
     tagged_ptr pool_;
-    atomic_int<long> free_list_size;
+    atomic_int<unsigned long> free_list_size;
 };
 
 template <typename T, typename Alloc = std::allocator<T> >
@@ -312,21 +314,23 @@ private:
 };
 
 
-const int caching_freelist_t = 0;
-const int static_freelist_t = 1;
+struct caching_freelist_t {};
+struct static_freelist_t {};
 
 namespace detail
 {
-template <typename T, typename Alloc, int tag>
+
+using namespace boost::mpl;
+
+template <typename T, typename Alloc, typename tag>
 struct select_freelist
 {
-private:
-    typedef boost::mpl::vector<boost::lockfree::caching_freelist<T, Alloc>,
-                               boost::lockfree::static_freelist<T, Alloc> >
-    freelists;
-
-public:
-    typedef typename boost::mpl::at_c<freelists, tag>::type type;
+    typedef typename if_<boost::is_same<tag, caching_freelist_t>,
+                         boost::lockfree::caching_freelist<T, Alloc>,
+                         if_<boost::is_same<tag, static_freelist_t>,
+                             boost::lockfree::static_freelist<T, Alloc>,
+                             int>
+                         >::type type;
 };
 
 } /* namespace detail */

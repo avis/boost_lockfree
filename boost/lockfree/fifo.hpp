@@ -35,7 +35,7 @@ namespace lockfree
 namespace detail
 {
 
-template <typename T, int freelist, typename Alloc>
+template <typename T, typename freelist_t, typename Alloc>
 class fifo:
     boost::noncopyable
 {
@@ -60,7 +60,7 @@ class fifo:
     typedef tagged_ptr<node> atomic_node_ptr;
 
     typedef typename Alloc::template rebind<node>::other node_allocator;
-    typedef typename select_freelist<node, node_allocator, freelist>::type pool_t;
+    typedef typename select_freelist<node, node_allocator, freelist_t>::type pool_t;
 
 public:
     fifo(void)
@@ -187,18 +187,18 @@ private:
  *  - wrapper for detail::fifo
  * */
 template <typename T,
-          int freelist = caching_freelist_t,
+          typename freelist_t = caching_freelist_t,
           typename Alloc = std::allocator<T>
           >
 class fifo:
-    public detail::fifo<T, freelist, Alloc>
+    public detail::fifo<T, freelist_t, Alloc>
 {
 public:
     fifo(void)
     {}
 
     explicit fifo(std::size_t initial_nodes):
-        detail::fifo<T, freelist, Alloc>(initial_nodes)
+        detail::fifo<T, freelist_t, Alloc>(initial_nodes)
     {}
 };
 
@@ -208,11 +208,11 @@ public:
  *  - wrapper for detail::fifo
  *  - overload dequeue to support smart pointers
  * */
-template <typename T, int freelist, typename Alloc>
-class fifo<T*, freelist, Alloc>:
-    public detail::fifo<T*, freelist, Alloc>
+template <typename T, typename freelist_t, typename Alloc>
+class fifo<T*, freelist_t, Alloc>:
+    public detail::fifo<T*, freelist_t, Alloc>
 {
-    typedef detail::fifo<T*, freelist, Alloc> fifo_t;
+    typedef detail::fifo<T*, freelist_t, Alloc> fifo_t;
 
     template <typename smart_ptr>
     bool dequeue_smart_ptr(smart_ptr & ptr)
