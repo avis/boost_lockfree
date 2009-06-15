@@ -242,8 +242,8 @@ enqueueing and dequeueing is lockfree, construction/destruction has to be synchr
 boost::lockfree::fifo fifo] class for pointer-arguments is provided, which supports dequeueing to stl/boost-style smart
 pointers. Its used type argument is limited to PODs.
 
-It uses a caching freelist for memory management, freed nodes are pushed to the freelist. This may result in leaking
-memory.
+It uses a freelist for memory management, freed nodes are pushed to the freelist, but not returned to the os. This may
+result in leaking memory.
 
 [section Synopsis]
 
@@ -254,7 +254,7 @@ memory.
 namespace boost {
 namespace lockfree {
 
-template <typename T, typename Alloc = std::allocator<T> >
+template <typename T, typename freelist_t = caching_freelist_t, typename Alloc = std::allocator<T> >
 class fifo:
     boost::noncopyable
 {
@@ -265,11 +265,11 @@ public:
 
     bool empty(void) const;
 
-    void enqueue(T const & t);
+    bool enqueue(T const & t);
     bool dequeue (T * ret);
 };
 
-template <typename T, typename Alloc = std::allocator<T> >
+template <typename T, typename freelist_t = caching_freelist_t, typename Alloc = std::allocator<T> >
 class fifo<T*>:
     boost::noncopyable
 {
@@ -280,7 +280,7 @@ public:
 
     bool empty(void) const;
 
-    void enqueue(T * t);
+    bool enqueue(T * t);
 
     bool dequeue (T ** ret);
     bool dequeue (std::auto_ptr<T> & ret);
@@ -325,7 +325,7 @@ Returns: true, if fifo is empty.
 
 [heading Enqueue]
 
-    void enqueue(T const & t);
+    bool enqueue(T const & t);
 
 Enqueues object t to the fifo.
 
@@ -351,6 +351,14 @@ The specialized class for pointer objects provides an api for dequeuing objects 
 
 [endsect]
 
+[section Memory Management]
+
+The memory management of the fifo can be controlled via its `freelist_t` template argument. Two different freelists can
+be used. `struct caching_freelist_t' selects a caching freelist, which can allocate more nodes from the operating
+system, and `struct static_freelist_t' uses a fixed-sized freelist. With a fixed-sized freelist, the enqueue operation
+may fail.
+
+[endsect]
 
 
 [endsect]
@@ -380,7 +388,7 @@ public:
     stack(void);
     explicit stack(std::size_t n);
 
-    void push(T const & v);
+    bool push(T const & v);
 
     bool pop(T * ret);
 };
@@ -412,7 +420,7 @@ Destroys stack, free all nodes from freelist.
 
 [heading Push]
 
-    void push(T const & t);
+    bool push(T const & t);
 
 Pushes object t to the stack.
 
@@ -431,8 +439,17 @@ Effect: if pop operation is successful, object is written to memory location den
 [note Thread-safe and non-blocking]
 
 [endsect]
+
+[section Memory Management]
+
+The memory management of the stack can be controlled via its `freelist_t` template argument. Two different freelists can
+be used. `struct caching_freelist_t' selects a caching freelist, which can allocate more nodes from the operating
+system, and `struct static_freelist_t' uses a fixed-sized freelist. With a fixed-sized freelist, the push operation
+may fail.
+
 [endsect]
 
+[endsect]
 
 [endsect]
 
