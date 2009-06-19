@@ -12,7 +12,7 @@
 boost::lockfree::atomic_int<int> producer_count(0);
 boost::lockfree::atomic_int<int> consumer_count(0);
 
-boost::lockfree::stack<int> fifo;
+boost::lockfree::stack<int> stack;
 
 const int iterations = 1000000;
 
@@ -20,7 +20,7 @@ void producer(void)
 {
     for (int i = 0; i != iterations; ++i) {
         int value = ++producer_count;
-        fifo.push(value);
+        stack.push(value);
     }
 }
 
@@ -28,11 +28,11 @@ void consumer(void)
 {
     int value;
     while (producer_count != 2*iterations) {
-        while (fifo.pop(&value))
+        while (stack.pop(&value))
             ++consumer_count;
     }
 
-    while (fifo.pop(&value))
+    while (stack.pop(&value))
         ++consumer_count;
 
 }
