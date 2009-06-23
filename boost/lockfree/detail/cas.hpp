@@ -13,7 +13,7 @@
 #include <boost/detail/lightweight_mutex.hpp>
 #include <boost/static_assert.hpp>
 
-#include <boost/interprocess/detail/atomic.hpp>
+#include <boost/cstdint.hpp>
 
 namespace boost
 {
@@ -22,7 +22,7 @@ namespace lockfree
 
 inline void memory_barrier()
 {
-#if defined(__GNUC__) && ( (__GNUC__ > 4) || ((__GNUC__ >= 4) && (__GNUC_MINOR__ >= 1)) )
+#if defined(__GNUC__) && ( (__GNUC__ > 4) || ((__GNUC__ >= 4) && (__GNUC_MINOR__ >= 1)) ) || defined(__INTEL_COMPILER)
     __sync_synchronize();
 #elif defined(_MSC_VER) && (_MSC_VER >= 1300)
     _ReadWriteBarrier();
@@ -55,7 +55,7 @@ using boost::uint64_t;
 
 inline bool atomic_cas32(volatile uint32_t *  addr, uint32_t old, uint32_t nw)
 {
-#if defined(__GNUC__) && ( (__GNUC__ > 4) || ((__GNUC__ >= 4) && (__GNUC_MINOR__ >= 1)) )
+#if defined(__GNUC__) && ( (__GNUC__ > 4) || ((__GNUC__ >= 4) && (__GNUC_MINOR__ >= 1)) ) || defined(__INTEL_COMPILER)
     return __sync_bool_compare_and_swap(addr, old, nw);
 #else
     return boost::interprocess::detail::atomic_cas32(addr, old, nw) == old;
@@ -64,7 +64,7 @@ inline bool atomic_cas32(volatile uint32_t *  addr, uint32_t old, uint32_t nw)
 
 inline bool atomic_cas64(volatile uint64_t * addr, uint64_t old, uint64_t nw)
 {
-#if defined(__GNUC__) && ( (__GNUC__ > 4) || ((__GNUC__ >= 4) && (__GNUC_MINOR__ >= 1)) )
+#if defined(__GNUC__) && ( (__GNUC__ > 4) || ((__GNUC__ >= 4) && (__GNUC_MINOR__ >= 1)) ) || defined(__INTEL_COMPILER)
     return __sync_bool_compare_and_swap(addr, old, nw);
 #elif defined(_M_IX86)
     return InterlockedCompareExchange(reinterpret_cast<volatile LONG*>(addr),

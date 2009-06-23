@@ -1,4 +1,4 @@
-#include <boost/lockfree/cas.hpp>
+#include <boost/lockfree/detail/cas.hpp>
 
 #include <climits>
 #define BOOST_TEST_MODULE lockfree_tests

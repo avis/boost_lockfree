@@ -18,7 +18,7 @@ namespace boost
 namespace lockfree
 {
 
-#if defined(__GNUC__) && ( (__GNUC__ > 4) || ((__GNUC__ >= 4) && (__GNUC_MINOR__ >= 1)) )
+#if defined(__GNUC__) && ( (__GNUC__ > 4) || ((__GNUC__ >= 4) && (__GNUC_MINOR__ >= 1)) ) || __INTEL_COMPILER
 
 template <typename T>
 class atomic_int:

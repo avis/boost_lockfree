@@ -50,7 +50,7 @@ public:
 
 /** simple freelist implementation  */
 template <typename T,
-          std::size_t max_size = 64,
+          std::size_t maximum_size = 64,
           typename Alloc = std::allocator<T> >
 class freelist:
     private detail::dummy_freelist<T, Alloc>
@@ -70,7 +70,7 @@ public:
     explicit freelist(std::size_t initial_nodes):
         pool_(NULL)
     {
-        for (std::size_t i = 0; i != std::min(initial_nodes, max_size); ++i)
+        for (std::size_t i = 0; i != std::min(initial_nodes, maximum_size); ++i)
         {
             T * node = detail::dummy_freelist<T, Alloc>::allocate();
             deallocate(node);
@@ -103,7 +103,7 @@ public:
 
     void deallocate (T * n)
     {
-        if (free_list_size > max_size)
+        if (free_list_size > maximum_size)
         {
             detail::dummy_freelist<T, Alloc>::deallocate(n);
             return;
