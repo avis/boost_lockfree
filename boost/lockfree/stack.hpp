@@ -98,6 +98,11 @@ public:
         }
     }
 
+    bool empty(void) const
+    {
+        return tos == NULL;
+    }
+
 private:
     node * alloc_node(T const & t)
     {

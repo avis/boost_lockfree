@@ -67,6 +67,8 @@ struct stack_tester
         thread_group writer;
         thread_group reader;
 
+        BOOST_REQUIRE(stk.empty());
+
         for (int i = 0; i != 2; ++i)
             reader.create_thread(boost::bind(&stack_tester::get_items, this));
 
@@ -86,6 +88,7 @@ struct stack_tester
         cout << "reader threads joined" << endl;
 
         BOOST_REQUIRE_EQUAL(data.count_nodes(), 0);
+        BOOST_REQUIRE(stk.empty());
     }
 };
 

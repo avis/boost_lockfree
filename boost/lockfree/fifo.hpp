@@ -90,7 +90,7 @@ public:
         dealloc_node(head_.get_ptr());
     }
 
-    bool empty(void) const
+    bool empty(void)
     {
         return head_.get_ptr() == tail_.get_ptr();
     }

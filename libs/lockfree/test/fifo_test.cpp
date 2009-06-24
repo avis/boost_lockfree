@@ -20,25 +20,25 @@ using namespace std;
 BOOST_AUTO_TEST_CASE( simple_fifo_test )
 {
     fifo<int> f(64);
-    BOOST_CHECK(f.empty());
+    BOOST_REQUIRE(f.empty());
     f.enqueue(1);
     f.enqueue(2);
 
     int i1(0), i2(0);
 
-    BOOST_CHECK(f.dequeue(&i1));
-    BOOST_CHECK_EQUAL(i1, 1);
+    BOOST_REQUIRE(f.dequeue(&i1));
+    BOOST_REQUIRE_EQUAL(i1, 1);
 
-    BOOST_CHECK(f.dequeue(&i2));
-    BOOST_CHECK_EQUAL(i2, 2);
-    BOOST_CHECK(f.empty());
+    BOOST_REQUIRE(f.dequeue(&i2));
+    BOOST_REQUIRE_EQUAL(i2, 2);
+    BOOST_REQUIRE(f.empty());
 }
 
 
 BOOST_AUTO_TEST_CASE( fifo_specialization_test )
 {
     fifo<int*> f;
-    BOOST_CHECK(f.empty());
+    BOOST_REQUIRE(f.empty());
     f.enqueue(new int(1));
     f.enqueue(new int(2));
     f.enqueue(new int(3));
@@ -47,34 +47,34 @@ BOOST_AUTO_TEST_CASE( fifo_specialization_test )
     {
         int * i1;
 
-        BOOST_CHECK(f.dequeue(&i1));
-        BOOST_CHECK_EQUAL(*i1, 1);
+        BOOST_REQUIRE(f.dequeue(&i1));
+        BOOST_REQUIRE_EQUAL(*i1, 1);
         delete i1;
     }
 
 
     {
         auto_ptr<int> i2;
-        BOOST_CHECK(f.dequeue(i2));
-        BOOST_CHECK_EQUAL(*i2, 2);
+        BOOST_REQUIRE(f.dequeue(i2));
+        BOOST_REQUIRE_EQUAL(*i2, 2);
     }
 
     {
         boost::scoped_ptr<int> i3;
-        BOOST_CHECK(f.dequeue(i3));
+        BOOST_REQUIRE(f.dequeue(i3));
 
-        BOOST_CHECK_EQUAL(*i3, 3);
+        BOOST_REQUIRE_EQUAL(*i3, 3);
     }
 
     {
         boost::scoped_ptr<int> i4;
-        BOOST_CHECK(f.dequeue(i4));
+        BOOST_REQUIRE(f.dequeue(i4));
 
-        BOOST_CHECK_EQUAL(*i4, 4);
+        BOOST_REQUIRE_EQUAL(*i4, 4);
     }
 
 
-    BOOST_CHECK(f.empty());
+    BOOST_REQUIRE(f.empty());
 }
 
 template <typename freelist_t>
@@ -152,6 +152,7 @@ struct fifo_tester
         thread_group writer;
         thread_group reader;
 
+        BOOST_REQUIRE(sf.empty());
         for (int i = 0; i != reader_threads; ++i)
             reader.create_thread(boost::bind(&fifo_tester::get, this));
 
@@ -165,10 +166,10 @@ struct fifo_tester
         running = false;
         reader.join_all();
 
-        BOOST_CHECK_EQUAL(received_nodes, writer_threads * nodes_per_thread);
-        BOOST_CHECK_EQUAL(fifo_cnt, 0);
-        BOOST_CHECK(sf.empty());
-        BOOST_CHECK(working_set.count_nodes() == 0);
+        BOOST_REQUIRE_EQUAL(received_nodes, writer_threads * nodes_per_thread);
+        BOOST_REQUIRE_EQUAL(fifo_cnt, 0);
+        BOOST_REQUIRE(sf.empty());
+        BOOST_REQUIRE(working_set.count_nodes() == 0);
     }
 };
 

@@ -267,7 +267,7 @@ public:
     bool empty(void) const;
 
     bool enqueue(T const & t);
-    bool dequeue (T * ret);
+    bool dequeue(T * ret);
 };
 
 template <typename T, typename freelist_t = caching_freelist_t, typename Alloc = std::allocator<T> >
@@ -307,7 +307,6 @@ Default Constructor
 
 Construct fifo with a number of initially allocated fifo nodes.
 
-
 [heading Destructor]
 
     ~fifo(void);
@@ -328,7 +327,9 @@ Returns: true, if fifo is empty.
 
     bool enqueue(T const & t);
 
-Enqueues object t to the fifo.
+Enqueues object t to the fifo. Enqueueing may fail, if the freelist is not able to allocate a new fifo node.
+
+Returns: true, if the enqueue operation is successful.
 
 [note Thread-safe and non-blocking]
 [important May block if node needs to be allocated from the operating system]
@@ -340,6 +341,7 @@ Enqueues object t to the fifo.
 Dequeue object from fifo.
 
 Returns: true, if the dequeue operation is successful, false if fifo was empty.
+
 Effect: if dequeue operation is successful, object is written to memory location denoted by ret.
 
 [note Thread-safe and non-blocking]
@@ -355,9 +357,9 @@ The specialized class for pointer objects provides an api for dequeuing objects 
 [section Memory Management]
 
 The memory management of the fifo can be controlled via its `freelist_t` template argument. Two different freelists can
-be used. `struct caching_freelist_t' selects a caching freelist, which can allocate more nodes from the operating
-system, and `struct static_freelist_t' uses a fixed-sized freelist. With a fixed-sized freelist, the enqueue operation
-may fail.
+be used. `struct caching_freelist_t` selects a caching freelist, which can allocate more nodes from the operating
+system, and `struct static_freelist_t` uses a fixed-sized freelist. With a fixed-sized freelist, the enqueue operation
+may fail, while with a caching freelist, the enqueue operation may block.
 
 [endsect]
 
@@ -389,8 +391,9 @@ public:
     stack(void);
     explicit stack(std::size_t n);
 
-    bool push(T const & v);
+    bool empty(void) const;
 
+    bool push(T const & v);
     bool pop(T * ret);
 };
 
@@ -419,11 +422,20 @@ Construct stack with a number of initially allocated stack nodes.
 
 Destroys stack, free all nodes from freelist.
 
+[heading Empty]
+
+    bool empty(void) const;
+
+Returns: true, if stack is empty.
+
+[warning Not thread-safe, use for debugging purposes only]
+
+
 [heading Push]
 
     bool push(T const & t);
 
-Pushes object t to the stack.
+Pushes object t to the stack. Pushing may fail, if the freelist is not able to allocate a new stack node.
 
 [note Thread-safe and non-blocking]
 [important May block, if node needs to be allocated from the operating system]
@@ -444,9 +456,9 @@ Effect: if pop operation is successful, object is written to memory location den
 [section Memory Management]
 
 The memory management of the stack can be controlled via its `freelist_t` template argument. Two different freelists can
-be used. `struct caching_freelist_t' selects a caching freelist, which can allocate more nodes from the operating
-system, and `struct static_freelist_t' uses a fixed-sized freelist. With a fixed-sized freelist, the push operation
-may fail.
+be used. `struct caching_freelist_t` selects a caching freelist, which can allocate more nodes from the operating
+system, and `struct static_freelist_t` uses a fixed-sized freelist. With a fixed-sized freelist, the push operation
+may fail, while with a caching freelist, the push operation may block.
 
 [endsect]
 
@@ -858,6 +870,7 @@ Thanks for suggestions, porting, testing:
 * Anthony Williams, found fifo race condition
 * Casey McCandless, msvc/icc fixes
 * Mark Bulas, msvc/x64 fixes
+* Anteru, api/documentation suggestions
 
 [endsect]
 
