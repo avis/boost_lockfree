@@ -118,6 +118,11 @@ private:
     }
 
     ptr_type tos;
+
+    static const int padding_size = 64 - sizeof(ptr_type); /* cache lines on current cpus seem to
+                                                            * be 64 byte */
+    char padding[padding_size];
+
     pool_t pool;
 };
 

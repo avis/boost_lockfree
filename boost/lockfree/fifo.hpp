@@ -181,7 +181,11 @@ private:
     }
 
     atomic_node_ptr head_;
-    atomic_node_ptr BOOST_LOCKFREE_CACHELINE_ALIGNMENT tail_; /* force head_ and tail_ to different cache lines! */
+    static const int padding_size = 64 - sizeof(atomic_node_ptr); /* cache lines on current cpus seem to
+                                                                   * be 64 byte */
+    char padding1[padding_size];
+    atomic_node_ptr tail_;
+    char padding2[padding_size];
 
     pool_t pool;
 };
