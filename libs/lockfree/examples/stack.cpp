@@ -15,6 +15,8 @@ boost::lockfree::atomic_int<int> consumer_count(0);
 boost::lockfree::stack<int> stack;
 
 const int iterations = 1000000;
+const int producer_thread_count = 4;
+const int consumer_thread_count = 4;
 
 void producer(void)
 {
@@ -24,30 +26,34 @@ void producer(void)
     }
 }
 
+volatile bool done = false;
+
 void consumer(void)
 {
     int value;
-    while (producer_count != 2*iterations) {
+    while (!done) {
         while (stack.pop(&value))
             ++consumer_count;
     }
 
     while (stack.pop(&value))
         ++consumer_count;
-
 }
 
 int main(int argc, char* argv[])
 {
-    boost::thread thrd_p1(producer);
-    boost::thread thrd_p2(producer);
-    boost::thread thrd_c1(consumer);
-    boost::thread thrd_c2(consumer);
+    boost::thread_group producer_threads, consumer_threads;
 
-    thrd_p1.join();
-    thrd_p2.join();
-    thrd_c1.join();
-    thrd_c2.join();
+    for (int i = 0; i != producer_thread_count; ++i)
+        producer_threads.create_thread(producer);
+
+    for (int i = 0; i != consumer_thread_count; ++i)
+        consumer_threads.create_thread(consumer);
+
+    producer_threads.join_all();
+    done = true;
+
+    consumer_threads.join_all();
 
     std::cout << "produced " << producer_count << " objects." << std::endl;
     std::cout << "consumed " << consumer_count << " objects." << std::endl;

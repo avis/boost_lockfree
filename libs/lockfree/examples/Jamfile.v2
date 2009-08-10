@@ -2,20 +2,10 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-rule test_all
-{
-   local all_rules = ;
+project boost/lockfree/example
+    : requirements
+       <library>/boost/thread//boost_thread
+    ;
 
-   for local fileb in [ glob *.cpp ]
-   {
-      all_rules += [ link $(fileb) /boost/thread//boost_thread
-      :  # additional args
-      :  # test-files
-      :  # requirements
-      ] ;
-   }
-
-   return $(all_rules) ;
-}
-
-test-suite lockfree_example : [ test_all r ] : <threading>multi ;
+exe fifo : fifo.cpp ;
+exe stack : stack.cpp ;
