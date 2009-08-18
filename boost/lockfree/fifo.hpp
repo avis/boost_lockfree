@@ -105,9 +105,8 @@ public:
         for (;;)
         {
             atomic_node_ptr tail (tail_);
-            memory_barrier();
+            read_memory_barrier();
             atomic_node_ptr next (tail->next);
-            memory_barrier();
 
             if (likely(tail == tail_))
             {
@@ -130,11 +129,10 @@ public:
         for (;;)
         {
             atomic_node_ptr head (head_);
-            memory_barrier();
+            read_memory_barrier();
 
             atomic_node_ptr tail(tail_);
             node * next = head->next.get_ptr();
-            memory_barrier();
 
             if (likely(head == head_))
             {
