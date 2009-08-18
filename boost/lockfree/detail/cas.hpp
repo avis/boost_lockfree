@@ -20,27 +20,24 @@
 #include <boost/mpl/if.hpp>
 #include <boost/mpl/long.hpp>
 
+#ifdef __SSE2__
+#include "emmintrin.h"
+#endif
+
 namespace boost
 {
 namespace lockfree
 {
 
-inline void memory_barrier()
+inline void memory_barrier(void)
 {
-#if defined(__GNUC__)                                                   \
-    && ( (__GNUC__ < 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ < 4)) )  \
-    && defined (__x86_64__)
-
-    /* we need to work around gcc compiler bug
-     * http://gcc.gnu.org/bugzilla/show_bug.cgi?id=36793 */
-    asm volatile("mfence":::"memory");
+#if defined(__SSE2__)
+    _mm_mfence();
 
 #elif defined(__GNUC__) && ( (__GNUC__ > 4) || ((__GNUC__ >= 4) &&      \
                                                 (__GNUC_MINOR__ >= 1))) \
     || defined(__INTEL_COMPILER)
     __sync_synchronize();
-#elif defined(__GNUC__) && defined (__x86_64__)
-    asm volatile("mfence":::"memory");
 #elif defined(__GNUC__) && defined (__i386__)
     asm volatile("lock; addl $0,0(%%esp)":::"memory")
 #elif defined(_MSC_VER) && (_MSC_VER >= 1300)
@@ -51,6 +48,15 @@ inline void memory_barrier()
     AO_nop_full();
 #else
 #   warning "no memory barrier implemented for this platform"
+#endif
+}
+
+inline void read_memory_barrier(void)
+{
+#if defined(__SSE2__)
+    _mm_lfence();
+#else
+    memory_barrier();
 #endif
 }
 
