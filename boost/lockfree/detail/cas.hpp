@@ -10,6 +10,7 @@
 #define BOOST_LOCKFREE_CAS_HPP_INCLUDED
 
 #include <boost/lockfree/detail/prefix.hpp>
+#include <boost/interprocess/detail/atomic.hpp>
 #include <boost/detail/lightweight_mutex.hpp>
 #include <boost/static_assert.hpp>
 
@@ -39,7 +40,7 @@ inline void memory_barrier(void)
     || defined(__INTEL_COMPILER)
     __sync_synchronize();
 #elif defined(__GNUC__) && defined (__i386__)
-    asm volatile("lock; addl $0,0(%%esp)":::"memory")
+    asm volatile("lock; addl $0,0(%%esp)":::"memory");
 #elif defined(_MSC_VER) && (_MSC_VER >= 1300)
     _ReadWriteBarrier();
 #elif defined(__APPLE__)
@@ -63,7 +64,7 @@ inline void read_memory_barrier(void)
 template <typename C>
 struct atomic_cas_emulator
 {
-    static inline bool cas(volatile C * addr, C old, C nw)
+    static inline bool cas(C * addr, C old, C nw)
     {
         static boost::detail::lightweight_mutex guard;
         boost::detail::lightweight_mutex::scoped_lock lock(guard);
@@ -82,7 +83,7 @@ struct atomic_cas_emulator
 
 
 template <typename C>
-inline bool atomic_cas_emulation(volatile C * addr, C old, C nw)
+inline bool atomic_cas_emulation(C * addr, C old, C nw)
 {
     return atomic_cas_emulator<C>::cas(addr, old, nw);
 }
@@ -111,7 +112,7 @@ struct atomic_cas64
                            uint64_t const & old,
                            uint64_t const & nw)
     {
-#if defined(__GNUC__) && ( (__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 1)) ) || defined(__INTEL_COMPILER)
+#if defined(__GNUC__) && ( (__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 1)) ) || defined(__INTEL_COMPILER)
         return __sync_bool_compare_and_swap(addr, old, nw);
 #elif defined(_M_IX86)
         return InterlockedCompareExchange(reinterpret_cast<volatile LONG*>(addr),
@@ -123,7 +124,7 @@ struct atomic_cas64
                                           reinterpret_cast<LONG>(old)) == old;
 #else
 #warning ("blocking CAS emulation")
-        return atomic_cas_emulation(addr, old, nw);
+        return atomic_cas_emulation((uint64_t *)addr, old, nw);
 #endif
     }
 
@@ -137,6 +138,12 @@ struct atomic_cas128
 #else
     struct cas_type
     {
+        bool operator==(cas_type const & rhs)
+        {
+            return (data[0] == rhs.data[0]) &&
+                (data[1] == rhs.data[1]);
+        }
+
         uint64_t data[2];
     };
 #endif
@@ -147,7 +154,7 @@ struct atomic_cas128
         return __sync_bool_compare_and_swap_16(addr, old, nw);
 #else
 #warning ("blocking CAS emulation")
-        return atomic_cas_emulation(addr, old, nw);
+        return atomic_cas_emulation((cas_type*)addr, old, nw);
 #endif
     }
 };
