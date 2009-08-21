@@ -42,6 +42,12 @@ void consumer(void)
 
 int main(int argc, char* argv[])
 {
+    using namespace std;
+    cout << "boost::lockfree::stack is ";
+    if (!boost::lockfree::stack<int>::is_lockfree)
+        cout << "not ";
+    cout << "lockfree" << endl;
+
     boost::thread_group producer_threads, consumer_threads;
 
     for (int i = 0; i != producer_thread_count; ++i)
@@ -55,6 +61,6 @@ int main(int argc, char* argv[])
 
     consumer_threads.join_all();
 
-    std::cout << "produced " << producer_count << " objects." << std::endl;
-    std::cout << "consumed " << consumer_count << " objects." << std::endl;
+    cout << "produced " << producer_count << " objects." << endl;
+    cout << "consumed " << consumer_count << " objects." << endl;
 }

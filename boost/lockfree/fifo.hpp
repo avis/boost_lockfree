@@ -43,6 +43,8 @@ class fifo:
 
     struct BOOST_LOCKFREE_CACHELINE_ALIGNMENT node
     {
+        typedef tagged_ptr<node> tagged_ptr_t;
+
         node(T const & v):
             data(v)
         {
@@ -53,7 +55,7 @@ class fifo:
             next(NULL)
         {}
 
-        tagged_ptr<node> next;
+        tagged_ptr_t next;
         T data;
     };
 
@@ -68,6 +70,8 @@ class fifo:
                                      >::type pool_t;
 
 public:
+    static const bool is_lockfree = node::tagged_ptr_t::is_lockfree;
+
     fifo(void):
         pool(128)
     {

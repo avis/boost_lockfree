@@ -32,11 +32,13 @@ class stack:
 {
     struct node
     {
+        typedef tagged_ptr<node> tagged_ptr_t;
+
         node(T const & v):
             v(v)
         {}
 
-        tagged_ptr<node> next;
+        tagged_ptr_t next;
         T v;
     };
 
@@ -51,6 +53,8 @@ class stack:
                                      >::type pool_t;
 
 public:
+    static const bool is_lockfree = node::tagged_ptr_t::is_lockfree;
+
     stack(void):
         tos(NULL), pool(128)
     {}

@@ -104,10 +104,14 @@ struct atomic_cas32
 #endif
     }
     typedef uint32_t cas_type;
+
+    static const bool is_lockfree = true;
 };
 
 struct atomic_cas64
 {
+    typedef uint64_t cas_type;
+
     static inline bool cas(volatile uint64_t * addr,
                            uint64_t const & old,
                            uint64_t const & nw)
@@ -123,12 +127,18 @@ struct atomic_cas64
                                           reinterpret_cast<LONG>(nw),
                                           reinterpret_cast<LONG>(old)) == old;
 #else
+#define CAS_BLOCKING
 #warning ("blocking CAS emulation")
         return atomic_cas_emulation((uint64_t *)addr, old, nw);
 #endif
     }
 
-    typedef uint64_t cas_type;
+#ifdef CAS_BLOCKING
+#undef CAS_BLOCKING
+    static const bool is_lockfree = false;
+#else
+    static const bool is_lockfree = true;
+#endif
 };
 
 struct atomic_cas128
@@ -153,17 +163,28 @@ struct atomic_cas128
 #if defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_16)
         return __sync_bool_compare_and_swap_16(addr, old, nw);
 #else
+#define CAS_BLOCKING
 #warning ("blocking CAS emulation")
         return atomic_cas_emulation((cas_type*)addr, old, nw);
 #endif
     }
+
+#ifdef CAS_BLOCKING
+#undef CAS_BLOCKING
+    static const bool is_lockfree = false;
+#else
+    static const bool is_lockfree = true;
+#endif
 };
 
-template <class C>
-inline bool atomic_cas(volatile C * addr, C const & old, C const & nw)
+namespace detail
 {
-    using namespace boost::mpl;
+using namespace boost::mpl;
 
+template<typename C>
+struct atomic_cas
+{
+private:
     typedef map3<pair<long_<4>, atomic_cas32>,
         pair<long_<8>, atomic_cas64>,
         pair<long_<16>, atomic_cas128>
@@ -177,7 +198,25 @@ inline bool atomic_cas(volatile C * addr, C const & old, C const & nw)
 
     typedef typename cas_t::cas_type cas_value_t;
 
-    return cas_t::cas((volatile cas_value_t*)addr, *(cas_value_t*)&old, *(cas_value_t*)&nw);
+public:
+    static inline bool cas(volatile C * addr, C const & old, C const & nw)
+    {
+        return cas_t::cas((volatile cas_value_t*)addr,
+                          *(cas_value_t*)&old,
+                          *(cas_value_t*)&nw);
+    }
+
+    static const bool is_lockfree = cas_t::is_lockfree;
+};
+
+} /* namespace detail */
+
+using detail::atomic_cas;
+
+template <typename C>
+inline bool cas(volatile C * addr, C const & old, C const & nw)
+{
+    return atomic_cas<C>::cas(addr, old, nw);
 }
 
 } /* namespace lockfree */
