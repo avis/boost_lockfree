@@ -263,7 +263,7 @@ public:
     bool dequeue (boost::scoped_ptr<T> & ret)
     {
         BOOST_STATIC_ASSERT(sizeof(boost::scoped_ptr<T>) == sizeof(T*));
-        return dequeue(reinterpret_cast<T**>(&ret));
+        return dequeue(reinterpret_cast<T**>((void*)&ret));
     }
 
     bool dequeue (boost::shared_ptr<T> & ret)

@@ -184,18 +184,21 @@ public:
 
             freelist_node * new_pool = old_pool->next.get_ptr();
 
-            if (pool_.cas(old_pool, new_pool))
-                return reinterpret_cast<T*>(old_pool.get_ptr());
+            if (pool_.cas(old_pool, new_pool)) {
+                void * ptr = old_pool.get_ptr();
+                return reinterpret_cast<T*>(ptr);
+            }
         }
     }
 
     void deallocate (T * n)
     {
+        void * node = n;
         for(;;)
         {
             tagged_ptr old_pool (pool_);
 
-            freelist_node * new_pool = reinterpret_cast<freelist_node*>(n);
+            freelist_node * new_pool = reinterpret_cast<freelist_node*>(node);
 
             new_pool->next.set_ptr(old_pool.get_ptr());
 
@@ -211,7 +214,7 @@ private:
 
         while (current)
         {
-            freelist_node * n = current.get_ptr();
+            void * n = current.get_ptr();
             current.set(current->next);
             detail::dummy_freelist<T, Alloc>::deallocate(reinterpret_cast<T*>(n));
         }
@@ -259,18 +262,21 @@ public:
 
             freelist_node * new_pool = old_pool->next.get_ptr();
 
-            if (pool_.cas(old_pool, new_pool))
-                return reinterpret_cast<T*>(old_pool.get_ptr());
+            if (pool_.cas(old_pool, new_pool)) {
+                void * ptr = old_pool.get_ptr();
+                return reinterpret_cast<T*>(ptr);
+            }
         }
     }
 
     void deallocate (T * n)
     {
+        void * node = n;
         for(;;)
         {
             tagged_ptr old_pool (pool_);
 
-            freelist_node * new_pool = reinterpret_cast<freelist_node*>(n);
+            freelist_node * new_pool = reinterpret_cast<freelist_node*>(node);
 
             new_pool->next.set_ptr(old_pool.get_ptr());
 

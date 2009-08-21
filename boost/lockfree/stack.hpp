@@ -104,7 +104,7 @@ public:
 
     bool empty(void) const
     {
-        return tos == NULL;
+        return tos.get_ptr() == NULL;
     }
 
 private:
