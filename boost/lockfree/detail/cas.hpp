@@ -130,7 +130,6 @@ struct atomic_cas64
                                           reinterpret_cast<LONG>(old)) == old;
 #else
 #define CAS_BLOCKING
-#warning ("blocking CAS emulation")
         return atomic_cas_emulation((uint64_t *)addr, old, nw);
 #endif
     }
@@ -166,7 +165,6 @@ struct atomic_cas128
         return __sync_bool_compare_and_swap_16(addr, old, nw);
 #else
 #define CAS_BLOCKING
-#warning ("blocking CAS emulation")
         return atomic_cas_emulation((cas_type*)addr, old, nw);
 #endif
     }
