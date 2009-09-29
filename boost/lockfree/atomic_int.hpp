@@ -180,7 +180,7 @@ public:
         {
             T oldv = value;
             T newv = oldv + v;
-            if(likely(atomic_cas(&value, oldv, newv)))
+            if(likely(cas(&value, oldv, newv)))
                 return newv;
         }
     }
@@ -192,7 +192,7 @@ public:
             T oldv = value;
             T newv = oldv - v;
 
-            if(likely(atomic_cas(&value, oldv, newv)))
+            if(likely(cas(&value, oldv, newv)))
                 return newv;
         }
     }
@@ -203,7 +203,7 @@ public:
         for(;;)
         {
             T oldv = value;
-            if(likely(atomic_cas(&value, oldv, oldv+1)))
+            if(likely(cas(&value, oldv, oldv+1)))
                 return oldv;
         }
     }
@@ -214,7 +214,7 @@ public:
         for(;;)
         {
             T oldv = value;
-            if(likely(atomic_cas(&value, oldv, oldv-1)))
+            if(likely(cas(&value, oldv, oldv-1)))
                 return oldv;
         }
     }
