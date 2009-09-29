@@ -121,13 +121,13 @@ struct atomic_cas64
     || defined(__INTEL_COMPILER)
         return __sync_bool_compare_and_swap(addr, old, nw);
 #elif defined(_M_IX86)
-        return InterlockedCompareExchange(reinterpret_cast<volatile LONG*>(addr),
-                                          reinterpret_cast<LONG>(nw),
-                                          reinterpret_cast<LONG>(old)) == old;
+        return InterlockedCompareExchange64(reinterpret_cast<volatile LONGLONG*>(addr),
+                                            reinterpret_cast<LONGLONG>(nw),
+                                            reinterpret_cast<LONGLONG>(old)) == old;
 #elif defined(_M_X64)
-        return InterlockedCompareExchange(reinterpret_cast<volatile LONG*>(addr),
-                                          reinterpret_cast<LONG>(nw),
-                                          reinterpret_cast<LONG>(old)) == old;
+        return InterlockedCompareExchange64(reinterpret_cast<volatile LONGLONG*>(addr),
+                                            reinterpret_cast<LONGLONG>(nw),
+                                            reinterpret_cast<LONGLONG>(old)) == old;
 #else
 #define CAS_BLOCKING
         return atomic_cas_emulation((uint64_t *)addr, old, nw);

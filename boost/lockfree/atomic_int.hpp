@@ -11,6 +11,7 @@
 
 #include <boost/lockfree/detail/prefix.hpp>
 #include <boost/lockfree/detail/cas.hpp>
+#include <boost/lockfree/detail/branch_hints.hpp>
 #include <boost/noncopyable.hpp>
 
 namespace boost
