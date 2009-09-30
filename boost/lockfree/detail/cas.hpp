@@ -100,7 +100,7 @@ struct atomic_cas32
 #if defined(__GNUC__) && ( (__GNUC__ > 4) || ((__GNUC__ >= 4) && (__GNUC_MINOR__ >= 1)) ) || defined(__INTEL_COMPILER)
         return __sync_bool_compare_and_swap(addr, old, nw);
 #else
-        return boost::interprocess::detail::atomic_cas32(addr, old, nw) == old;
+        return boost::interprocess::detail::atomic_cas32(addr, nw, old) == old;
 #endif
     }
     typedef uint32_t cas_type;
