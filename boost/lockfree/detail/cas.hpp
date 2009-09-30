@@ -64,14 +64,16 @@ inline void read_memory_barrier(void)
 template <typename C>
 struct atomic_cas_emulator
 {
-    static inline bool cas(C * addr, C old, C nw)
+    static inline bool cas(volatile C * addr, C old, C nw)
     {
         static boost::detail::lightweight_mutex guard;
         boost::detail::lightweight_mutex::scoped_lock lock(guard);
 
-        if (*addr == old)
+        C * address = (C*) addr;
+
+        if (*address == old)
         {
-            *addr = nw;
+            *address = nw;
             return true;
         }
         else
@@ -83,7 +85,7 @@ struct atomic_cas_emulator
 
 
 template <typename C>
-inline bool atomic_cas_emulation(C * addr, C old, C nw)
+inline bool atomic_cas_emulation(volatile C * addr, C old, C nw)
 {
     return atomic_cas_emulator<C>::cas(addr, old, nw);
 }
