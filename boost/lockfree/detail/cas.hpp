@@ -94,8 +94,8 @@ using boost::uint64_t;
 struct atomic_cas32
 {
     static inline bool cas(volatile uint32_t * addr,
-                           uint64_t const & old,
-                           uint64_t const & nw)
+                           uint32_t const & old,
+                           uint32_t const & nw)
     {
 #if defined(__GNUC__) && ( (__GNUC__ > 4) || ((__GNUC__ >= 4) && (__GNUC_MINOR__ >= 1)) ) || defined(__INTEL_COMPILER)
         return __sync_bool_compare_and_swap(addr, old, nw);
