@@ -34,17 +34,16 @@ inline void memory_barrier(void)
 {
 #if defined(__SSE2__)
     _mm_mfence();
-
+#elif defined(_MSC_VER) && (_MSC_VER >= 1300)
+    _ReadWriteBarrier();
+#elif defined(__APPLE__)
+    OSMemoryBarrier();
 #elif defined(__GNUC__) && ( (__GNUC__ > 4) || ((__GNUC__ >= 4) &&      \
                                                 (__GNUC_MINOR__ >= 1))) \
     || defined(__INTEL_COMPILER)
     __sync_synchronize();
 #elif defined(__GNUC__) && defined (__i386__)
     asm volatile("lock; addl $0,0(%%esp)":::"memory");
-#elif defined(_MSC_VER) && (_MSC_VER >= 1300)
-    _ReadWriteBarrier();
-#elif defined(__APPLE__)
-    OSMemoryBarrier();
 #elif defined(AO_HAVE_nop_full)
     AO_nop_full();
 #else
@@ -118,12 +117,7 @@ struct atomic_cas64
                            uint64_t const & old,
                            uint64_t const & nw)
     {
-#if defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_8) ||                                              \
-    (defined(__GNUC__) && ((__GNUC__ >  4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 1)          \
-                       || ((__GNUC__ == 4) && (__GNUC_MINOR__ == 1)))) && defined(__x86_64__))  \
-    || defined(__INTEL_COMPILER)
-        return __sync_bool_compare_and_swap(addr, old, nw);
-#elif defined(_M_IX86)
+#if defined(_M_IX86)
         return InterlockedCompareExchange64(reinterpret_cast<volatile LONGLONG*>(addr),
                                             reinterpret_cast<LONGLONG>(nw),
                                             reinterpret_cast<LONGLONG>(old)) == old;
@@ -131,6 +125,11 @@ struct atomic_cas64
         return InterlockedCompareExchange64(reinterpret_cast<volatile LONGLONG*>(addr),
                                             reinterpret_cast<LONGLONG>(nw),
                                             reinterpret_cast<LONGLONG>(old)) == old;
+#elif defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_8) ||                                              \
+    (defined(__GNUC__) && ((__GNUC__ >  4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 1)          \
+                       || ((__GNUC__ == 4) && (__GNUC_MINOR__ == 1)))) && defined(__x86_64__))  \
+    || defined(__INTEL_COMPILER)
+        return __sync_bool_compare_and_swap(addr, old, nw);
 #else
 #define CAS_BLOCKING
         return atomic_cas_emulation((uint64_t *)addr, old, nw);
