@@ -18,8 +18,6 @@
 
 #ifdef __APPLE__
     #include <libkern/OSAtomic.h>
-
-    #include <bits/atomicity.h>
 #endif
 
 #define BOOST_LOCKFREE_CACHELINE_BYTES 64
@@ -44,8 +42,7 @@
 
 #ifdef __GNUC__
 
-//#define BOOST_LOCKFREE_CACHELINE_ALIGNMENT __attribute__((aligned(BOOST_LOCKFREE_CACHELINE_ALIGNMENT)))
-#define BOOST_LOCKFREE_CACHELINE_ALIGNMENT __attribute__((aligned(64)))
+#define BOOST_LOCKFREE_CACHELINE_ALIGNMENT __attribute__((aligned(BOOST_LOCKFREE_CACHELINE_BYTES)))
 
 #ifdef __i386__
     #define BOOST_LOCKFREE_DCAS_ALIGNMENT
@@ -58,6 +55,14 @@
     #endif
     #define BOOST_LOCKFREE_DCAS_ALIGNMENT __attribute__((aligned(16)))
 #endif
+
+
+#if (__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 2))
+#include <ext/atomicity.h>
+#else
+#include <bits/atomicity.h>
+#endif
+
 
 #endif /* __GNUC__ */
 

@@ -100,6 +100,8 @@ struct atomic_cas32
     {
 #if defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4) || defined(__INTEL_COMPILER)
         return __sync_bool_compare_and_swap(addr, old, nw);
+#elif defined(__APPLE__)
+        return OSAtomicCompareAndSwap32Barrier(old, nw, addr);
 #else
         return boost::interprocess::detail::atomic_cas32(addr, nw, old) == old;
 #endif
@@ -125,7 +127,9 @@ struct atomic_cas64
         return InterlockedCompareExchange64(reinterpret_cast<volatile LONGLONG*>(addr),
                                             reinterpret_cast<LONGLONG>(nw),
                                             reinterpret_cast<LONGLONG>(old)) == old;
-#elif defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_8) ||                                              \
+#elif defined(__APPLE__)
+        return OSAtomicCompareAndSwap64Barrier(old, nw, addr);
+#elif defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_8) ||                    \
     (defined(__GNUC__) && ((__GNUC__ >  4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 1)          \
                        || ((__GNUC__ == 4) && (__GNUC_MINOR__ == 1)))) && defined(__x86_64__))  \
     || defined(__INTEL_COMPILER)

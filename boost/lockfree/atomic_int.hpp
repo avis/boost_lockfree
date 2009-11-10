@@ -98,6 +98,7 @@ public:
     void operator =(T v)
     {
         value = v;
+        memory_barrier();
     }
 
     T operator +=(T v)
