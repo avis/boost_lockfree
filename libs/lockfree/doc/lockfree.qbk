@@ -311,8 +311,9 @@ Construct fifo with a number of initially allocated fifo nodes.
 
     ~fifo(void);
 
-Destroys fifo, free all nodes from freelist.
+Destroys stored nodes and fifo, free all nodes from freelist.
 
+[warning Not thread-safe, no enqueue/dequeue operation is allowed, when the destructor is running]
 
 [heading Empty]
 
