@@ -90,7 +90,15 @@ public:
 
     ~fifo(void)
     {
-        assert(empty());
+        if (!empty())
+        {
+            T dummy;
+            for(;;)
+            {
+                if (!dequeue(&dummy))
+                    break;
+            }
+        }
         dealloc_node(head_.get_ptr());
     }
 

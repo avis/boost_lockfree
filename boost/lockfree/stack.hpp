@@ -63,6 +63,19 @@ public:
         tos(NULL), pool(n)
     {}
 
+    ~stack(void)
+    {
+        if (!empty())
+        {
+            T dummy;
+            for(;;)
+            {
+                if (!pop(&dummy))
+                    break;
+            }
+        }
+    }
+
     bool push(T const & v)
     {
         node * newnode = alloc_node(v);
