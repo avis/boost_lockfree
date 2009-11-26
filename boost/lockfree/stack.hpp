@@ -85,11 +85,11 @@ public:
     {
         for (;;)
         {
-            ptr_type old_tos;
-            old_tos.set(tos);
+            ptr_type old_tos(tos);
 
             if (!old_tos)
                 return false;
+            read_memory_barrier();
 
             node * new_tos = old_tos->next.get_ptr();
 
@@ -121,7 +121,7 @@ private:
         pool.deallocate(n);
     }
 
-    ptr_type tos;
+    volatile ptr_type tos;
 
     static const int padding_size = 64 - sizeof(ptr_type); /* cache lines on current cpus seem to
                                                             * be 64 byte */

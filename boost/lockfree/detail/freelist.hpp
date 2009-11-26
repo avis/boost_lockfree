@@ -182,6 +182,7 @@ public:
             if (!old_pool)
                 return detail::dummy_freelist<T, Alloc>::allocate();
 
+            read_memory_barrier();
             freelist_node * new_pool = old_pool->next.get_ptr();
 
             if (pool_.cas(old_pool, new_pool)) {
@@ -220,7 +221,7 @@ private:
         }
     }
 
-    tagged_ptr pool_;
+    volatile tagged_ptr pool_;
 };
 
 template <typename T, typename Alloc = std::allocator<T> >
@@ -260,6 +261,7 @@ public:
             if (!old_pool)
                 return 0;       /* allocation fails */
 
+            read_memory_barrier();
             freelist_node * new_pool = old_pool->next.get_ptr();
 
             if (pool_.cas(old_pool, new_pool)) {
@@ -286,7 +288,7 @@ public:
     }
 
 private:
-    tagged_ptr pool_;
+    volatile tagged_ptr pool_;
 
     const std::size_t total_nodes;
     T* chunks;
