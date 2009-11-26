@@ -121,7 +121,7 @@ struct atomic_cas64
     {
 #if defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_8) ||                    \
     (defined(__GNUC__) && ((__GNUC__ >  4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 1)          \
-                       || ((__GNUC__ == 4) && (__GNUC_MINOR__ == 1)))) && defined(__x86_64__))  \
+                       || ((__GNUC__ == 4) && (__GNUC_MINOR__ == 1)))) && (defined(__x86_64__) || defined(__alpha__) ) )  \
     || defined(__INTEL_COMPILER)
         return __sync_bool_compare_and_swap(addr, old, nw);
 #elif defined(_M_IX86)

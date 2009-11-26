@@ -23,10 +23,10 @@ namespace boost
 namespace lockfree
 {
 
-#if defined (__x86_64__) || defined (_M_X64)
+#if defined (__x86_64__) || defined (_M_X64) || defined(__alpha__)
 
 template <class T>
-class BOOST_LOCKFREE_DCAS_ALIGNMENT tagged_ptr
+class tagged_ptr
 {
     typedef boost::uint64_t compressed_ptr_t;
     typedef boost::uint16_t tag_t;
