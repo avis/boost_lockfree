@@ -1,7 +1,7 @@
 #include <stdlib.h>
 
 #include <boost/atomic.hpp>
-#include <boost/atomic/detail/fallback.hpp>
+#include <boost/atomic/detail/base.hpp>
 
 namespace boost {
 namespace detail {

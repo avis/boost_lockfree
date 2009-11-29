@@ -1,4 +1,4 @@
-CXXFLAGS=-I.
+CXXFLAGS=-I. -g
 LDFLAGS=-lboost_thread
 
 atomictest: atomictest.o lib/fallback.o

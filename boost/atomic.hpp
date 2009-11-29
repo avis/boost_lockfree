@@ -1,161 +1,135 @@
 #ifndef __BOOST_ATOMIC_HPP
 #define __BOOST_ATOMIC_HPP
 
-#include <boost/atomic/types.hpp>
+#include <boost/atomic/memory_order.hpp>
 #include <boost/atomic/platform.hpp>
+#include <boost/atomic/detail/valid_integral_types.hpp>
 
 namespace boost {
 
-template<>
-class atomic<char> : public detail::atomic::__atomic_char {
+template<typename T>
+class atomic : private detail::atomic::__platform_atomic<T> {
 public:
-	atomic(void) {}
-	explicit atomic(char v) : detail::atomic::__atomic_char(v) {}
+	typedef detail::atomic::__platform_atomic<T> super;
+	typedef typename super::integral_type integral_type;
+	
+	atomic() {detail::atomic::valid_atomic_type<T> verify_valid_atomic_integral;}
+	atomic(T v) : super(v) {detail::atomic::valid_atomic_type<T> verify_valid_atomic_integral;}
+	
+	using super::load;
+	using super::store;
+	using super::compare_exchange_strong;
+	using super::compare_exchange_weak;
+	using super::exchange;
+	using super::fetch_add;
+	using super::fetch_sub;
+	using super::fetch_and;
+	using super::fetch_or;
+	using super::fetch_xor;
+	using super::is_lock_free;
+	
+	operator integral_type(void) const volatile {return load();}
+	integral_type operator=(integral_type v) volatile {store(v); return v;}	
+	
+	integral_type operator&=(integral_type c) volatile {return fetch_and(c)&c;}
+	integral_type operator|=(integral_type c) volatile {return fetch_or(c)|c;}
+	integral_type operator^=(integral_type c) volatile {return fetch_xor(c)^c;}
+	
+	integral_type operator+=(integral_type c) volatile {return fetch_add(c)+c;}
+	integral_type operator-=(integral_type c) volatile {return fetch_sub(c)-c;}
+	
+	integral_type operator++(void) volatile {return fetch_add(1)+1;}
+	integral_type operator++(int) volatile {return fetch_add(1);}
+	integral_type operator--(void) volatile {return fetch_sub(1)-1;}
+	integral_type operator--(int) volatile {return fetch_sub(1);}
+	
 private:
-	atomic(const atomic &a) {}
-	void operator=(const atomic &a) {}
+	atomic(const atomic &);
+	void operator=(const atomic &);
 };
 
 template<>
-class atomic<unsigned char> : public detail::atomic::__atomic_uchar {
+class atomic<void *> : private detail::atomic::__platform_atomic_address {
 public:
-	atomic(void) {}
-	explicit atomic(unsigned char v) : detail::atomic::__atomic_uchar(v) {}
+	typedef detail::atomic::__platform_atomic_address super;
+	
+	atomic() {}
+	explicit atomic(void * p) : super(p) {}
+	using super::load;
+	using super::store;
+	using super::compare_exchange_strong;
+	using super::compare_exchange_weak;
+	using super::exchange;
+	using super::is_lock_free;
+	
+	operator void *(void) const volatile {return load();}
+	void * operator=(void * v) volatile {store(v); return v;}
+	
 private:
-	atomic(const atomic &a) {}
-	void operator=(const atomic &a) {}
-};
-
-template<>
-class atomic<signed char> : public detail::atomic::__atomic_schar {
-public:
-	atomic(void) {}
-	explicit atomic(signed char v) : detail::atomic::__atomic_schar(v) {}
-private:
-	atomic(const atomic &a) {}
-	void operator=(const atomic &a) {}
-};
-
-template<>
-class atomic<unsigned short> : public detail::atomic::__atomic_ushort {
-public:
-	atomic(void) {}
-	explicit atomic(unsigned short v) : detail::atomic::__atomic_ushort(v) {}
-private:
-	atomic(const atomic &a) {}
-	void operator=(const atomic &a) {}
-};
-
-template<>
-class atomic<short> : public detail::atomic::__atomic_short {
-public:
-	atomic(void) {}
-	explicit atomic(short v) : detail::atomic::__atomic_short(v) {}
-private:
-	atomic(const atomic &a) {}
-	void operator=(const atomic &a) {}
-};
-
-template<>
-class atomic<unsigned int> : public detail::atomic::__atomic_uint {
-public:
-	atomic(void) {}
-	explicit atomic(unsigned int v) : detail::atomic::__atomic_uint(v) {}
-private:
-	atomic(const atomic &a) {}
-	void operator=(const atomic &a) {}
-};
-
-template<>
-class atomic<int> : public detail::atomic::__atomic_int {
-public:
-	atomic(void) {}
-	explicit atomic(int v) : detail::atomic::__atomic_int(v) {}
-private:
-	atomic(const atomic &a) {}
-	void operator=(const atomic &a) {}
-};
-
-template<>
-class atomic<unsigned long> : public detail::atomic::__atomic_ulong {
-public:
-	atomic(void) {}
-	explicit atomic(unsigned long v) : detail::atomic::__atomic_ulong(v) {}
-private:
-	atomic(const atomic &a) {}
-	void operator=(const atomic &a) {}
-};
-
-template<>
-class atomic<long> : public detail::atomic::__atomic_long {
-public:
-	atomic(void) {}
-	explicit atomic(long v) : detail::atomic::__atomic_long(v) {}
-private:
-	atomic(const atomic &a) {}
-	void operator=(const atomic &a) {}
-};
-
-template<>
-class atomic<unsigned long long> : public detail::atomic::__atomic_ullong {
-public:
-	atomic(void) {}
-	explicit atomic(unsigned long long v) : detail::atomic::__atomic_ullong(v) {}
-private:
-	atomic(const atomic &a) {}
-	void operator=(const atomic &a) {}
-};
-
-template<>
-class atomic<long long> : public detail::atomic::__atomic_llong {
-public:
-	atomic(void) {}
-	explicit atomic(long long v) : detail::atomic::__atomic_llong(v) {}
-private:
-	atomic(const atomic &a) {}
-	void operator=(const atomic &a) {}
-};
-
-class atomic_address : public detail::atomic::__atomic_address {
-public:
-	atomic_address(void) {}
-	explicit atomic_address(void * v) : detail::atomic::__atomic_address(v) {}
-private:
-	atomic_address(const atomic_address &a) {}
-	void operator=(const atomic_address &a) {}
+	atomic(const atomic &);
+	void * operator=(const atomic &);
 };
 
 template<typename T>
-class atomic<T *> : private atomic_address {
+class atomic<T *> : private atomic<void *> {
 public:
+	typedef atomic<void *> super;
+	
+	using super::is_lock_free;
+	
 	atomic(void) {}
-	explicit atomic(T * v) : atomic_address(v) {}
+	explicit atomic(T * v) : super(v) {}
+	
 	T *load(memory_order order=memory_order_seq_cst) const volatile
 	{
-		return static_cast<T *>(atomic_address::load(order));
+		return static_cast<T *>(super::load(order));
 	}
 	void store(T * v, memory_order order=memory_order_seq_cst) volatile
 	{
-		atomic_address::store(v, order);
+		super::store(v, order);
 	}
 	bool compare_exchange_weak(T *&expected, T *desired, memory_order order=memory_order_seq_cst) volatile
 	{
 		void **expected_void = reinterpret_cast<void **>(&expected);
-		return atomic_address::compare_exchange_weak(*expected_void, static_cast<void *>(desired), order);
+		return super::compare_exchange_weak(*expected_void, static_cast<void *>(desired), order);
 	}
 	bool compare_exchange_strong(T *&expected, T *desired, memory_order order=memory_order_seq_cst) volatile
 	{
 		void **expected_void = reinterpret_cast<void **>(&expected);
-		return atomic_address::compare_exchange_strong(*expected_void, static_cast<void *>(desired), order);
+		return super::compare_exchange_strong(*expected_void, static_cast<void *>(desired), order);
 	}
 	T *exchange(T *replacement, memory_order order=memory_order_seq_cst) volatile
 	{
-		return static_cast<T *>(atomic_address::exchange(static_cast<void *>(replacement)));
+		return static_cast<T *>(super::exchange(static_cast<void *>(replacement)));
 	}
 	
 	operator T *(void) const {return load();}
 	T *operator=(T *v) {store(v); return v;}
+private:
+	atomic(const atomic &);
+	void operator=(const atomic &);
 };
+
+typedef atomic<char> atomic_char;
+typedef atomic<unsigned char> atomic_uchar;
+typedef atomic<signed char> atomic_schar;
+typedef atomic<uint8_t> atomic_uint8_t;
+typedef atomic<int8_t> atomic_int8_t;
+typedef atomic<unsigned short> atomic_ushort;
+typedef atomic<short> atomic_short;
+typedef atomic<uint16_t> atomic_uint16_t;
+typedef atomic<int16_t> atomic_int16_t;
+typedef atomic<unsigned int> atomic_uint;
+typedef atomic<int> atomic_int;
+typedef atomic<uint32_t> atomic_uint32_t;
+typedef atomic<int32_t> atomic_int32_t;
+typedef atomic<unsigned long> atomic_ulong;
+typedef atomic<long> atomic_long;
+typedef atomic<uint64_t> atomic_uint64_t;
+typedef atomic<int64_t> atomic_int64_t;
+typedef atomic<unsigned long long> atomic_ullong;
+typedef atomic<long long> atomic_llong;
+typedef atomic<void*> atomic_address;
 
 }
 

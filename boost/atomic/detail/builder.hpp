@@ -1,6 +1,8 @@
 #ifndef BOOST_DETAIL_ATOMIC_BUILDER_HPP
 #define BOOST_DETAIL_ATOMIC_BUILDER_HPP
 
+#include <endian.h>
+
 namespace boost {
 namespace detail {
 namespace atomic {
@@ -9,21 +11,21 @@ namespace atomic {
 given a Base that implements:
 
 - load(memory_order order)
-- compare_exchange_weak(IntegralType &expected, IntegralType desired, memory_order order)
+- compare_exchange_weak(integral_type &expected, integral_type desired, memory_order order)
 
 generates exchange and compare_exchange_strong
 */
 template<typename Base>
 class __build_exchange : public Base {
 public:
-	typedef typename Base::IntegralType IntegralType;
+	typedef typename Base::integral_type integral_type;
 	
 	using Base::load;
 	using Base::compare_exchange_weak;
 	
-	bool compare_exchange_strong(IntegralType &expected, IntegralType desired, memory_order order=memory_order_seq_cst) volatile
+	bool compare_exchange_strong(integral_type &expected, integral_type desired, memory_order order=memory_order_seq_cst) volatile
 	{
-		IntegralType expected_save=expected;
+		integral_type expected_save=expected;
 		while(true) {
 			if (compare_exchange_weak(expected, desired, order)) return true;
 			if (expected_save!=expected) return false;
@@ -31,44 +33,44 @@ public:
 		}
 	}
 	
-	IntegralType exchange(IntegralType replacement, memory_order order=memory_order_seq_cst) volatile
+	integral_type exchange(integral_type replacement, memory_order order=memory_order_seq_cst) volatile
 	{
-		IntegralType o=load(memory_order_relaxed);
+		integral_type o=load(memory_order_relaxed);
 		do {} while(!compare_exchange_weak(o, replacement, order));
 		return o;
 	}
 	
 	__build_exchange() {}
-	explicit __build_exchange(IntegralType i) : Base(i) {}
+	explicit __build_exchange(integral_type i) : Base(i) {}
 };
 
 /*
 given a Base that implements:
 
 - load(memory_order order)
-- store(IntegralType v, memory_order order)
+- store(integral_type v, memory_order order)
 
 creates assignment and type conversion operator
 */
 template<typename Base>
 class __build_assign : public Base {
 public:
-	typedef typename Base::IntegralType IntegralType;
+	typedef typename Base::integral_type integral_type;
 	
 	using Base::load;
 	using Base::store;
 	
-	operator IntegralType(void) const volatile {return load();}
-	IntegralType operator=(IntegralType v) volatile {store(v); return v;}
+	operator integral_type(void) const volatile {return load();}
+	integral_type operator=(integral_type v) volatile {store(v); return v;}
 	
 	__build_assign() {}
-	explicit __build_assign(IntegralType i) : Base(i) {}
+	explicit __build_assign(integral_type i) : Base(i) {}
 };
 
 /*
 given a Base that implements:
 
-- fetch_add_var(IntegralType c, memory_order order)
+- fetch_add_var(integral_type c, memory_order order)
 - fetch_inc(memory_order order)
 - fetch_dec(memory_order order)
 
@@ -80,9 +82,9 @@ the intention is to allow optimizing the incredibly common case of +1/-1
 template<typename Base>
 class __build_const_fetch_add : public Base {
 public:
-	typedef typename Base::IntegralType IntegralType;
+	typedef typename Base::integral_type integral_type;
 	
-	IntegralType fetch_add(long c, memory_order order=memory_order_seq_cst) volatile
+	integral_type fetch_add(long c, memory_order order=memory_order_seq_cst) volatile
 	{
 		if (__builtin_constant_p(c)) {
 			switch(c) {
@@ -94,7 +96,7 @@ public:
 	}
 	
 	__build_const_fetch_add() {}
-	explicit __build_const_fetch_add(IntegralType i) : Base(i) {}
+	explicit __build_const_fetch_add(integral_type i) : Base(i) {}
 protected:
 	using Base::fetch_add_var;
 	using Base::fetch_inc;
@@ -105,108 +107,96 @@ protected:
 given a Base that implements:
 
 - load(memory_order order)
-- compare_exchange_weak(IntegralType &expected, IntegralType desired, memory_order order)
+- compare_exchange_weak(integral_type &expected, integral_type desired, memory_order order)
 
 generates a -- not very efficient, but correct -- fetch_add operation
 */
 template<typename Base>
 class __build_fetch_add : public Base {
 public:
-	typedef typename Base::IntegralType IntegralType;
+	typedef typename Base::integral_type integral_type;
 	
 	using Base::compare_exchange_weak;
 	
-	IntegralType fetch_add(long c, memory_order order=memory_order_seq_cst) volatile
+	integral_type fetch_add(long c, memory_order order=memory_order_seq_cst) volatile
 	{
-		IntegralType o=Base::load(memory_order_relaxed), n;
+		integral_type o=Base::load(memory_order_relaxed), n;
 		do {n=o+c;} while(!compare_exchange_weak(o, n, order));
 		return o;
 	}
 	
 	__build_fetch_add() {}
-	explicit __build_fetch_add(IntegralType i) : Base(i) {}
+	explicit __build_fetch_add(integral_type i) : Base(i) {}
 };
 
 /*
 given a Base that implements:
 
-- fetch_add(IntegralType c, memory_order order)
+- fetch_add(integral_type c, memory_order order)
 
 generates fetch_sub and post/pre- increment/decrement operators
 */
 template<typename Base>
 class __build_arithmeticops : public Base {
 public:
-	typedef typename Base::IntegralType IntegralType;
+	typedef typename Base::integral_type integral_type;
 	
 	using Base::fetch_add;
 	
-	IntegralType fetch_sub(long c, memory_order order=memory_order_seq_cst) volatile
+	integral_type fetch_sub(long c, memory_order order=memory_order_seq_cst) volatile
 	{
 		return fetch_add(-c, order);
 	}
 	
-	IntegralType operator++(void) volatile {return fetch_add(1)+1;}
-	IntegralType operator++(int) volatile {return fetch_add(1);}
-	IntegralType operator--(void) volatile {return fetch_sub(1)-1;}
-	IntegralType operator--(int) volatile {return fetch_sub(1);}
-	
-	IntegralType operator+=(IntegralType c) volatile {return fetch_add(c)+c;}
-	IntegralType operator-=(IntegralType c) volatile {return fetch_sub(c)-c;}
-	
 	__build_arithmeticops() {}
-	explicit __build_arithmeticops(IntegralType i) : Base(i) {}
+	explicit __build_arithmeticops(integral_type i) : Base(i) {}
 };
 
 /*
 given a Base that implements:
 
 - load(memory_order order)
-- compare_exchange_weak(IntegralType &expected, IntegralType desired, memory_order order)
+- compare_exchange_weak(integral_type &expected, integral_type desired, memory_order order)
 
 generates -- not very efficient, but correct -- fetch_and, fetch_or and fetch_xor operators
 */
 template<typename Base>
 class __build_logicops : public Base {
 public:
-	typedef typename Base::IntegralType IntegralType;
+	typedef typename Base::integral_type integral_type;
 	
 	using Base::compare_exchange_weak;
 	using Base::load;
 	
-	IntegralType fetch_and(IntegralType c, memory_order order=memory_order_seq_cst) volatile
+	integral_type fetch_and(integral_type c, memory_order order=memory_order_seq_cst) volatile
 	{
-		IntegralType o=load(memory_order_relaxed), n;
+		integral_type o=load(memory_order_relaxed), n;
 		do {n=o&c;} while(!compare_exchange_weak(o, n, order));
 		return o;
 	}
-	IntegralType fetch_or(IntegralType c, memory_order order=memory_order_seq_cst) volatile
+	integral_type fetch_or(integral_type c, memory_order order=memory_order_seq_cst) volatile
 	{
-		IntegralType o=load(memory_order_relaxed), n;
+		integral_type o=load(memory_order_relaxed), n;
 		do {n=o|c;} while(!compare_exchange_weak(o, n, order));
 		return o;
 	}
-	IntegralType fetch_xor(IntegralType c, memory_order order=memory_order_seq_cst) volatile
+	integral_type fetch_xor(integral_type c, memory_order order=memory_order_seq_cst) volatile
 	{
-		IntegralType o=load(memory_order_relaxed), n;
+		integral_type o=load(memory_order_relaxed), n;
 		do {n=o^c;} while(!compare_exchange_weak(o, n, order));
 		return o;
 	}
 	
-	IntegralType operator&=(IntegralType c) volatile {return fetch_and(c)&c;}
-	IntegralType operator-=(IntegralType c) volatile {return fetch_or(c)&c;}
-	IntegralType operator^=(IntegralType c) volatile {return fetch_xor(c)&c;}
-	
 	__build_logicops() {}
-	__build_logicops(IntegralType i) : Base(i) {}
+	__build_logicops(integral_type i) : Base(i) {}
 };
 
 /*
 given a Base that implements:
 
 - load(memory_order order)
-- store(IntegralType i, memory_order order)
-- compare_exchange_weak(IntegralType &expected, IntegralType desired, memory_order order)
+- store(integral_type i, memory_order order)
+- compare_exchange_weak(integral_type &expected, integral_type desired, memory_order order)
 
 generates the full set of atomic operations for integral types
 */
@@ -214,20 +204,21 @@ template<typename Base>
 class __build_atomic_from_minimal : public __build_logicops< __build_arithmeticops< __build_fetch_add< __build_exchange<__build_assign<Base> > > > > {
 public:
 	typedef __build_logicops< __build_arithmeticops< __build_fetch_add< __build_exchange<__build_assign<Base> > > > > __super;
+	typedef typename __super::integral_type integral_type;
 	
 	__build_atomic_from_minimal(void) {}
-	__build_atomic_from_minimal(typename __super::IntegralType i) : __super(i) {}
+	__build_atomic_from_minimal(typename __super::integral_type i) : __super(i) {}
 };
 
 /*
 given a Base that implements:
 
 - load(memory_order order)
-- store(IntegralType i, memory_order order)
-- compare_exchange_weak(IntegralType &expected, IntegralType desired, memory_order order)
-- compare_exchange_strong(IntegralType &expected, IntegralType desired, memory_order order)
-- exchange(IntegralType replacement, memory_order order)
-- fetch_add_var(IntegralType c, memory_order order)
+- store(integral_type i, memory_order order)
+- compare_exchange_weak(integral_type &expected, integral_type desired, memory_order order)
+- compare_exchange_strong(integral_type &expected, integral_type desired, memory_order order)
+- exchange(integral_type replacement, memory_order order)
+- fetch_add_var(integral_type c, memory_order order)
 - fetch_inc(memory_order order)
 - fetch_dec(memory_order order)
 
@@ -237,20 +228,21 @@ template<typename Base>
 class __build_atomic_from_typical : public __build_logicops< __build_arithmeticops< __build_const_fetch_add<__build_assign<Base> > > > {
 public:
 	typedef __build_logicops< __build_arithmeticops< __build_const_fetch_add<__build_assign<Base> > > > __super;
+	typedef typename __super::integral_type integral_type;
 	
 	__build_atomic_from_typical(void) {}
-	__build_atomic_from_typical(typename __super::IntegralType i) : __super(i) {}
+	__build_atomic_from_typical(typename __super::integral_type i) : __super(i) {}
 };
 
 /*
 given a Base that implements:
 
 - load(memory_order order)
-- store(IntegralType i, memory_order order)
-- compare_exchange_weak(IntegralType &expected, IntegralType desired, memory_order order)
-- compare_exchange_strong(IntegralType &expected, IntegralType desired, memory_order order)
-- exchange(IntegralType replacement, memory_order order)
-- fetch_add(IntegralType c, memory_order order)
+- store(integral_type i, memory_order order)
+- compare_exchange_weak(integral_type &expected, integral_type desired, memory_order order)
+- compare_exchange_strong(integral_type &expected, integral_type desired, memory_order order)
+- exchange(integral_type replacement, memory_order order)
+- fetch_add(integral_type c, memory_order order)
 
 generates the full set of atomic operations for integral types
 */
@@ -258,17 +250,146 @@ template<typename Base>
 class __build_atomic_from_add : public __build_logicops< __build_arithmeticops< __build_assign<Base> > > {
 public:
 	typedef __build_logicops< __build_arithmeticops< __build_assign<Base> > > __super;
+	typedef typename __super::integral_type integral_type;
 	
 	__build_atomic_from_add(void) {}
-	__build_atomic_from_add(typename __super::IntegralType i) : __super(i) {}
+	__build_atomic_from_add(typename __super::integral_type i) : __super(i) {}
 };
 
 /*
 given a Base that implements:
 
 - load(memory_order order)
-- store(IntegralType i, memory_order order)
-- compare_exchange_weak(IntegralType &expected, IntegralType desired, memory_order order)
+- store(integral_type i, memory_order order)
+- compare_exchange_weak(integral_type &expected, integral_type desired, memory_order order)
+- compare_exchange_strong(integral_type &expected, integral_type desired, memory_order order)
+- exchange(integral_type replacement, memory_order order)
+- fetch_add(integral_type c, memory_order order)
+
+generates the full set of atomic operations for integral types
+*/
+template<typename Base>
+class __build_atomic_from_exchange : public __build_logicops< __build_arithmeticops< __build_fetch_add<__build_assign<Base> > > > {
+public:
+	typedef __build_logicops< __build_arithmeticops< __build_fetch_add<__build_assign<Base> > > > __super;
+	typedef typename __super::integral_type integral_type;
+	
+	__build_atomic_from_exchange(void) {}
+	__build_atomic_from_exchange(typename __super::integral_type i) : __super(i) {}
+};
+
+template<typename Base, typename Type>
+class __build_base_from_larger_type {
+public:
+	typedef Type integral_type;
+	
+	__build_base_from_larger_type() {}
+	__build_base_from_larger_type(integral_type t) {store(t, memory_order_relaxed);}
+	
+	integral_type load(memory_order order=memory_order_seq_cst) const volatile
+	{
+		larger_integral_type v=get_base().load(order);
+		return extract(v);
+	}
+	bool compare_exchange_weak(integral_type &expected,
+		integral_type desired,
+		memory_order order=memory_order_seq_cst) volatile
+	{
+		larger_integral_type expected_;
+		larger_integral_type desired_;
+		
+		expected_=get_base().load(memory_order_relaxed);
+		expected_=insert(expected_, expected);
+		desired_=insert(expected_, desired);
+		bool success=get_base().compare_exchange_weak(expected_, desired_, order);
+		expected=extract(expected_);
+		return success;
+	}
+	void store(integral_type v,
+		memory_order order=memory_order_seq_cst) volatile
+	{
+		larger_integral_type expected, desired;
+		expected=get_base().load(memory_order_relaxed);
+		do {
+			desired=insert(expected, v);
+		} while(!get_base().compare_exchange_weak(expected, desired, order));
+	}
+	
+	bool is_lock_free(void)
+	{
+		return get_base().is_lock_free();
+	}
+private:
+	typedef typename Base::integral_type larger_integral_type;
+	
+	const Base &get_base(void) const volatile
+	{
+		intptr_t address=(intptr_t)this;
+		address&=~(sizeof(larger_integral_type)-1);
+		return *reinterpret_cast<const Base *>(address);
+	}
+	Base &get_base(void) volatile
+	{
+		intptr_t address=(intptr_t)this;
+		address&=~(sizeof(larger_integral_type)-1);
+		return *reinterpret_cast<Base *>(address);
+	}
+	unsigned int get_offset(void) const volatile
+	{
+		intptr_t address=(intptr_t)this;
+		address&=(sizeof(larger_integral_type)-1);
+		return address;
+	}
+	
+	unsigned int get_shift(void) const volatile
+	{
+#if (__BYTE_ORDER==__LITTLE_ENDIAN)
+		return get_offset()*8;
+#else
+		return (sizeof(larger_integral_type)-sizeof(integral_type)-get_offset())*8;
+#endif
+	}
+	
+	integral_type extract(larger_integral_type v) const volatile
+	{
+		return v>>get_shift();
+	}
+	
+	larger_integral_type insert(larger_integral_type target, integral_type source) const volatile
+	{
+		larger_integral_type tmp=source;
+		larger_integral_type mask=(larger_integral_type)-1;
+		
+		mask=~(mask<<(8*sizeof(integral_type)));
+		
+		mask=mask<<get_shift();
+		tmp=tmp<<get_shift();
+		
+		tmp=(tmp & mask) | (target & ~mask);
+		
+		return tmp;
+	}
+	
+	integral_type i;
+};
+
+template<typename Base, typename Type>
+class __build_atomic_from_larger_type : public __build_atomic_from_minimal< __build_base_from_larger_type<Base, Type> > {
+public:
+	typedef __build_atomic_from_minimal< __build_base_from_larger_type<Base, Type> > __super;
+	//typedef typename __super::integral_type integral_type;
+	typedef Type integral_type;
+	
+	__build_atomic_from_larger_type() {}
+	__build_atomic_from_larger_type(integral_type v) : __super(v) {}
+};
+
+/*
+given a Base that implements:
+
+- load(memory_order order)
+- store(integral_type i, memory_order order)
+- compare_exchange_weak(integral_type &expected, integral_type desired, memory_order order)
 
 generates the full set of atomic operations for pointers
 */
@@ -278,7 +399,7 @@ public:
 	typedef __build_exchange<__build_assign<Base> > __super;
 	
 	__build_atomic_ptr_from_minimal(void) {}
-	__build_atomic_ptr_from_minimal(typename __super::IntegralType i) : __super(i) {}
+	__build_atomic_ptr_from_minimal(typename __super::integral_type i) : __super(i) {}
 };
 
 template<typename Base>
@@ -287,7 +408,7 @@ public:
 	typedef __build_assign<Base> __super;
 	
 	__build_atomic_ptr_from_typical(void) {}
-	__build_atomic_ptr_from_typical(typename __super::IntegralType i) : __super(i) {}
+	__build_atomic_ptr_from_typical(typename __super::integral_type i) : __super(i) {}
 };
 
 }

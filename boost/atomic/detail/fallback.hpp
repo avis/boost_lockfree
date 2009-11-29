@@ -1,7 +1,6 @@
 #ifndef BOOST_DETAIL_ATOMIC_FALLBACK_HPP
 #define BOOST_DETAIL_ATOMIC_FALLBACK_HPP
 
-#include <boost/atomic/detail/builder.hpp>
 #include <boost/thread/mutex.hpp>
 
 namespace boost {
@@ -23,10 +22,10 @@ private:
 };
 
 template<typename T>
-class __atomic_fallback {
+class __fallback_atomic {
 public:
-	__atomic_fallback(void) {}
-	explicit __atomic_fallback(const T &t) : i(t) {}
+	__fallback_atomic(void) {}
+	explicit __fallback_atomic(const T &t) : i(t) {}
 	
 	const T &store(const T &t, memory_order order=memory_order_seq_cst) volatile
 	{
@@ -59,36 +58,7 @@ public:
 	bool is_lock_free(void) const volatile {return false;}
 protected:
 	T i;
-};
-
-template<typename T>
-class __atomic_fallback_integral : public __atomic_fallback<T> {
-protected:
-	using __atomic_fallback<T>::i;
-public:
-	__atomic_fallback_integral(void) {}
-	explicit __atomic_fallback_integral(const T &t) : __atomic_fallback<T>(t) {}
-	
-	T load(memory_order order=memory_order_seq_cst) volatile const
-	{
-		/* assume that things up to machine word size can be
-		read atomically */
-		if (sizeof(T)<=sizeof(void *) && order==memory_order_relaxed)
-			return i;
-		else {
-			atomic_guard guard(&i, order);
-			return i;
-		}
-	}
-	T fetch_add(long long c, memory_order order=memory_order_seq_cst) volatile
-	{
-		atomic_guard guard(&i, order);
-		T tmp=i;
-		i+=c;
-		return tmp;
-	}
-protected:
-	typedef T IntegralType;
+	typedef T integral_type;
 };
 
 }

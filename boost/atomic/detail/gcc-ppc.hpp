@@ -1,8 +1,9 @@
 #ifndef BOOST_DETAIL_ATOMIC_GCC_PPC_HPP
 #define BOOST_DETAIL_ATOMIC_GCC_PPC_HPP
 
+#include <boost/atomic/memory_order.hpp>
+#include <boost/atomic/detail/base.hpp>
 #include <boost/atomic/detail/builder.hpp>
-#include <boost/atomic/detail/fallback.hpp>
 
 /*
   Refer to: Motorola: "Programming Environments Manual for 32-Bit
@@ -28,7 +29,7 @@ static inline void __fence_before(memory_order order)
 		case memory_order_release:
 		case memory_order_acq_rel:
 		case memory_order_seq_cst:
-			__asm__ __volatile__ ("eieio" ::: "memory");
+			__asm__ __volatile__ ("sync" ::: "memory");
 		default:;
 	}
 }
@@ -39,26 +40,29 @@ static inline void __fence_after(memory_order order)
 		case memory_order_acquire:
 		case memory_order_acq_rel:
 		case memory_order_seq_cst:
-			__asm__ __volatile__ ("eieio" ::: "memory");
+			__asm__ __volatile__ ("isync" ::: "memory");
+		case memory_order_consume:
+			__asm__ __volatile__ ("" ::: "memory");
 		default:;
 	}
 }
 
 template<typename T>
-class __atomic_ppc {
+class __atomic_ppc_4 {
 public:
-	explicit __atomic_ppc(T v) : i(v) {}
-	__atomic_ppc() {}
+	typedef T integral_type;
+	explicit __atomic_ppc_4(T v) : i(v) {}
+	__atomic_ppc_4() {}
 	T load(memory_order order=memory_order_seq_cst) const volatile
 	{
-		T v=*reinterpret_cast<volatile const int *>(&i);
+		T v=*reinterpret_cast<volatile const T *>(&i);
 		__fence_after(order);
 		return v;
 	}
 	void store(T v, memory_order order=memory_order_seq_cst) volatile
 	{
 		__fence_before(order);
-		*reinterpret_cast<volatile int *>(&i)=(int)v;
+		*reinterpret_cast<volatile T *>(&i)=v;
 	}
 	bool compare_exchange_weak(T &expected, T desired, memory_order order=memory_order_seq_cst) volatile
 	{
@@ -82,10 +86,10 @@ public:
 	
 	bool is_lock_free(void) const volatile {return true;}
 protected:
-	inline T fetch_add_var(long c, memory_order order) volatile
+	inline T fetch_add_var(T c, memory_order order) volatile
 	{
 		__fence_before(order);
-		int original, tmp;
+		T original, tmp;
 		__asm__ __volatile__(
 			"1: lwarx %0,0,%2\n"
 			"add %1,%0,%3\n"
@@ -100,7 +104,7 @@ protected:
 	inline T fetch_inc(memory_order order) volatile
 	{
 		__fence_before(order);
-		int original, tmp;
+		T original, tmp;
 		__asm__ __volatile__(
 			"1: lwarx %0,0,%2\n"
 			"addi %1,%0,1\n"
@@ -115,7 +119,7 @@ protected:
 	inline T fetch_dec(memory_order order) volatile
 	{
 		__fence_before(order);
-		int original, tmp;
+		T original, tmp;
 		__asm__ __volatile__(
 			"1: lwarx %0,0,%2\n"
 			"addi %1,%0,-1\n"
@@ -127,66 +131,37 @@ protected:
 		__fence_after(order);
 		return original;
 	}
-	typedef T IntegralType;
 private:
-	int i;
+	T i;
 };
 
-class __atomic_ppc_address {
+template<typename T>
+class __platform_atomic<T, 4> : public __build_atomic_from_typical<__build_exchange<__atomic_ppc_4<T> > > {
 public:
-	explicit __atomic_ppc_address(void * v) : i(v) {}
-	__atomic_ppc_address() {}
-	void *load(memory_order order=memory_order_seq_cst) const volatile
-	{
-		void * v=*reinterpret_cast<void * volatile const *>(&i);
-		__fence_after(order);
-		return v;
-	}
-	void store(void *v, memory_order order=memory_order_seq_cst) volatile
-	{
-		__fence_before(order);
-		*reinterpret_cast<void * volatile *>(&i)=v;
-	}
-	bool compare_exchange_weak(void * &expected, void * desired, memory_order order=memory_order_seq_cst) volatile
-	{
-		__fence_before(order);
-		int success;
-		__asm__ __volatile__(
-			"addi %1,0,0\n"
-			"lwarx %0,0,%2\n"
-			"cmpw %0, %3\n"
-			"bne- 1f\n"
-			"stwcx. %4,0,%2\n"
-			"bne- 1f\n"
-			"addi %1,0,1\n"
-			"1:"
-				: "=&b" (expected), "=&b" (success)
-				: "b" (&i), "b" (expected), "b" (desired)
-			);
-		__fence_after(order);
-		return success;
-	}
-	
-	bool is_lock_free(void) const volatile {return true;}
-protected:
-	typedef void * IntegralType;
-private:
-	void * i;
+	typedef __build_atomic_from_typical<__build_exchange<__atomic_ppc_4<T> > > super;
+	explicit __platform_atomic(T v) : super(v) {}
+	__platform_atomic(void) {}
 };
 
-typedef __build_atomic_from_typical<__build_exchange<__atomic_ppc<char> > > __atomic_char;
-typedef __build_atomic_from_typical<__build_exchange<__atomic_ppc<unsigned char> > > __atomic_uchar;
-typedef __build_atomic_from_typical<__build_exchange<__atomic_ppc<unsigned short> > > __atomic_ushort;
-typedef __build_atomic_from_typical<__build_exchange<__atomic_ppc<unsigned int> > > __atomic_uint;
-typedef __build_atomic_from_typical<__build_exchange<__atomic_ppc<unsigned long> > > __atomic_ulong;
-typedef __build_atomic_from_typical<__build_exchange<__atomic_ppc<signed char> > > __atomic_schar;
-typedef __build_atomic_from_typical<__build_exchange<__atomic_ppc<short> > > __atomic_short;
-typedef __build_atomic_from_typical<__build_exchange<__atomic_ppc<int> > > __atomic_int;
-typedef __build_atomic_from_typical<__build_exchange<__atomic_ppc<long> > > __atomic_long;
-typedef detail::atomic::__build_atomic_from_add<__atomic_fallback_integral<long long> > __atomic_llong;
-typedef detail::atomic::__build_atomic_from_add<__atomic_fallback_integral<unsigned long long> > __atomic_ullong;
+template<typename T>
+class __platform_atomic<T, 1>: public __build_atomic_from_larger_type<__atomic_ppc_4<uint32_t>, T> {
+public:
+	typedef __build_atomic_from_larger_type<__atomic_ppc_4<uint32_t>, T> super;
+	
+	explicit __platform_atomic(T v) : super(v) {}
+	__platform_atomic(void) {}
+};
 
-typedef detail::atomic::__build_atomic_ptr_from_minimal<__atomic_ppc_address > __atomic_address;
+template<typename T>
+class __platform_atomic<T, 2>: public __build_atomic_from_larger_type<__atomic_ppc_4<uint32_t>, T> {
+public:
+	typedef __build_atomic_from_larger_type<__atomic_ppc_4<uint32_t>, T> super;
+	
+	explicit __platform_atomic(T v) : super(v) {}
+	__platform_atomic(void) {}
+};
+
+typedef __build_exchange<__atomic_ppc_4<void *> > __platform_atomic_address;
 
 }
 }

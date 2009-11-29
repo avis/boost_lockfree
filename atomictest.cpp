@@ -1,3 +1,4 @@
+#include <typeinfo>
 #include <boost/atomic.hpp>
 #include <stdio.h>
 
@@ -6,10 +7,16 @@
 using namespace boost;
 
 template<typename T>
-void test_atomic(void)
+void test_atomic_arithmetic(void)
 {
 	atomic<T> i(41);
+	
+	assert( 41==*(T*)&i );
 	T n;
+	
+	printf("Type=%s, size=%d, atomic_size=%d, lockfree=%d\n",
+		typeid(T).name(), sizeof(n), sizeof(i), i.is_lock_free());
+	
 	assert(sizeof(i)>=sizeof(n));
 	
 	bool success;
@@ -59,40 +66,61 @@ void test_atomic(void)
 	assert(i==17);
 }
 
-int main()
+template<typename T>
+void test_atomic(void)
 {
-	test_atomic<char>();
-	test_atomic<signed char>();
-	test_atomic<unsigned char>();
-	test_atomic<short>();
-	test_atomic<unsigned short>();
-	test_atomic<int>();
-	test_atomic<unsigned int>();
-	test_atomic<long>();
-	test_atomic<unsigned long>();
-	test_atomic<long long>();
-	test_atomic<unsigned long long>();
+	atomic<T> i;
+	T n;
 	
-	atomic<int *> i;
-	int *p;
+	printf("Type=%s, size=%d, atomic_size=%d, lockfree=%d\n",
+		typeid(T).name(), sizeof(n), sizeof(i), i.is_lock_free());
+	
+	assert(sizeof(i)>=sizeof(n));
+	
 	bool success;
 	
 	i=0;
-	assert(i==0);
-	
-	p=(int *)40;
-	success=i.compare_exchange_strong(p, (int *)44);
+	n=(int *)40;
+	success=i.compare_exchange_strong(n, (int *)44);
 	assert(!success);
-	assert(p==0);
+	assert(n==0);
 	assert(i==0);
 	
-	p=(int *)0;
-	success=i.compare_exchange_strong(p, (int *)44);
+	n=(int *)0;
+	success=i.compare_exchange_strong(n, (int *)44);
 	assert(success);
-	assert(p==0);
+	assert(n==0);
 	assert(i==(int *)44);
 	
-	p=i.exchange((int *)20);
-	assert(p==(int *)44);
+	n=i.exchange((int *)20);
+	assert(n==(int *)44);
 	assert(i==(int *)20);
+}
+
+	struct A { int x; };
+
+int main()
+{
+	test_atomic_arithmetic<char>();
+	test_atomic_arithmetic<signed char>();
+	test_atomic_arithmetic<unsigned char>();
+	test_atomic_arithmetic<uint8_t>();
+	test_atomic_arithmetic<int8_t>();
+	test_atomic_arithmetic<short>();
+	test_atomic_arithmetic<unsigned short>();
+	test_atomic_arithmetic<uint16_t>();
+	test_atomic_arithmetic<int16_t>();
+	test_atomic_arithmetic<int>();
+	test_atomic_arithmetic<unsigned int>();
+	test_atomic_arithmetic<uint32_t>();
+	test_atomic_arithmetic<int32_t>();
+	test_atomic_arithmetic<long>();
+	test_atomic_arithmetic<unsigned long>();
+	test_atomic_arithmetic<uint64_t>();
+	test_atomic_arithmetic<int64_t>();
+	test_atomic_arithmetic<long long>();
+	test_atomic_arithmetic<unsigned long long>();
+	
+	test_atomic<void *>();
+	test_atomic<int *>();
 }
