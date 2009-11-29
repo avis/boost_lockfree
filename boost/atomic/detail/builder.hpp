@@ -264,7 +264,6 @@ given a Base that implements:
 - compare_exchange_weak(integral_type &expected, integral_type desired, memory_order order)
 - compare_exchange_strong(integral_type &expected, integral_type desired, memory_order order)
 - exchange(integral_type replacement, memory_order order)
-- fetch_add(integral_type c, memory_order order)
 
 generates the full set of atomic operations for integral types
 */

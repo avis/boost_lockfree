@@ -22,6 +22,6 @@
 
 #else
 	
-	#error Atomic implementation missing for this platform
+	#include <boost/atomic/detail/generic-cas.hpp>
 
 #endif
