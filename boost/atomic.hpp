@@ -49,6 +49,28 @@ private:
 };
 
 template<>
+class atomic<bool> : private detail::atomic::__platform_atomic<bool> {
+public:
+	typedef detail::atomic::__platform_atomic<bool> super;
+	
+	atomic() {}
+	explicit atomic(bool v) : super(v) {}
+	
+	using super::load;
+	using super::store;
+	using super::compare_exchange_strong;
+	using super::compare_exchange_weak;
+	using super::exchange;
+	using super::is_lock_free;
+	
+	operator bool(void) const volatile {return load();}
+	bool operator=(bool v) volatile {store(v); return v;}	
+private:
+	atomic(const atomic &);
+	void operator=(const atomic &);
+};
+
+template<>
 class atomic<void *> : private detail::atomic::__platform_atomic_address {
 public:
 	typedef detail::atomic::__platform_atomic_address super;
@@ -130,6 +152,7 @@ typedef atomic<int64_t> atomic_int64_t;
 typedef atomic<unsigned long long> atomic_ullong;
 typedef atomic<long long> atomic_llong;
 typedef atomic<void*> atomic_address;
+typedef atomic<bool> atomic_bool;
 
 }
 

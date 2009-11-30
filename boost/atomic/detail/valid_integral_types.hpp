@@ -10,7 +10,6 @@ namespace atomic {
 /* list all types for which corresponding atomic types can be defined */
 template<class T> class valid_atomic_type;
 
-template<> class valid_atomic_type<bool> {};
 template<> class valid_atomic_type<char> {};
 template<> class valid_atomic_type<unsigned char> {};
 template<> class valid_atomic_type<signed char> {};
