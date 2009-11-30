@@ -242,6 +242,64 @@ private:
 };
 #elif defined(__i686__)
 
+template<typename T>
+class __atomic_x86_8 {
+private:
+	typedef __atomic_x86_8 this_type;
+public:
+	explicit __atomic_x86_8(T v) : i(v) {}
+	__atomic_x86_8() {}
+	
+	bool compare_exchange_strong(T &e, T d, memory_order order=memory_order_seq_cst) volatile
+	{
+		T prev=e;
+		__asm__ __volatile__("lock cmpxchg8b %3\n" :
+			"=A" (prev) : "b" ((long)d), "c" ((long)(d>>32)), "m" (i), "0" (prev) : "memory");
+		bool success=(prev==e);
+		e=prev;
+		return success;
+	}
+	bool compare_exchange_weak(T &expected, T desired, memory_order order=memory_order_seq_cst) volatile
+	{
+		return compare_exchange_strong(expected, desired, order);
+	}
+	T exchange(T r, memory_order order=memory_order_seq_cst) volatile
+	{
+		T prev=i;
+		do {} while(!compare_exchange_strong(prev, r, order));
+		return prev;
+	}
+	
+	T load(memory_order order=memory_order_seq_cst) const volatile
+	{
+		/* this is a bit problematic -- there is no other
+		way to atomically load a 64 bit value, but of course
+		compare_exchange requires write access to the memory
+		area */
+		T expected=i;
+		do { } while(!const_cast<this_type *>(this)->compare_exchange_strong(expected, expected, order));
+		return expected;
+	}
+	void store(T v, memory_order order=memory_order_seq_cst) volatile
+	{
+		exchange(v, order);
+	}
+	T fetch_add(T c, memory_order order=memory_order_seq_cst) volatile
+	{
+		T expected=i, desired;;
+		do {
+			desired=expected+c;
+		} while(!compare_exchange_strong(expected, desired, order));
+		return expected;
+	}
+	
+	bool is_lock_free(void) const volatile {return true;}
+protected:
+	typedef T integral_type;
+private:
+	T i;
+};
+
 #endif
 
 #if defined(__amd64__) || defined(__i686__)
