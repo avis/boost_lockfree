@@ -14,7 +14,7 @@ public:
 	typedef typename super::integral_type integral_type;
 	
 	atomic() {detail::atomic::valid_atomic_type<T> verify_valid_atomic_integral;}
-	atomic(T v) : super(v) {detail::atomic::valid_atomic_type<T> verify_valid_atomic_integral;}
+	explicit atomic(T v) : super(v) {detail::atomic::valid_atomic_type<T> verify_valid_atomic_integral;}
 	
 	using super::load;
 	using super::store;
