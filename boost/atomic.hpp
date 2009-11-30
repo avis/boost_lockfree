@@ -132,6 +132,24 @@ private:
 	void operator=(const atomic &);
 };
 
+class atomic_flag : private atomic<int> {
+public:
+	typedef atomic<int> super;
+	using super::is_lock_free;
+	
+	atomic_flag(bool initial_state) : super(initial_state?1:0) {}
+	atomic_flag() {}
+	
+	bool test_and_set(memory_order order=memory_order_seq_cst)
+	{
+		return super::exchange(1, order);
+	}
+	void clear(memory_order order=memory_order_seq_cst)
+	{
+		return super::store(0, order);
+	}
+};
+
 typedef atomic<char> atomic_char;
 typedef atomic<unsigned char> atomic_uchar;
 typedef atomic<signed char> atomic_schar;

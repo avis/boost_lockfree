@@ -128,6 +128,16 @@ void test_atomic<bool>(void)
 	assert(i==false);
 }
 
+void test_atomic_flag()
+{
+	atomic_flag f(0);
+	
+	assert(!f.test_and_set());
+	assert(f.test_and_set());
+	f.clear();
+	assert(!f.test_and_set());
+}
+
 int main()
 {
 	test_atomic_arithmetic<char>();
@@ -153,4 +163,6 @@ int main()
 	test_atomic<void *>();
 	test_atomic<int *>();
 	test_atomic<bool>();
+	
+	test_atomic_flag();
 }
