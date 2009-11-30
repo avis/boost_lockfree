@@ -135,6 +135,99 @@ private:
 	T i;
 };
 
+#if defined(__powerpc64__)
+
+#warning Untested code -- please inform me if it works
+
+template<typename T>
+class __atomic_ppc_8 {
+public:
+	typedef T integral_type;
+	explicit __atomic_ppc_8(T v) : i(v) {}
+	__atomic_ppc_8() {}
+	T load(memory_order order=memory_order_seq_cst) const volatile
+	{
+		T v=*reinterpret_cast<volatile const T *>(&i);
+		__fence_after(order);
+		return v;
+	}
+	void store(T v, memory_order order=memory_order_seq_cst) volatile
+	{
+		__fence_before(order);
+		*reinterpret_cast<volatile T *>(&i)=v;
+	}
+	bool compare_exchange_weak(T &expected, T desired, memory_order order=memory_order_seq_cst) volatile
+	{
+		__fence_before(order);
+		int success;
+		__asm__ __volatile__(
+			"addi %1,0,0\n"
+			"ldarx %0,0,%2\n"
+			"cmpw %0, %3\n"
+			"bne- 1f\n"
+			"stdcx. %4,0,%2\n"
+			"bne- 1f\n"
+			"addi %1,0,1\n"
+			"1:"
+				: "=&b" (expected), "=&b" (success)
+				: "b" (&i), "b" (expected), "b" ((int)desired)
+			);
+		__fence_after(order);
+		return success;
+	}
+	
+	bool is_lock_free(void) const volatile {return true;}
+protected:
+	inline T fetch_add_var(T c, memory_order order) volatile
+	{
+		__fence_before(order);
+		T original, tmp;
+		__asm__ __volatile__(
+			"1: ldarx %0,0,%2\n"
+			"add %1,%0,%3\n"
+			"stdcx. %1,0,%2\n"
+			"bne- 1b\n"
+			: "=&b" (original), "=&b" (tmp)
+			: "b" (&i), "b" (c)
+			: "cc");
+		__fence_after(order);
+		return original;
+	}
+	inline T fetch_inc(memory_order order) volatile
+	{
+		__fence_before(order);
+		T original, tmp;
+		__asm__ __volatile__(
+			"1: ldarx %0,0,%2\n"
+			"addi %1,%0,1\n"
+			"stdcx. %1,0,%2\n"
+			"bne- 1b\n"
+			: "=&b" (original), "=&b" (tmp)
+			: "b" (&i)
+			: "cc");
+		__fence_after(order);
+		return original;
+	}
+	inline T fetch_dec(memory_order order) volatile
+	{
+		__fence_before(order);
+		T original, tmp;
+		__asm__ __volatile__(
+			"1: ldarx %0,0,%2\n"
+			"addi %1,%0,-1\n"
+			"stdcx. %1,0,%2\n"
+			"bne- 1b\n"
+			: "=&b" (original), "=&b" (tmp)
+			: "b" (&i)
+			: "cc");
+		__fence_after(order);
+		return original;
+	}
+private:
+	T i;
+};
+#endif
+
 template<typename T>
 class __platform_atomic<T, 4> : public __build_atomic_from_typical<__build_exchange<__atomic_ppc_4<T> > > {
 public:
@@ -161,7 +254,19 @@ public:
 	__platform_atomic(void) {}
 };
 
+#if defined(__powerpc64__)
+template<typename T>
+class __platform_atomic<T, 8> : public __build_atomic_from_typical<__build_exchange<__atomic_ppc_8<T> > > {
+public:
+	typedef __build_atomic_from_typical<__build_exchange<__atomic_ppc_8<T> > > super;
+	explicit __platform_atomic(T v) : super(v) {}
+	__platform_atomic(void) {}
+};
+
+typedef __build_exchange<__atomic_ppc_8<void *> > __platform_atomic_address;
+#else
 typedef __build_exchange<__atomic_ppc_4<void *> > __platform_atomic_address;
+#endif
 
 }
 }
