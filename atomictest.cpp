@@ -97,7 +97,36 @@ void test_atomic(void)
 	assert(i==(int *)20);
 }
 
-	struct A { int x; };
+template<>
+void test_atomic<bool>(void)
+{
+	atomic<bool> i;
+	bool n;
+	
+	printf("Type=bool, size=%d, atomic_size=%d, lockfree=%d\n",
+		sizeof(n), sizeof(i), i.is_lock_free());
+	
+	assert(sizeof(i)>=sizeof(n));
+	
+	bool success;
+	
+	i=false;
+	n=true;
+	success=i.compare_exchange_strong(n, true);
+	assert(!success);
+	assert(n==false);
+	assert(i==false);
+	
+	n=false;
+	success=i.compare_exchange_strong(n, true);
+	assert(success);
+	assert(n==false);
+	assert(i==true);
+	
+	n=i.exchange(false);
+	assert(n==true);
+	assert(i==false);
+}
 
 int main()
 {
@@ -123,4 +152,5 @@ int main()
 	
 	test_atomic<void *>();
 	test_atomic<int *>();
+	test_atomic<bool>();
 }
