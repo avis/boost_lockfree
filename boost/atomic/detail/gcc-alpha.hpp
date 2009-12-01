@@ -286,37 +286,37 @@ private:
 };
 
 template<typename T>
-class __platform_atomic<T, 4> : public __build_atomic_from_typical<__build_exchange<__atomic_alpha_4<T> > > {
+class __platform_atomic_integral<T, 4> : public __build_atomic_from_typical<__build_exchange<__atomic_alpha_4<T> > > {
 public:
 	typedef __build_atomic_from_typical<__build_exchange<__atomic_alpha_4<T> > > super;
-	explicit __platform_atomic(T v) : super(v) {}
-	__platform_atomic(void) {}
+	explicit __platform_atomic_integral(T v) : super(v) {}
+	__platform_atomic_integral(void) {}
 };
 
 template<typename T>
-class __platform_atomic<T, 8> : public __build_atomic_from_typical<__build_exchange<__atomic_alpha_8<T> > > {
+class __platform_atomic_integral<T, 8> : public __build_atomic_from_typical<__build_exchange<__atomic_alpha_8<T> > > {
 public:
 	typedef __build_atomic_from_typical<__build_exchange<__atomic_alpha_8<T> > > super;
-	explicit __platform_atomic(T v) : super(v) {}
-	__platform_atomic(void) {}
+	explicit __platform_atomic_integral(T v) : super(v) {}
+	__platform_atomic_integral(void) {}
 };
 
 template<typename T>
-class __platform_atomic<T, 1>: public __build_atomic_from_larger_type<__atomic_alpha_4<uint32_t>, T> {
+class __platform_atomic_integral<T, 1>: public __build_atomic_from_larger_type<__atomic_alpha_4<uint32_t>, T> {
 public:
 	typedef __build_atomic_from_larger_type<__atomic_alpha_4<uint32_t>, T> super;
 	
-	explicit __platform_atomic(T v) : super(v) {}
-	__platform_atomic(void) {}
+	explicit __platform_atomic_integral(T v) : super(v) {}
+	__platform_atomic_integral(void) {}
 };
 
 template<typename T>
-class __platform_atomic<T, 2>: public __build_atomic_from_larger_type<__atomic_alpha_4<uint32_t>, T> {
+class __platform_atomic_integral<T, 2>: public __build_atomic_from_larger_type<__atomic_alpha_4<uint32_t>, T> {
 public:
 	typedef __build_atomic_from_larger_type<__atomic_alpha_4<uint32_t>, T> super;
 	
-	explicit __platform_atomic(T v) : super(v) {}
-	__platform_atomic(void) {}
+	explicit __platform_atomic_integral(T v) : super(v) {}
+	__platform_atomic_integral(void) {}
 };
 
 typedef __build_exchange<__atomic_alpha_8<void *> > __platform_atomic_address;

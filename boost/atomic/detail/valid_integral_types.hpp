@@ -7,28 +7,20 @@ namespace boost {
 namespace detail {
 namespace atomic {
 
-/* list all types for which corresponding atomic types can be defined */
-template<class T> class valid_atomic_type;
+template<typename T> struct is_integral_type {typedef void test;};
 
-template<> class valid_atomic_type<char> {};
-template<> class valid_atomic_type<unsigned char> {};
-template<> class valid_atomic_type<signed char> {};
-//template<> class valid_atomic_type<uint8_t> {};
-//template<> class valid_atomic_type<int8_t> {};
-template<> class valid_atomic_type<unsigned short> {};
-template<> class valid_atomic_type<short> {};
-//template<> class valid_atomic_type<uint16_t> {};
-//template<> class valid_atomic_type<int16_t> {};
-template<> class valid_atomic_type<int> {};
-template<> class valid_atomic_type<unsigned int> {};
-//template<> class valid_atomic_type<uint32_t> {};
-//template<> class valid_atomic_type<int32_t> {};
-template<> class valid_atomic_type<long> {};
-template<> class valid_atomic_type<unsigned long> {};
-//template<> class valid_atomic_type<uint64_t> {};
-//template<> class valid_atomic_type<int64_t> {};
-template<> class valid_atomic_type<long long> {};
-template<> class valid_atomic_type<unsigned long long> {};
+template<> struct is_integral_type<char> {typedef int test;};
+
+template<> struct is_integral_type<unsigned char> {typedef int test;};
+template<> struct is_integral_type<signed char> {typedef int test;};
+template<> struct is_integral_type<unsigned short> {typedef int test;};
+template<> struct is_integral_type<short> {typedef int test;};
+template<> struct is_integral_type<unsigned int> {typedef int test;};
+template<> struct is_integral_type<int> {typedef int test;};
+template<> struct is_integral_type<unsigned long> {typedef int test;};
+template<> struct is_integral_type<long> {typedef int test;};
+template<> struct is_integral_type<unsigned long long> {typedef int test;};
+template<> struct is_integral_type<long long> {typedef int test;};
 
 }
 }

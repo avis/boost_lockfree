@@ -79,22 +79,22 @@ void test_atomic(void)
 	
 	bool success;
 	
-	i=0;
-	n=(int *)40;
-	success=i.compare_exchange_strong(n, (int *)44);
+	i.store((T)0);
+	n=(T)40;
+	success=i.compare_exchange_strong(n, (T)44);
 	assert(!success);
-	assert(n==0);
-	assert(i==0);
+	assert(n==(T)0);
+	assert(i.load()==(T)0);
 	
-	n=(int *)0;
-	success=i.compare_exchange_strong(n, (int *)44);
+	n=(T)0;
+	success=i.compare_exchange_strong(n, (T)44);
 	assert(success);
-	assert(n==0);
-	assert(i==(int *)44);
+	assert(n==(T)0);
+	assert(i.load()==(T)44);
 	
-	n=i.exchange((int *)20);
-	assert(n==(int *)44);
-	assert(i==(int *)20);
+ 	n=i.exchange((T)20);
+	assert(n==(T)44);
+	assert(i.load()==(T)20);
 }
 
 template<>
@@ -138,6 +138,45 @@ void test_atomic_flag()
 	assert(!f.test_and_set());
 }
 
+struct Compound {
+	int i;
+	
+	inline bool operator==(const Compound &c) const {return i==c.i;}
+};
+
+void test_atomic_struct(void)
+{
+	atomic<Compound> i;
+	Compound n;
+	
+	Compound zero={0}, one={1}, two={2};
+	
+	assert(sizeof(i)>=sizeof(n));
+	
+	bool success;
+	
+	i.store(zero);
+	n=one;
+	success=i.compare_exchange_strong(n, two);
+	assert(!success);
+	assert(n==zero);
+	assert(i.load()==zero);
+	
+	n=zero;
+	success=i.compare_exchange_strong(n, two);
+	assert(success);
+	assert(n==zero);
+	assert(i.load()==two);
+	
+	n=i.exchange(one);
+	assert(n==two);
+	assert(i.load()==one);
+}
+
+enum TestEnum {
+	Foo, Bar
+};
+
 int main()
 {
 	test_atomic_arithmetic<char>();
@@ -160,9 +199,12 @@ int main()
 	test_atomic_arithmetic<long long>();
 	test_atomic_arithmetic<unsigned long long>();
 	
+	//test_atomic_struct();
+	
 	test_atomic<void *>();
 	test_atomic<int *>();
 	test_atomic<bool>();
+	test_atomic<TestEnum>();
 	
 	test_atomic_flag();
 }

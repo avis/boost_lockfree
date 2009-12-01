@@ -79,11 +79,11 @@ private:
 };
 
 template<typename T>
-class __platform_atomic<T, 1> : public __build_atomic_from_add<__atomic_x86_1<T> > {
+class __platform_atomic_integral<T, 1> : public __build_atomic_from_add<__atomic_x86_1<T> > {
 public:
 	typedef __build_atomic_from_add<__atomic_x86_1<T> > super;
-	explicit __platform_atomic(T v) : super(v) {}
-	__platform_atomic(void) {}
+	explicit __platform_atomic_integral(T v) : super(v) {}
+	__platform_atomic_integral(void) {}
 };
 
 template<typename T>
@@ -133,11 +133,11 @@ private:
 };
 
 template<typename T>
-class __platform_atomic<T, 2> : public __build_atomic_from_add<__atomic_x86_2<T> > {
+class __platform_atomic_integral<T, 2> : public __build_atomic_from_add<__atomic_x86_2<T> > {
 public:
 	typedef __build_atomic_from_add<__atomic_x86_2<T> > super;
-	explicit __platform_atomic(T v) : super(v) {}
-	__platform_atomic(void) {}
+	explicit __platform_atomic_integral(T v) : super(v) {}
+	__platform_atomic_integral(void) {}
 };
 
 template<typename T>
@@ -187,11 +187,11 @@ private:
 };
 
 template<typename T>
-class __platform_atomic<T, 4> : public __build_atomic_from_add<__atomic_x86_4<T> > {
+class __platform_atomic_integral<T, 4> : public __build_atomic_from_add<__atomic_x86_4<T> > {
 public:
 	typedef __build_atomic_from_add<__atomic_x86_4<T> > super;
-	explicit __platform_atomic(T v) : super(v) {}
-	__platform_atomic(void) {}
+	explicit __platform_atomic_integral(T v) : super(v) {}
+	__platform_atomic_integral(void) {}
 };
 
 #if defined(__amd64__)
@@ -304,11 +304,11 @@ private:
 
 #if defined(__amd64__) || defined(__i686__)
 template<typename T>
-class __platform_atomic<T, 8> : public __build_atomic_from_add<__atomic_x86_8<T> >{
+class __platform_atomic_integral<T, 8> : public __build_atomic_from_add<__atomic_x86_8<T> >{
 public:
 	typedef __build_atomic_from_add<__atomic_x86_8<T> > super;
-	explicit __platform_atomic(T v) : super(v) {}
-	__platform_atomic(void) {}
+	explicit __platform_atomic_integral(T v) : super(v) {}
+	__platform_atomic_integral(void) {}
 };
 #endif
 

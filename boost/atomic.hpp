@@ -3,55 +3,29 @@
 
 #include <boost/atomic/memory_order.hpp>
 #include <boost/atomic/platform.hpp>
+#include <boost/atomic/detail/base.hpp>
 #include <boost/atomic/detail/valid_integral_types.hpp>
+#include <boost/atomic/detail/generic-atomic.hpp>
 
 namespace boost {
 
 template<typename T>
-class atomic : private detail::atomic::__platform_atomic<T> {
+class atomic : public detail::atomic::__atomic<T> {
 public:
-	typedef detail::atomic::__platform_atomic<T> super;
-	typedef typename super::integral_type integral_type;
+	typedef detail::atomic::__atomic<T> super;
 	
-	atomic() {detail::atomic::valid_atomic_type<T> verify_valid_atomic_integral;}
-	explicit atomic(T v) : super(v) {detail::atomic::valid_atomic_type<T> verify_valid_atomic_integral;}
-	
-	using super::load;
-	using super::store;
-	using super::compare_exchange_strong;
-	using super::compare_exchange_weak;
-	using super::exchange;
-	using super::fetch_add;
-	using super::fetch_sub;
-	using super::fetch_and;
-	using super::fetch_or;
-	using super::fetch_xor;
-	using super::is_lock_free;
-	
-	operator integral_type(void) const volatile {return load();}
-	integral_type operator=(integral_type v) volatile {store(v); return v;}	
-	
-	integral_type operator&=(integral_type c) volatile {return fetch_and(c)&c;}
-	integral_type operator|=(integral_type c) volatile {return fetch_or(c)|c;}
-	integral_type operator^=(integral_type c) volatile {return fetch_xor(c)^c;}
-	
-	integral_type operator+=(integral_type c) volatile {return fetch_add(c)+c;}
-	integral_type operator-=(integral_type c) volatile {return fetch_sub(c)-c;}
-	
-	integral_type operator++(void) volatile {return fetch_add(1)+1;}
-	integral_type operator++(int) volatile {return fetch_add(1);}
-	integral_type operator--(void) volatile {return fetch_sub(1)-1;}
-	integral_type operator--(int) volatile {return fetch_sub(1);}
-	
+	atomic() {}
+	explicit atomic(T v) : super(v) {}
 private:
 	atomic(const atomic &);
 	void operator=(const atomic &);
 };
 
+
 template<>
-class atomic<bool> : private detail::atomic::__platform_atomic<bool> {
+class atomic<bool> : private detail::atomic::__atomic<bool> {
 public:
-	typedef detail::atomic::__platform_atomic<bool> super;
+	typedef detail::atomic::__atomic<bool> super;
 	
 	atomic() {}
 	explicit atomic(bool v) : super(v) {}
@@ -71,9 +45,9 @@ private:
 };
 
 template<>
-class atomic<void *> : private detail::atomic::__platform_atomic_address {
+class atomic<void *> : private detail::atomic::__atomic<void *, sizeof(void *), int> {
 public:
-	typedef detail::atomic::__platform_atomic_address super;
+	typedef detail::atomic::__atomic<void *, sizeof(void *), int> super;
 	
 	atomic() {}
 	explicit atomic(void * p) : super(p) {}
@@ -92,6 +66,29 @@ private:
 	void * operator=(const atomic &);
 };
 
+template<typename T>
+class atomic<T *> : private detail::atomic::__atomic<T *, sizeof(T *), int> {
+public:
+	typedef detail::atomic::__atomic<T *, sizeof(T *), int> super;
+	
+	atomic() {}
+	explicit atomic(T * p) : super(p) {}
+	using super::load;
+	using super::store;
+	using super::compare_exchange_strong;
+	using super::compare_exchange_weak;
+	using super::exchange;
+	using super::is_lock_free;
+	
+	operator T *(void) const volatile {return load();}
+	T * operator=(T * v) volatile {store(v); return v;}
+	
+private:
+	atomic(const atomic &);
+	void * operator=(const atomic &);
+};
+
+#if 0
 template<typename T>
 class atomic<T *> : private atomic<void *> {
 public:
@@ -131,6 +128,7 @@ private:
 	atomic(const atomic &);
 	void operator=(const atomic &);
 };
+#endif
 
 class atomic_flag : private atomic<int> {
 public:
@@ -146,7 +144,7 @@ public:
 	}
 	void clear(memory_order order=memory_order_seq_cst)
 	{
-		return super::store(0, order);
+		super::store(0, order);
 	}
 };
 

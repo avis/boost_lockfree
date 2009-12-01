@@ -1,6 +1,7 @@
 #ifndef BOOST_DETAIL_ATOMIC_FALLBACK_HPP
 #define BOOST_DETAIL_ATOMIC_FALLBACK_HPP
 
+#include <string.h>
 #include <boost/thread/mutex.hpp>
 
 namespace boost {
@@ -25,24 +26,30 @@ template<typename T>
 class __fallback_atomic {
 public:
 	__fallback_atomic(void) {}
-	explicit __fallback_atomic(const T &t) : i(t) {}
+	explicit __fallback_atomic(const T &t) {memcpy(&i, &t, sizeof(T));}
 	
-	const T &store(const T &t, memory_order order=memory_order_seq_cst) volatile
+	void store(const T &t, memory_order order=memory_order_seq_cst) volatile
 	{
 		atomic_guard guard(&i, order);
-		i=t;
-		return t;
+		memcpy((void*)&i, &t, sizeof(T));
 	}
 	T load(memory_order order=memory_order_seq_cst) volatile const
 	{
 		atomic_guard guard(&i, order);
-		return i;
+		T tmp;
+		memcpy(&tmp, (void*)&i, sizeof(T));
+		return tmp;
 	}
 	bool compare_exchange_strong(T &expected, T desired, memory_order order=memory_order_seq_cst) volatile
 	{
 		atomic_guard guard(&i, order);
-		if (i==expected) {i=desired; return true;}
-		else {expected=i; return false;}
+		if (memcmp((void*)&i, &expected, sizeof(T))==0) {
+			memcpy((void*)&i, &desired, sizeof(T));
+			return true;
+		} else {
+			memcpy(&expected, (void*)&i, sizeof(T));
+			return false;
+		}
 	}
 	bool compare_exchange_weak(T &expected, T desired, memory_order order=memory_order_seq_cst) volatile
 	{
@@ -51,8 +58,9 @@ public:
 	T exchange(T replacement, memory_order order=memory_order_seq_cst) volatile
 	{
 		atomic_guard guard(&i, order);
-		T tmp=i;
-		i=replacement;
+		T tmp;
+		memcpy(&tmp, (void*)&i, sizeof(T));
+		memcpy((void*)&i, &replacement, sizeof(T));
 		return tmp;
 	}
 	bool is_lock_free(void) const volatile {return false;}
