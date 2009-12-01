@@ -4,7 +4,6 @@
 #include <boost/atomic/memory_order.hpp>
 #include <boost/atomic/platform.hpp>
 #include <boost/atomic/detail/base.hpp>
-#include <boost/atomic/detail/valid_integral_types.hpp>
 #include <boost/atomic/detail/generic-atomic.hpp>
 
 namespace boost {
@@ -66,6 +65,9 @@ private:
 	void * operator=(const atomic &);
 };
 
+/* FIXME: pointer arithmetic still missing */
+/* FIXME: specialize void * pointer separately to forbid arithmetic */
+
 template<typename T>
 class atomic<T *> : private detail::atomic::__atomic<T *, sizeof(T *), int> {
 public:
@@ -87,48 +89,6 @@ private:
 	atomic(const atomic &);
 	void * operator=(const atomic &);
 };
-
-#if 0
-template<typename T>
-class atomic<T *> : private atomic<void *> {
-public:
-	typedef atomic<void *> super;
-	
-	using super::is_lock_free;
-	
-	atomic(void) {}
-	explicit atomic(T * v) : super(v) {}
-	
-	T *load(memory_order order=memory_order_seq_cst) const volatile
-	{
-		return static_cast<T *>(super::load(order));
-	}
-	void store(T * v, memory_order order=memory_order_seq_cst) volatile
-	{
-		super::store(v, order);
-	}
-	bool compare_exchange_weak(T *&expected, T *desired, memory_order order=memory_order_seq_cst) volatile
-	{
-		void **expected_void = reinterpret_cast<void **>(&expected);
-		return super::compare_exchange_weak(*expected_void, static_cast<void *>(desired), order);
-	}
-	bool compare_exchange_strong(T *&expected, T *desired, memory_order order=memory_order_seq_cst) volatile
-	{
-		void **expected_void = reinterpret_cast<void **>(&expected);
-		return super::compare_exchange_strong(*expected_void, static_cast<void *>(desired), order);
-	}
-	T *exchange(T *replacement, memory_order order=memory_order_seq_cst) volatile
-	{
-		return static_cast<T *>(super::exchange(static_cast<void *>(replacement)));
-	}
-	
-	operator T *(void) const {return load();}
-	T *operator=(T *v) {store(v); return v;}
-private:
-	atomic(const atomic &);
-	void operator=(const atomic &);
-};
-#endif
 
 class atomic_flag : private atomic<int> {
 public:

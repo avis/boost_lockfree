@@ -11,7 +11,6 @@ void test_atomic_arithmetic(void)
 {
 	atomic<T> i(41);
 	
-	assert( 41==*(T*)&i );
 	T n;
 	
 	printf("Type=%s, size=%d, atomic_size=%d, lockfree=%d\n",
