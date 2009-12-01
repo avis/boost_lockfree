@@ -1,7 +1,7 @@
 #ifndef BOOST_DETAIL_ATOMIC_BUILDER_HPP
 #define BOOST_DETAIL_ATOMIC_BUILDER_HPP
 
-#include <endian.h>
+#include <boost/detail/endian.hpp>
 
 namespace boost {
 namespace detail {
@@ -319,10 +319,12 @@ private:
 	
 	unsigned int get_shift(void) const volatile
 	{
-#if (__BYTE_ORDER==__LITTLE_ENDIAN)
+#if defined(BOOST_LITTLE_ENDIAN)
 		return get_offset()*8;
-#else
+#elif  defined(BOOST_BIG_ENDIAN)
 		return (sizeof(larger_integral_type)-sizeof(integral_type)-get_offset())*8;
+#else
+	#error "Unknown endian"
 #endif
 	}
 	
