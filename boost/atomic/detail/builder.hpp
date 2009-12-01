@@ -47,29 +47,6 @@ public:
 /*
 given a Base that implements:
 
-- load(memory_order order)
-- store(integral_type v, memory_order order)
-
-creates assignment and type conversion operator
-*/
-template<typename Base>
-class __build_assign : public Base {
-public:
-	typedef typename Base::integral_type integral_type;
-	
-	using Base::load;
-	using Base::store;
-	
-	operator integral_type(void) const volatile {return load();}
-	integral_type operator=(integral_type v) volatile {store(v); return v;}
-	
-	__build_assign() {}
-	explicit __build_assign(integral_type i) : Base(i) {}
-};
-
-/*
-given a Base that implements:
-
 - fetch_add_var(integral_type c, memory_order order)
 - fetch_inc(memory_order order)
 - fetch_dec(memory_order order)
@@ -201,13 +178,13 @@ given a Base that implements:
 generates the full set of atomic operations for integral types
 */
 template<typename Base>
-class __build_atomic_from_minimal : public __build_logicops< __build_arithmeticops< __build_fetch_add< __build_exchange<__build_assign<Base> > > > > {
+class __build_atomic_from_minimal : public __build_logicops< __build_arithmeticops< __build_fetch_add< __build_exchange<Base> > > > {
 public:
-	typedef __build_logicops< __build_arithmeticops< __build_fetch_add< __build_exchange<__build_assign<Base> > > > > __super;
-	typedef typename __super::integral_type integral_type;
+	typedef __build_logicops< __build_arithmeticops< __build_fetch_add< __build_exchange<Base> > > > super;
+	typedef typename super::integral_type integral_type;
 	
 	__build_atomic_from_minimal(void) {}
-	__build_atomic_from_minimal(typename __super::integral_type i) : __super(i) {}
+	__build_atomic_from_minimal(typename super::integral_type i) : super(i) {}
 };
 
 /*
@@ -225,13 +202,13 @@ given a Base that implements:
 generates the full set of atomic operations for integral types
 */
 template<typename Base>
-class __build_atomic_from_typical : public __build_logicops< __build_arithmeticops< __build_const_fetch_add<__build_assign<Base> > > > {
+class __build_atomic_from_typical : public __build_logicops< __build_arithmeticops< __build_const_fetch_add<Base> > > {
 public:
-	typedef __build_logicops< __build_arithmeticops< __build_const_fetch_add<__build_assign<Base> > > > __super;
-	typedef typename __super::integral_type integral_type;
+	typedef __build_logicops< __build_arithmeticops< __build_const_fetch_add<Base> > > super;
+	typedef typename super::integral_type integral_type;
 	
 	__build_atomic_from_typical(void) {}
-	__build_atomic_from_typical(typename __super::integral_type i) : __super(i) {}
+	__build_atomic_from_typical(typename super::integral_type i) : super(i) {}
 };
 
 /*
@@ -247,13 +224,13 @@ given a Base that implements:
 generates the full set of atomic operations for integral types
 */
 template<typename Base>
-class __build_atomic_from_add : public __build_logicops< __build_arithmeticops< __build_assign<Base> > > {
+class __build_atomic_from_add : public __build_logicops< __build_arithmeticops<Base> > {
 public:
-	typedef __build_logicops< __build_arithmeticops< __build_assign<Base> > > __super;
-	typedef typename __super::integral_type integral_type;
+	typedef __build_logicops< __build_arithmeticops<Base> > super;
+	typedef typename super::integral_type integral_type;
 	
 	__build_atomic_from_add(void) {}
-	__build_atomic_from_add(typename __super::integral_type i) : __super(i) {}
+	__build_atomic_from_add(typename super::integral_type i) : super(i) {}
 };
 
 /*
@@ -268,13 +245,13 @@ given a Base that implements:
 generates the full set of atomic operations for integral types
 */
 template<typename Base>
-class __build_atomic_from_exchange : public __build_logicops< __build_arithmeticops< __build_fetch_add<__build_assign<Base> > > > {
+class __build_atomic_from_exchange : public __build_logicops< __build_arithmeticops< __build_fetch_add<Base> > > {
 public:
-	typedef __build_logicops< __build_arithmeticops< __build_fetch_add<__build_assign<Base> > > > __super;
-	typedef typename __super::integral_type integral_type;
+	typedef __build_logicops< __build_arithmeticops< __build_fetch_add<Base> > > super;
+	typedef typename super::integral_type integral_type;
 	
 	__build_atomic_from_exchange(void) {}
-	__build_atomic_from_exchange(typename __super::integral_type i) : __super(i) {}
+	__build_atomic_from_exchange(typename super::integral_type i) : super(i) {}
 };
 
 template<typename Base, typename Type>
@@ -375,12 +352,12 @@ private:
 template<typename Base, typename Type>
 class __build_atomic_from_larger_type : public __build_atomic_from_minimal< __build_base_from_larger_type<Base, Type> > {
 public:
-	typedef __build_atomic_from_minimal< __build_base_from_larger_type<Base, Type> > __super;
-	//typedef typename __super::integral_type integral_type;
+	typedef __build_atomic_from_minimal< __build_base_from_larger_type<Base, Type> > super;
+	//typedef typename super::integral_type integral_type;
 	typedef Type integral_type;
 	
 	__build_atomic_from_larger_type() {}
-	__build_atomic_from_larger_type(integral_type v) : __super(v) {}
+	__build_atomic_from_larger_type(integral_type v) : super(v) {}
 };
 
 /*
@@ -393,21 +370,21 @@ given a Base that implements:
 generates the full set of atomic operations for pointers
 */
 template<typename Base>
-class __build_atomic_ptr_from_minimal : public __build_exchange<__build_assign<Base> > {
+class __build_atomic_ptr_from_minimal : public __build_exchange<Base> {
 public:
-	typedef __build_exchange<__build_assign<Base> > __super;
+	typedef __build_exchange<Base> super;
 	
 	__build_atomic_ptr_from_minimal(void) {}
-	__build_atomic_ptr_from_minimal(typename __super::integral_type i) : __super(i) {}
+	__build_atomic_ptr_from_minimal(typename super::integral_type i) : super(i) {}
 };
 
 template<typename Base>
-class __build_atomic_ptr_from_typical : public __build_assign<Base> {
+class __build_atomic_ptr_from_typical : public Base {
 public:
-	typedef __build_assign<Base> __super;
+	typedef Base super;
 	
 	__build_atomic_ptr_from_typical(void) {}
-	__build_atomic_ptr_from_typical(typename __super::integral_type i) : __super(i) {}
+	__build_atomic_ptr_from_typical(typename super::integral_type i) : super(i) {}
 };
 
 }
