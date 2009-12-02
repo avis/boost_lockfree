@@ -4,7 +4,7 @@
 #include <boost/atomic/memory_order.hpp>
 #include <boost/atomic/platform.hpp>
 #include <boost/atomic/detail/base.hpp>
-#include <boost/atomic/detail/generic-atomic.hpp>
+#include <boost/atomic/detail/integral-casts.hpp>
 
 namespace boost {
 
@@ -66,7 +66,6 @@ private:
 };
 
 /* FIXME: pointer arithmetic still missing */
-/* FIXME: specialize void * pointer separately to forbid arithmetic */
 
 template<typename T>
 class atomic<T *> : private detail::atomic::__atomic<T *, sizeof(T *), int> {
@@ -87,7 +86,7 @@ public:
 	
 private:
 	atomic(const atomic &);
-	void * operator=(const atomic &);
+	T * operator=(const atomic &);
 };
 
 class atomic_flag : private atomic<int> {
