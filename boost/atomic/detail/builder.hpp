@@ -254,6 +254,16 @@ public:
 	__build_atomic_from_exchange(typename super::integral_type i) : super(i) {}
 };
 
+
+/*
+given a Base that implements:
+
+- compare_exchange_weak()
+
+generates load, store and compare_exchange_weak for a smaller
+data type (e.g. an atomic "byte" embedded into a temporary
+and properly aligned atomic "int").
+*/
 template<typename Base, typename Type>
 class __build_base_from_larger_type {
 public:
@@ -351,6 +361,15 @@ private:
 	integral_type i;
 };
 
+/*
+given a Base that implements:
+
+- compare_exchange_weak()
+
+generates the full set of atomic ops for a smaller
+data type (e.g. an atomic "byte" embedded into a temporary
+and properly aligned atomic "int").
+*/
 template<typename Base, typename Type>
 class __build_atomic_from_larger_type : public __build_atomic_from_minimal< __build_base_from_larger_type<Base, Type> > {
 public:
@@ -360,33 +379,6 @@ public:
 	
 	__build_atomic_from_larger_type() {}
 	__build_atomic_from_larger_type(integral_type v) : super(v) {}
-};
-
-/*
-given a Base that implements:
-
-- load(memory_order order)
-- store(integral_type i, memory_order order)
-- compare_exchange_weak(integral_type &expected, integral_type desired, memory_order order)
-
-generates the full set of atomic operations for pointers
-*/
-template<typename Base>
-class __build_atomic_ptr_from_minimal : public __build_exchange<Base> {
-public:
-	typedef __build_exchange<Base> super;
-	
-	__build_atomic_ptr_from_minimal(void) {}
-	__build_atomic_ptr_from_minimal(typename super::integral_type i) : super(i) {}
-};
-
-template<typename Base>
-class __build_atomic_ptr_from_typical : public Base {
-public:
-	typedef Base super;
-	
-	__build_atomic_ptr_from_typical(void) {}
-	__build_atomic_ptr_from_typical(typename super::integral_type i) : super(i) {}
 };
 
 }
