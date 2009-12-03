@@ -62,7 +62,7 @@ public:
 	}
 	T exchange(T r, memory_order order=memory_order_seq_cst) volatile
 	{
-		__asm__ __volatile__("lock xchgb %0, %1\n" : "=r" (r) : "m"(i), "0" (r) : "memory");
+		__asm__ __volatile__("xchgb %0, %1\n" : "=r" (r) : "m"(i), "0" (r) : "memory");
 		return r;
 	}
 	T fetch_add(T c, memory_order order=memory_order_seq_cst) volatile
@@ -116,7 +116,7 @@ public:
 	}
 	T exchange(T r, memory_order order=memory_order_seq_cst) volatile
 	{
-		__asm__ __volatile__("lock xchgw %0, %1\n" : "=r" (r) : "m"(i), "0" (r) : "memory");
+		__asm__ __volatile__("xchgw %0, %1\n" : "=r" (r) : "m"(i), "0" (r) : "memory");
 		return r;
 	}
 	T fetch_add(T c, memory_order order=memory_order_seq_cst) volatile
@@ -170,7 +170,7 @@ public:
 	}
 	T exchange(T r, memory_order order=memory_order_seq_cst) volatile
 	{
-		__asm__ __volatile__("lock xchgl %0, %1\n" : "=r" (r) : "m"(i), "0" (r) : "memory");
+		__asm__ __volatile__("xchgl %0, %1\n" : "=r" (r) : "m"(i), "0" (r) : "memory");
 		return r;
 	}
 	T fetch_add(T c, memory_order order=memory_order_seq_cst) volatile
@@ -225,7 +225,7 @@ public:
 	}
 	T exchange(T r, memory_order order=memory_order_seq_cst) volatile
 	{
-		__asm__ __volatile__("lock xchgq %0, %1\n" : "=r" (r) : "m"(i), "0" (r) : "memory");
+		__asm__ __volatile__("xchgq %0, %1\n" : "=r" (r) : "m"(i), "0" (r) : "memory");
 		return r;
 	}
 	T fetch_add(T c, memory_order order=memory_order_seq_cst) volatile
