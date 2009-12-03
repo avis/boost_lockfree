@@ -6,6 +6,8 @@
 	<UL>
 		<LI>\ref memory_order "Memory order"</LI>
 		<LI>\ref boost::atomic template class</LI>
+		<LI>\ref architecture_support </LI>
+		<LI>\ref faq "Frequently asked questions"</LI>
 	</UL>
 */
 
@@ -66,9 +68,9 @@
 		// thread 1
 		void add_element()
 		{
-			// prevent "overtaking" the head pointer
 			unsigned int current=head.load(memory_order_relaxed);
 			unsigned int next=(current+1)&15;
+			// prevent "overtaking" the head pointer
 			if (next==tail.load(memory_order_acquire)) return;
 			ring_buffer[current]=new X;
 			head.store(next, memory_order_release);
@@ -79,7 +81,7 @@
 		{
 			unsigned int current=tail.load(memory_order_relaxed);
 			unsigned int next=(current+1)&15;
-			if (head.load(memory_order_acquire)==current) return;
+			if (current==head.load(memory_order_acquire)) return;
 			X * x=ring_buffer[current];
 			tail.store(next, memory_order_release);
 		}
@@ -91,16 +93,17 @@
 		<LI> @c memory_order_relaxed: Atomic operation and other
 		memory operations may be reordered freely. </LI>
 		
+		<LI> @c memory_order_release: Atomic operation must strictly
+		follow all memory operations that precede it in program order.
+		Use this constraint if the thread wants to hand over
+		a resource to another thread.
+		</LI>
+		
 		<LI> @c memory_order_acquire: Atomic operation must strictly
 		precede all memory operations that follow in
 		program order. Use this constraint if the thread
-		is going to use a resource produced or released by another
-		thread.</LI>
-		
-		<LI> @c memory_order_release: Atomic operation must strictly
-		follow all memory operations that preced it in program order.
-		Use this constraint if the thread produced or released a resource
-		for use by another thread.
+		wants to receive an object handed over from another
+		thread (via @c memory_order_release).
 		</LI>
 		
 		<LI> @c memory_order_consume: Atomic operation must strictly
@@ -242,6 +245,208 @@
 		return x;
 	}
 	\endcode
+	
+*/
+
+/**
+	\page faq Frequently asked questions
+	
+	<h3>Why do you use inline assembler instead of compiler intrinsics such as <tt>__sync_val_compare_and_swap</tt>?</h3>
+	
+	The <tt>__sync_*</tt> family of gcc intrinsics implicitly act as memory
+	fences (sometimes before the operations, sometimes after the operations,
+	sometimes both). The memory fences are the expensive part of the atomic
+	operation, and there are legitimate use cases for atomic operations
+	using weaker forms of memory ordering than <tt>__sync_*</tt> impose.
+	
+*/
+
+/**
+	\page architecture_support Implementing support for new architectures
+	
+	The implementation uses multiple layers of template classes
+	that refine the respective underlying class:
+	
+	<UL>
+		<LI>
+			At the topmost-level, the <code>boost::atomic&lt;T&gt;</code>
+			template provides the external interface. Implementation-wise,
+			it does not add anything (except for hiding copy constructor
+			and assignment operator), but just inherits from
+		</LI>
+		<LI>
+			<code>boost::detail::atomic::__atomic&lt;T,S=sizeof(T),I=is_integral_type&lt;T&gt; &gt;</code>.
+			This layer is mainly responsible for providing the overloaded operators
+			mapping to API member functions (e.g. <code>fetch_add</code>).
+			The defaulted template parameter <code>I</code> allows
+			to expose the correct API functions (via partial template
+			specialization): For non-integral types, it only
+			publishes the various <code>exchange</code> functions
+			as well as load and store, for integral types it
+			additionally exports arithmetic and logic operations.
+			
+			Depending on whether the given type is integral, it
+			inherits from either <code>boost::detail::atomic::__platform_atomic&lt;T,S=sizeof(T)&gt;</code>
+			or <code>boost::detail::atomic::__platform_atomic_integral&lt;T,S=sizeof(T)&gt;</code>.
+			There is however some special-casing: for non-integral types
+			of size 1, 2, 4 or 8, it will coerce the datatype into an integer representation
+			and delegate to <code>boost::detail::atomic::__platform_atomic_integral&lt;T,S=sizeof(T)&gt;</code>
+			-- the rationale is that platform implementors only need to provide
+			integer-type operations.
+		</LI>
+		<LI>
+			<code>boost::detail::atomic::__platform_atomic_integral&lt;T,S=sizeof(T)&gt;</code>
+			must provide the full set of operations for an integral type T
+			(i.e. <code>load</code>, <code>store</code>, <code>exchange</code>,
+			<code>compare_exchange_weak</code>, <code>compare_exchange_strong</code>,
+			<code>fetch_add</code>, <code>fetch_sub</code>, <code>fetch_and</code>,
+			<code>fetch_or</code>, <code>fetch_xor</code>, <code>is_lock_free</code>).
+			The default implementation uses locking to emulate atomic operations, so
+			this is the level at which implementors should provide template specializations
+			to add support for platform-specific atomic operations.
+			
+			The two separate template parameters allow separate specialization
+			on size and type (which, with fixed size, cannot
+			specify more than signedness/unsignedness). The rationale is that
+			most platform-specific atomic operations usually depend only on the
+			operand size, so that common implementations for signed/unsigned
+			types are possible. Signedness must nevertheless be treated
+			properly to choose properly sign-extending instructions for
+			the <code>load</code> operation (in most implementations this
+			will be a normal assignment in C, possibly accompanied by memory
+			fences, so that the compiler can choose the proper instruction).
+		</LI>
+		<LI>
+			At the lowest level,
+			<code>boost::detail::atomic::__platform_atomic&lt;T,S=sizeof(T)&gt;</code>
+			provides the most basic atomic operations (<code>load</code>, <code>store</code>,
+			<code>exchange</code>, <code>compare_exchange_weak</code>,
+			<code>compare_exchange_strong</code>) for arbitrarily generic data types.
+			The default implementation uses locking as a fallback mechanism.
+			Implementors generally do not have to specialize at this level
+			(since these will not be used for the common integral type sizes
+			of 1, 2, 4 and 8 bytes), but if s/he can if s/he so wishes to
+			provide truly atomic operations for "odd" data type sizes.
+			Some amount of care must be taken as the "raw" data type
+			passed in from the user through <code>boost::atomic&lt;T&gt;</code>
+			is visible here -- it thus needs to be type-punned or otherwise
+			manipulated byte-by-byte to avoid using overloaded assigment,
+			comparison operators and copy constructors.
+		</LI>
+	</UL>
+	
+	In principle implementors are responsible for providing the
+	full range of member functions of an atomic object, but
+	often only a portion of the required operations can be
+	usefully mapped to machine instructions. The library therefore
+	provides several helper template classes that
+	can automatically synthesize missing methods to
+	complete an implementation.
+	
+	At the minimum, an implementor must provide the
+	<code>load</code>, <code>store</code>,
+	<code>compare_exchange_weak</code> and
+	<code>is_lock_free</code> methods:
+	
+	\code
+		template<typename T>
+		class my_atomic_32 {
+		public:
+			my_atomic_32();
+			my_atomic_32(T initial_value) : value(initial_value) {}
+			
+			T load(memory_order order)
+			{
+				// platform-specific code
+			}
+			void store(T new_value, memory_order order)
+			{
+				// platform-specific code
+			}
+			bool compare_exchange_weak(T &expected, T desired,
+				memory_order order)
+			{
+				// platform-specific code
+			}
+			bool is_lock_free() {return true;}
+		protected:
+			typedef T integral_type;
+		private:
+			T value;
+		};
+	\endcode
+	
+	The template <code>boost::detail::atomic::__build_atomic_from_minimal</code>
+	will then take care of the rest:
+	
+	\code
+		template<typename T, unsigned short Size>
+		template<typename T>
+		class __platform_atomic_integral<T, 4>
+			: public __build_atomic_from_minimal<my_atomic_32<T> >
+		{
+		public:
+			typedef __build_atomic_from_minimal<my_atomic_32<T> > super;
+			
+			explicit __platform_atomic_integral(T v) : super(v) {}
+			__platform_atomic_integral(void) {}
+		};
+	\endcode
+	
+	There are several helper classes to assist in building "complete"
+	atomic implementations from different starting points:
+	
+	<UL>
+		<LI>
+			<code>__build_atomic_from_minimal</code> requires
+			<UL>
+				<LI><code>load</code></LI>
+				<LI><code>store</code></LI>
+				<LI><code>compare_exchange_weak</code></LI>
+			</UL>
+		</LI>
+		<LI>
+			<code>__build_atomic_from_exchange</code> requires
+			<UL>
+				<LI><code>load</code></LI>
+				<LI><code>store</code></LI>
+				<LI><code>compare_exchange_weak</code></LI>
+				<LI><code>compare_exchange_strong</code></LI>
+				<LI><code>exchange</code></LI>
+			</UL>
+		</LI>
+		<LI>
+			<code>__build_atomic_from_add</code> requires
+			<UL>
+				<LI><code>load</code></LI>
+				<LI><code>store</code></LI>
+				<LI><code>compare_exchange_weak</code></LI>
+				<LI><code>compare_exchange_strong</code></LI>
+				<LI><code>exchange</code></LI>
+				<LI><code>fetch_add</code></LI>
+			</UL>
+		</LI>
+		<LI>
+			<code>__build_atomic_from_typical</code> (<I>supported on gcc only</I>) requires
+			<UL>
+				<LI><code>load</code></LI>
+				<LI><code>store</code></LI>
+				<LI><code>compare_exchange_weak</code></LI>
+				<LI><code>compare_exchange_strong</code></LI>
+				<LI><code>exchange</code></LI>
+				<LI><code>fetch_add_var</code> (protected method)</LI>
+				<LI><code>fetch_inc</code> (protected method)</LI>
+				<LI><code>fetch_dec</code> (protected method)</LI>
+			</UL>
+			This will generater a <code>fetch_add</code> method
+			that calls <code>fetch_inc</code>/<code>fetch_dec</code>
+			when the given parameter is a compile-time constant
+			equal to +1 or -1 respectively, and <code>fetch_add_var</code>
+			in all other cases. This provides a mechanism for
+			optimizing the extremely common case of an atomic
+			variable being used as a counter.
+		</LI>
+	</UL>
 	
 */
 
