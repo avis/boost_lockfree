@@ -264,20 +264,23 @@
 /**
 	\page architecture_support Implementing support for new architectures
 	
-	The implementation uses multiple layers of template classes
-	that refine the respective underlying class:
+	\section template_organization Organization of class template layers
+	
+	The implementation uses multiple layers of template classes that
+	inherit from the next lower level each and refine or adapt the respective
+	underlying class:
 	
 	<UL>
 		<LI>
-			At the topmost-level, the <code>boost::atomic&lt;T&gt;</code>
-			template provides the external interface. Implementation-wise,
+			<code>boost::atomic&lt;T&gt;</code> is the topmost-level, providing 
+			the external interface. Implementation-wise,
 			it does not add anything (except for hiding copy constructor
-			and assignment operator), but just inherits from
+			and assignment operator).
 		</LI>
 		<LI>
 			<code>boost::detail::atomic::__atomic&lt;T,S=sizeof(T),I=is_integral_type&lt;T&gt; &gt;</code>.
 			This layer is mainly responsible for providing the overloaded operators
-			mapping to API member functions (e.g. <code>fetch_add</code>).
+			mapping to API member functions (e.g. <code>+=</code> to <code>fetch_add</code>).
 			The defaulted template parameter <code>I</code> allows
 			to expose the correct API functions (via partial template
 			specialization): For non-integral types, it only
@@ -310,11 +313,12 @@
 			specify more than signedness/unsignedness). The rationale is that
 			most platform-specific atomic operations usually depend only on the
 			operand size, so that common implementations for signed/unsigned
-			types are possible. Signedness must nevertheless be treated
-			properly to choose properly sign-extending instructions for
-			the <code>load</code> operation (in most implementations this
-			will be a normal assignment in C, possibly accompanied by memory
-			fences, so that the compiler can choose the proper instruction).
+			types are possible. Signedness allows to properly to choose sign-extending
+			instructions for the <code>load</code> operation, avoiding later
+			conversion. The expectation is that in most implementations this will
+			be a normal assignment in C, possibly accompanied by memory
+			fences, so that the compiler can automatically choose the correct
+			instruction.
 		</LI>
 		<LI>
 			At the lowest level,
@@ -335,12 +339,45 @@
 		</LI>
 	</UL>
 	
+	\section platform_atomic_implementation Implementing platform-specific atomic operations
+	
 	In principle implementors are responsible for providing the
-	full range of member functions of an atomic object, but
-	often only a portion of the required operations can be
-	usefully mapped to machine instructions. The library therefore
-	provides several helper template classes that
-	can automatically synthesize missing methods to
+	full range of named member functions of an atomic object
+	(i.e. <code>load</code>, <code>store</code>, <code>exchange</code>,
+	<code>compare_exchange_weak</code>, <code>compare_exchange_strong</code>,
+	<code>fetch_add</code>, <code>fetch_sub</code>, <code>fetch_and</code>,
+	<code>fetch_or</code>, <code>fetch_xor</code>, <code>is_lock_free</code>).
+	These must be implemented as partial template specializations for
+	<code>boost::detail::atomic::__platform_atomic_integral&lt;T,S=sizeof(T)&gt;</code>:
+	
+	\code
+		template<typename T>
+		class __platform_atomic_integral<T, 4>
+		{
+		public:
+			explicit __platform_atomic_integral(T v) : i(v) {}
+			__platform_atomic_integral(void) {}
+			
+			T load(memory_order order=memory_order_seq_cst) const volatile
+			{
+				// platform-specific code
+			}
+			void store(T v, memory_order order=memory_order_seq_cst) volatile
+			{
+				// platform-specific code
+			}
+			...
+		private:
+			volatile T i;
+		};
+	\endcode
+	
+	As noted above, it will usually suffice to specialize on the second
+	template argument, indicating the size of the data type in bytes.
+	
+	Often only a portion of the required operations can be
+	usefully mapped to machine instructions. Several helper template
+	classes are provided that can automatically synthesize missing methods to
 	complete an implementation.
 	
 	At the minimum, an implementor must provide the
@@ -352,24 +389,25 @@
 		template<typename T>
 		class my_atomic_32 {
 		public:
-			my_atomic_32();
+			my_atomic_32() {}
 			my_atomic_32(T initial_value) : value(initial_value) {}
 			
-			T load(memory_order order)
+			T load(memory_order order=memory_order_seq_cst) volatile const
 			{
 				// platform-specific code
 			}
-			void store(T new_value, memory_order order)
+			void store(T new_value, memory_order order=memory_order_seq_cst) volatile
 			{
 				// platform-specific code
 			}
 			bool compare_exchange_weak(T &expected, T desired,
-				memory_order order)
+				memory_order order=memory_order_seq_cst) volatile
 			{
 				// platform-specific code
 			}
-			bool is_lock_free() {return true;}
+			bool is_lock_free() const volatile {return true;}
 		protected:
+			// typedef is required for classes inheriting from this
 			typedef T integral_type;
 		private:
 			T value;
@@ -377,13 +415,12 @@
 	\endcode
 	
 	The template <code>boost::detail::atomic::__build_atomic_from_minimal</code>
-	will then take care of the rest:
+	can then take care of the rest:
 	
 	\code
-		template<typename T, unsigned short Size>
 		template<typename T>
 		class __platform_atomic_integral<T, 4>
-			: public __build_atomic_from_minimal<my_atomic_32<T> >
+			: public boost::detail::atomic::__build_atomic_from_minimal<my_atomic_32<T> >
 		{
 		public:
 			typedef __build_atomic_from_minimal<my_atomic_32<T> > super;
@@ -438,15 +475,91 @@
 				<LI><code>fetch_inc</code> (protected method)</LI>
 				<LI><code>fetch_dec</code> (protected method)</LI>
 			</UL>
-			This will generater a <code>fetch_add</code> method
+			This will generate a <code>fetch_add</code> method
 			that calls <code>fetch_inc</code>/<code>fetch_dec</code>
 			when the given parameter is a compile-time constant
 			equal to +1 or -1 respectively, and <code>fetch_add_var</code>
 			in all other cases. This provides a mechanism for
 			optimizing the extremely common case of an atomic
 			variable being used as a counter.
+			
+			The prototypes for these methods to be implemented is:
+			\code
+				template<typename T>
+				class my_atomic {
+				public:
+					T fetch_inc(memory_order order) volatile;
+					T fetch_dec(memory_order order) volatile;
+					T fetch_add_var(T counter, memory_order order) volatile;
+				};
+			\endcode
 		</LI>
 	</UL>
+	
+	There is one other helper template that can build sub-word-sized
+	atomic data types even though the underlying architecture allows
+	only word-sized atomic operations:
+	
+	\code
+		template<typename T>
+		class __platform_atomic_integral<T, 1> :
+			public __build_atomic_from_larger_type<my_atomic_32<uint32_t>, T>
+		{
+		public:
+			typedef __build_atomic_from_larger_type<my_atomic_32<uint32_t>, T> super;
+			
+			explicit __platform_atomic_integral(T v) : super(v) {}
+			__platform_atomic_integral(void) {}
+		};
+	\endcode
+	
+	The above would create an atomic data type of 1 byte size, and
+	use masking and shifts to map it to 32-bit atomic operations.
+	The base type must implement <code>load</code>, <code>store</code>
+	and <code>compare_exchange_weak</code> for this to work.
+	
+	These helper templates are defined in <code>boost/atomic/detail/builder.hpp</code>.
+	In unusual circumstances, an implementor may also opt to specialize
+	<code>public boost::detail::atomic::__platform_atomic&lt;T,S=sizeof(T)&gt;</code>
+	to provide support for atomic objects not fitting an integral size.
+	If you do that, keep the following things in mind:
+	
+	<UL>
+		<LI>
+			There is no reason to ever do this for object sizes
+			of 1, 2, 4 and 8
+		</LI>
+		<LI>
+			Only the methods
+			<LI><code>load</code></LI>
+			<LI><code>store</code></LI>
+			<LI><code>compare_exchange_weak</code></LI>
+			<LI><code>compare_exchange_strong</code></LI>
+			<LI><code>exchange</code></LI>
+			need to be implemented.
+		</LI>
+		<LI>
+			The type of the data to be stored in the atomic
+			variable (template parameter <code>T</code>)
+			is exposed to this class, and the type may have
+			overloaded assignment and comparison operators --
+			using these overloaded operators however will result
+			in an error. The implementor is responsible for
+			accessing the objects in a way that does not
+			invoke either of these operators (using e.g.
+			<code>memcpy</code> or type-casts).
+		</LI>
+	</UL>
+	
+	\section platform_atomic_implementation Putting it altogether
+	
+	The template specializations should be put into a header file
+	in the <code>boost/atomic/detail</code> directory, preferrably
+	specifying supported compiler and architecture in its name.
+	
+	The file <code>boost/atomic/platform.hpp</code> must
+	subsequently be modified to conditionally include the new
+	header.
 	
 */
 
@@ -461,9 +574,9 @@ namespace boost {
 	
 	The order of operations specified by the programmer in the
 	source code ("program order") does not necessarily match
-	the order in which they are actually executed on target system:
+	the order in which they are actually executed on the target system:
 	Both compiler as well as processor may reorder operations
-	quite arbitrarily. <B>Neglecting to specify any ordering
+	quite arbitrarily. <B>Specify the wrong ordering
 	constraint will therefore generally result in an incorrect program.</B>
 */
 enum memory_order {
