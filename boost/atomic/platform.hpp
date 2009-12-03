@@ -10,16 +10,6 @@
 
 	#include <boost/atomic/detail/gcc-ppc.hpp>
 
-/*
-#elif defined(__GNUC__) && (defined(__sparc__))
-
-	#include <boost/atomic/detail/gcc-sparc.hpp>
-
-#elif defined(__GNUC__) && defined(__ia64__) && !defined(USE_FALLBACK_ATOMICS)
-
-	#include <boost/atomic/detail/gcc-ia64.hpp>
-*/
-
 #else
 	
 	#include <boost/atomic/detail/generic-cas.hpp>

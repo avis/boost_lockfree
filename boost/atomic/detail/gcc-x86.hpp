@@ -1,7 +1,6 @@
 #ifndef BOOST_DETAIL_ATOMIC_GCC_X86_HPP
 #define BOOST_DETAIL_ATOMIC_GCC_X86_HPP
 
-#include <boost/atomic/memory_order.hpp>
 #include <boost/atomic/detail/base.hpp>
 #include <boost/atomic/detail/builder.hpp>
 
@@ -310,12 +309,6 @@ public:
 	explicit __platform_atomic_integral(T v) : super(v) {}
 	__platform_atomic_integral(void) {}
 };
-#endif
-
-#if defined(__i386__)
-typedef __atomic_x86_4<void *> __platform_atomic_address;
-#else
-typedef __atomic_x86_8<void *> __platform_atomic_address;
 #endif
 
 }

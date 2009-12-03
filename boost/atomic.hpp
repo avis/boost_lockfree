@@ -1,7 +1,7 @@
 #ifndef __BOOST_ATOMIC_HPP
 #define __BOOST_ATOMIC_HPP
 
-#include <boost/atomic/memory_order.hpp>
+#include <boost/memory_order.hpp>
 #include <boost/atomic/platform.hpp>
 #include <boost/atomic/detail/base.hpp>
 #include <boost/atomic/detail/integral-casts.hpp>

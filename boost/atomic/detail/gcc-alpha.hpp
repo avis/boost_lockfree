@@ -1,7 +1,6 @@
 #ifndef BOOST_DETAIL_ATOMIC_GCC_ALPHA_HPP
 #define BOOST_DETAIL_ATOMIC_GCC_ALPHA_HPP
 
-#include <boost/atomic/memory_order.hpp>
 #include <boost/atomic/detail/base.hpp>
 #include <boost/atomic/detail/builder.hpp>
 
@@ -318,8 +317,6 @@ public:
 	explicit __platform_atomic_integral(T v) : super(v) {}
 	__platform_atomic_integral(void) {}
 };
-
-typedef __build_exchange<__atomic_alpha_8<void *> > __platform_atomic_address;
 
 }
 }
