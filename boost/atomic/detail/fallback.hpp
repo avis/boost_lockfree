@@ -2,25 +2,11 @@
 #define BOOST_DETAIL_ATOMIC_FALLBACK_HPP
 
 #include <string.h>
-#include <boost/thread/mutex.hpp>
+#include <boost/smart_ptr/detail/spinlock_pool.hpp>
 
 namespace boost {
 namespace detail {
 namespace atomic {
-
-class atomic_guard {
-public:
-	inline atomic_guard(const volatile void * address, memory_order order)
-		: global(seq_cst_lock, order==memory_order_seq_cst),
-		local(get_lock_for_address(address))
-	{}
-	inline ~atomic_guard(void) {}
-protected:
-	static boost::mutex &get_lock_for_address(volatile const void * address);
-	mutex::scoped_lock global, local;
-private:
-	static boost::mutex seq_cst_lock;
-};
 
 template<typename T>
 class __fallback_atomic {
@@ -30,19 +16,19 @@ public:
 	
 	void store(const T &t, memory_order order=memory_order_seq_cst) volatile
 	{
-		atomic_guard guard(&i, order);
+		detail::spinlock_pool<0>::scoped_lock guard(const_cast<T*>(&i));
 		memcpy((void*)&i, &t, sizeof(T));
 	}
 	T load(memory_order order=memory_order_seq_cst) volatile const
 	{
-		atomic_guard guard(&i, order);
+		detail::spinlock_pool<0>::scoped_lock guard(const_cast<T*>(&i));
 		T tmp;
-		memcpy(&tmp, (void*)&i, sizeof(T));
+		memcpy(&tmp, (T*)&i, sizeof(T));
 		return tmp;
 	}
 	bool compare_exchange_strong(T &expected, T desired, memory_order order=memory_order_seq_cst) volatile
 	{
-		atomic_guard guard(&i, order);
+		detail::spinlock_pool<0>::scoped_lock guard(const_cast<T*>(&i));
 		if (memcmp((void*)&i, &expected, sizeof(T))==0) {
 			memcpy((void*)&i, &desired, sizeof(T));
 			return true;
@@ -57,7 +43,7 @@ public:
 	}
 	T exchange(T replacement, memory_order order=memory_order_seq_cst) volatile
 	{
-		atomic_guard guard(&i, order);
+		detail::spinlock_pool<0>::scoped_lock guard(const_cast<T*>(&i));
 		T tmp;
 		memcpy(&tmp, (void*)&i, sizeof(T));
 		memcpy((void*)&i, &replacement, sizeof(T));
