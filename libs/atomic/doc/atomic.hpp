@@ -414,16 +414,16 @@
 		};
 	\endcode
 	
-	The template <code>boost::detail::atomic::__build_atomic_from_minimal</code>
+	The template <code>boost::detail::atomic::build_atomic_from_minimal</code>
 	can then take care of the rest:
 	
 	\code
 		template<typename T>
 		class __platform_atomic_integral<T, 4>
-			: public boost::detail::atomic::__build_atomic_from_minimal<my_atomic_32<T> >
+			: public boost::detail::atomic::build_atomic_from_minimal<my_atomic_32<T> >
 		{
 		public:
-			typedef __build_atomic_from_minimal<my_atomic_32<T> > super;
+			typedef build_atomic_from_minimal<my_atomic_32<T> > super;
 			
 			explicit __platform_atomic_integral(T v) : super(v) {}
 			__platform_atomic_integral(void) {}
@@ -435,7 +435,7 @@
 	
 	<UL>
 		<LI>
-			<code>__build_atomic_from_minimal</code> requires
+			<code>build_atomic_from_minimal</code> requires
 			<UL>
 				<LI><code>load</code></LI>
 				<LI><code>store</code></LI>
@@ -443,7 +443,7 @@
 			</UL>
 		</LI>
 		<LI>
-			<code>__build_atomic_from_exchange</code> requires
+			<code>build_atomic_from_exchange</code> requires
 			<UL>
 				<LI><code>load</code></LI>
 				<LI><code>store</code></LI>
@@ -453,7 +453,7 @@
 			</UL>
 		</LI>
 		<LI>
-			<code>__build_atomic_from_add</code> requires
+			<code>build_atomic_from_add</code> requires
 			<UL>
 				<LI><code>load</code></LI>
 				<LI><code>store</code></LI>
@@ -464,7 +464,7 @@
 			</UL>
 		</LI>
 		<LI>
-			<code>__build_atomic_from_typical</code> (<I>supported on gcc only</I>) requires
+			<code>build_atomic_from_typical</code> (<I>supported on gcc only</I>) requires
 			<UL>
 				<LI><code>load</code></LI>
 				<LI><code>store</code></LI>
@@ -503,10 +503,10 @@
 	\code
 		template<typename T>
 		class __platform_atomic_integral<T, 1> :
-			public __build_atomic_from_larger_type<my_atomic_32<uint32_t>, T>
+			public build_atomic_from_larger_type<my_atomic_32<uint32_t>, T>
 		{
 		public:
-			typedef __build_atomic_from_larger_type<my_atomic_32<uint32_t>, T> super;
+			typedef build_atomic_from_larger_type<my_atomic_32<uint32_t>, T> super;
 			
 			explicit __platform_atomic_integral(T v) : super(v) {}
 			__platform_atomic_integral(void) {}

@@ -1,5 +1,5 @@
-#ifndef __BOOST_ATOMIC_HPP
-#define __BOOST_ATOMIC_HPP
+#ifndef BOOST_ATOMIC_HPP
+#define BOOST_ATOMIC_HPP
 
 #include <boost/memory_order.hpp>
 #include <boost/atomic/platform.hpp>

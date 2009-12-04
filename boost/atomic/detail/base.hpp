@@ -21,9 +21,9 @@ protected:
 };
 
 template<typename T, unsigned short Size=sizeof(T)>
-class __platform_atomic_integral : public __build_atomic_from_exchange<__fallback_atomic<T> > {
+class __platform_atomic_integral : public build_atomic_from_exchange<__fallback_atomic<T> > {
 public:
-	typedef __build_atomic_from_exchange<__fallback_atomic<T> > super;
+	typedef build_atomic_from_exchange<__fallback_atomic<T> > super;
 	
 	explicit __platform_atomic_integral(T v) : super(v) {}
 	__platform_atomic_integral() {}

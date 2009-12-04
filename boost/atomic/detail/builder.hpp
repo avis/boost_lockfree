@@ -17,7 +17,7 @@ given a Base that implements:
 generates exchange and compare_exchange_strong
 */
 template<typename Base>
-class __build_exchange : public Base {
+class build_exchange : public Base {
 public:
 	typedef typename Base::integral_type integral_type;
 	
@@ -41,8 +41,8 @@ public:
 		return o;
 	}
 	
-	__build_exchange() {}
-	explicit __build_exchange(integral_type i) : Base(i) {}
+	build_exchange() {}
+	explicit build_exchange(integral_type i) : Base(i) {}
 };
 
 /*
@@ -58,7 +58,7 @@ is constant +1/-1, and uses fetch_add_var otherwise
 the intention is to allow optimizing the incredibly common case of +1/-1
 */
 template<typename Base>
-class __build_const_fetch_add : public Base {
+class build_const_fetch_add : public Base {
 public:
 	typedef typename Base::integral_type integral_type;
 	
@@ -75,8 +75,8 @@ public:
 		return fetch_add_var(c, order);
 	}
 	
-	__build_const_fetch_add() {}
-	explicit __build_const_fetch_add(integral_type i) : Base(i) {}
+	build_const_fetch_add() {}
+	explicit build_const_fetch_add(integral_type i) : Base(i) {}
 protected:
 	using Base::fetch_add_var;
 	using Base::fetch_inc;
@@ -92,7 +92,7 @@ given a Base that implements:
 generates a -- not very efficient, but correct -- fetch_add operation
 */
 template<typename Base>
-class __build_fetch_add : public Base {
+class build_fetch_add : public Base {
 public:
 	typedef typename Base::integral_type integral_type;
 	
@@ -106,8 +106,8 @@ public:
 		return o;
 	}
 	
-	__build_fetch_add() {}
-	explicit __build_fetch_add(integral_type i) : Base(i) {}
+	build_fetch_add() {}
+	explicit build_fetch_add(integral_type i) : Base(i) {}
 };
 
 /*
@@ -118,7 +118,7 @@ given a Base that implements:
 generates fetch_sub and post/pre- increment/decrement operators
 */
 template<typename Base>
-class __build_arithmeticops : public Base {
+class build_arithmeticops : public Base {
 public:
 	typedef typename Base::integral_type integral_type;
 	
@@ -131,8 +131,8 @@ public:
 		return fetch_add(-c, order);
 	}
 	
-	__build_arithmeticops() {}
-	explicit __build_arithmeticops(integral_type i) : Base(i) {}
+	build_arithmeticops() {}
+	explicit build_arithmeticops(integral_type i) : Base(i) {}
 };
 
 /*
@@ -144,7 +144,7 @@ given a Base that implements:
 generates -- not very efficient, but correct -- fetch_and, fetch_or and fetch_xor operators
 */
 template<typename Base>
-class __build_logicops : public Base {
+class build_logicops : public Base {
 public:
 	typedef typename Base::integral_type integral_type;
 	
@@ -170,8 +170,8 @@ public:
 		return o;
 	}
 	
-	__build_logicops() {}
-	__build_logicops(integral_type i) : Base(i) {}
+	build_logicops() {}
+	build_logicops(integral_type i) : Base(i) {}
 };
 
 /*
@@ -184,13 +184,13 @@ given a Base that implements:
 generates the full set of atomic operations for integral types
 */
 template<typename Base>
-class __build_atomic_from_minimal : public __build_logicops< __build_arithmeticops< __build_fetch_add< __build_exchange<Base> > > > {
+class build_atomic_from_minimal : public build_logicops< build_arithmeticops< build_fetch_add< build_exchange<Base> > > > {
 public:
-	typedef __build_logicops< __build_arithmeticops< __build_fetch_add< __build_exchange<Base> > > > super;
+	typedef build_logicops< build_arithmeticops< build_fetch_add< build_exchange<Base> > > > super;
 	typedef typename super::integral_type integral_type;
 	
-	__build_atomic_from_minimal(void) {}
-	__build_atomic_from_minimal(typename super::integral_type i) : super(i) {}
+	build_atomic_from_minimal(void) {}
+	build_atomic_from_minimal(typename super::integral_type i) : super(i) {}
 };
 
 /*
@@ -208,13 +208,13 @@ given a Base that implements:
 generates the full set of atomic operations for integral types
 */
 template<typename Base>
-class __build_atomic_from_typical : public __build_logicops< __build_arithmeticops< __build_const_fetch_add<Base> > > {
+class build_atomic_from_typical : public build_logicops< build_arithmeticops< build_const_fetch_add<Base> > > {
 public:
-	typedef __build_logicops< __build_arithmeticops< __build_const_fetch_add<Base> > > super;
+	typedef build_logicops< build_arithmeticops< build_const_fetch_add<Base> > > super;
 	typedef typename super::integral_type integral_type;
 	
-	__build_atomic_from_typical(void) {}
-	__build_atomic_from_typical(typename super::integral_type i) : super(i) {}
+	build_atomic_from_typical(void) {}
+	build_atomic_from_typical(typename super::integral_type i) : super(i) {}
 };
 
 /*
@@ -230,13 +230,13 @@ given a Base that implements:
 generates the full set of atomic operations for integral types
 */
 template<typename Base>
-class __build_atomic_from_add : public __build_logicops< __build_arithmeticops<Base> > {
+class build_atomic_from_add : public build_logicops< build_arithmeticops<Base> > {
 public:
-	typedef __build_logicops< __build_arithmeticops<Base> > super;
+	typedef build_logicops< build_arithmeticops<Base> > super;
 	typedef typename super::integral_type integral_type;
 	
-	__build_atomic_from_add(void) {}
-	__build_atomic_from_add(typename super::integral_type i) : super(i) {}
+	build_atomic_from_add(void) {}
+	build_atomic_from_add(typename super::integral_type i) : super(i) {}
 };
 
 /*
@@ -251,13 +251,13 @@ given a Base that implements:
 generates the full set of atomic operations for integral types
 */
 template<typename Base>
-class __build_atomic_from_exchange : public __build_logicops< __build_arithmeticops< __build_fetch_add<Base> > > {
+class build_atomic_from_exchange : public build_logicops< build_arithmeticops< build_fetch_add<Base> > > {
 public:
-	typedef __build_logicops< __build_arithmeticops< __build_fetch_add<Base> > > super;
+	typedef build_logicops< build_arithmeticops< build_fetch_add<Base> > > super;
 	typedef typename super::integral_type integral_type;
 	
-	__build_atomic_from_exchange(void) {}
-	__build_atomic_from_exchange(typename super::integral_type i) : super(i) {}
+	build_atomic_from_exchange(void) {}
+	build_atomic_from_exchange(typename super::integral_type i) : super(i) {}
 };
 
 
@@ -271,12 +271,12 @@ data type (e.g. an atomic "byte" embedded into a temporary
 and properly aligned atomic "int").
 */
 template<typename Base, typename Type>
-class __build_base_from_larger_type {
+class build_base_from_larger_type {
 public:
 	typedef Type integral_type;
 	
-	__build_base_from_larger_type() {}
-	__build_base_from_larger_type(integral_type t) {store(t, memory_order_relaxed);}
+	build_base_from_larger_type() {}
+	build_base_from_larger_type(integral_type t) {store(t, memory_order_relaxed);}
 	
 	integral_type load(memory_order order=memory_order_seq_cst) const volatile
 	{
@@ -377,14 +377,14 @@ data type (e.g. an atomic "byte" embedded into a temporary
 and properly aligned atomic "int").
 */
 template<typename Base, typename Type>
-class __build_atomic_from_larger_type : public __build_atomic_from_minimal< __build_base_from_larger_type<Base, Type> > {
+class build_atomic_from_larger_type : public build_atomic_from_minimal< build_base_from_larger_type<Base, Type> > {
 public:
-	typedef __build_atomic_from_minimal< __build_base_from_larger_type<Base, Type> > super;
+	typedef build_atomic_from_minimal< build_base_from_larger_type<Base, Type> > super;
 	//typedef typename super::integral_type integral_type;
 	typedef Type integral_type;
 	
-	__build_atomic_from_larger_type() {}
-	__build_atomic_from_larger_type(integral_type v) : super(v) {}
+	build_atomic_from_larger_type() {}
+	build_atomic_from_larger_type(integral_type v) : super(v) {}
 };
 
 }
