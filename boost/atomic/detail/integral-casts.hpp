@@ -6,13 +6,13 @@
 namespace boost { namespace detail { namespace atomic {
 
 template<typename T>
-class __platform_atomic<T, 1> : private __platform_atomic_integral<uint8_t> {
+class platform_atomic<T, 1> : private platform_atomic_integral<uint8_t> {
 public:
-	typedef __platform_atomic_integral<uint8_t> super;
+	typedef platform_atomic_integral<uint8_t> super;
 	typedef union { T e; uint8_t i;} conv;
 	
-	__platform_atomic() {}
-	explicit __platform_atomic(T t) : super(to_integral(t))
+	platform_atomic() {}
+	explicit platform_atomic(T t) : super(to_integral(t))
 	{
 	}
 	
@@ -68,13 +68,13 @@ protected:
 };
 
 template<typename T>
-class __platform_atomic<T, 2> : private __platform_atomic_integral<uint16_t> {
+class platform_atomic<T, 2> : private platform_atomic_integral<uint16_t> {
 public:
-	typedef __platform_atomic_integral<uint16_t> super;
+	typedef platform_atomic_integral<uint16_t> super;
 	typedef union { T e; uint16_t i;} conv;
 	
-	__platform_atomic() {}
-	explicit __platform_atomic(T t) : super(to_integral(t))
+	platform_atomic() {}
+	explicit platform_atomic(T t) : super(to_integral(t))
 	{
 	}
 	
@@ -130,13 +130,13 @@ protected:
 };
 
 template<typename T>
-class __platform_atomic<T, 4> : private __platform_atomic_integral<uint32_t> {
+class platform_atomic<T, 4> : private platform_atomic_integral<uint32_t> {
 public:
-	typedef __platform_atomic_integral<uint32_t> super;
+	typedef platform_atomic_integral<uint32_t> super;
 	typedef union { T e; uint32_t i;} conv;
 	
-	__platform_atomic() {}
-	explicit __platform_atomic(T t) : super(to_integral(t))
+	platform_atomic() {}
+	explicit platform_atomic(T t) : super(to_integral(t))
 	{
 	}
 	
@@ -192,13 +192,13 @@ protected:
 };
 
 template<typename T>
-class __platform_atomic<T, 8> : private __platform_atomic_integral<uint64_t> {
+class platform_atomic<T, 8> : private platform_atomic_integral<uint64_t> {
 public:
-	typedef __platform_atomic_integral<uint64_t> super;
+	typedef platform_atomic_integral<uint64_t> super;
 	typedef union { T e; uint64_t i;} conv;
 	
-	__platform_atomic() {}
-	explicit __platform_atomic(T t) : super(to_integral(t))
+	platform_atomic() {}
+	explicit platform_atomic(T t) : super(to_integral(t))
 	{
 	}
 	

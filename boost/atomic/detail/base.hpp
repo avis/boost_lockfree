@@ -10,23 +10,23 @@ namespace detail {
 namespace atomic {
 
 template<typename T, unsigned short Size=sizeof(T)>
-class __platform_atomic : public __fallback_atomic<T> {
+class platform_atomic : public fallback_atomic<T> {
 public:
-	typedef __fallback_atomic<T> super;
+	typedef fallback_atomic<T> super;
 	
-	explicit __platform_atomic(T v) : super(v) {}
-	__platform_atomic() {}
+	explicit platform_atomic(T v) : super(v) {}
+	platform_atomic() {}
 protected:
 	typedef typename super::integral_type integral_type;
 };
 
 template<typename T, unsigned short Size=sizeof(T)>
-class __platform_atomic_integral : public build_atomic_from_exchange<__fallback_atomic<T> > {
+class platform_atomic_integral : public build_atomic_from_exchange<fallback_atomic<T> > {
 public:
-	typedef build_atomic_from_exchange<__fallback_atomic<T> > super;
+	typedef build_atomic_from_exchange<fallback_atomic<T> > super;
 	
-	explicit __platform_atomic_integral(T v) : super(v) {}
-	__platform_atomic_integral() {}
+	explicit platform_atomic_integral(T v) : super(v) {}
+	platform_atomic_integral() {}
 protected:
 	typedef typename super::integral_type integral_type;
 };
@@ -34,15 +34,15 @@ protected:
 /**/
 
 template<typename T, unsigned short Size=sizeof(T), typename Int=typename is_integral_type<T>::test>
-class __atomic;
+class internal_atomic;
 
 template<typename T, unsigned short Size>
-class __atomic<T, Size, void> : private detail::atomic::__platform_atomic<T> {
+class internal_atomic<T, Size, void> : private detail::atomic::platform_atomic<T> {
 public:
-	typedef detail::atomic::__platform_atomic<T> super;
+	typedef detail::atomic::platform_atomic<T> super;
 	
-	__atomic() {}
-	explicit __atomic(T v) : super(v) {}
+	internal_atomic() {}
+	explicit internal_atomic(T v) : super(v) {}
 	
 	operator T(void) const volatile {return load();}
 	T operator=(T v) volatile {store(v); return v;}	
@@ -55,18 +55,18 @@ public:
 	using super::exchange;
 	
 private:
-	__atomic(const __atomic &);
-	void operator=(const __atomic &);
+	internal_atomic(const internal_atomic &);
+	void operator=(const internal_atomic &);
 };
 
 template<typename T, unsigned short Size>
-class __atomic<T, Size, int> : private detail::atomic::__platform_atomic_integral<T> {
+class internal_atomic<T, Size, int> : private detail::atomic::platform_atomic_integral<T> {
 public:
-	typedef detail::atomic::__platform_atomic_integral<T> super;
+	typedef detail::atomic::platform_atomic_integral<T> super;
 	typedef typename super::integral_type integral_type;
 	
-	__atomic() {}
-	explicit __atomic(T v) : super(v) {}
+	internal_atomic() {}
+	explicit internal_atomic(T v) : super(v) {}
 	
 	using super::is_lock_free;
 	using super::load;
@@ -96,8 +96,8 @@ public:
 	integral_type operator--(int) volatile {return fetch_sub(1);}
 	
 private:
-	__atomic(const __atomic &);
-	void operator=(const __atomic &);
+	internal_atomic(const internal_atomic &);
+	void operator=(const internal_atomic &);
 };
 
 

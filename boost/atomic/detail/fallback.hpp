@@ -9,10 +9,10 @@ namespace detail {
 namespace atomic {
 
 template<typename T>
-class __fallback_atomic {
+class fallback_atomic {
 public:
-	__fallback_atomic(void) {}
-	explicit __fallback_atomic(const T &t) {memcpy(&i, &t, sizeof(T));}
+	fallback_atomic(void) {}
+	explicit fallback_atomic(const T &t) {memcpy(&i, &t, sizeof(T));}
 	
 	void store(const T &t, memory_order order=memory_order_seq_cst) volatile
 	{

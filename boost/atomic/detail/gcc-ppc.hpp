@@ -47,11 +47,11 @@ static inline void __fence_after(memory_order order)
 }
 
 template<typename T>
-class __atomic_ppc_4 {
+class atomic_ppc_32 {
 public:
 	typedef T integral_type;
-	explicit __atomic_ppc_4(T v) : i(v) {}
-	__atomic_ppc_4() {}
+	explicit atomic_ppc_32(T v) : i(v) {}
+	atomic_ppc_32() {}
 	T load(memory_order order=memory_order_seq_cst) const volatile
 	{
 		T v=*reinterpret_cast<volatile const T *>(&i);
@@ -139,11 +139,11 @@ private:
 #warning Untested code -- please inform me if it works
 
 template<typename T>
-class __atomic_ppc_8 {
+class atomic_ppc_64 {
 public:
 	typedef T integral_type;
-	explicit __atomic_ppc_8(T v) : i(v) {}
-	__atomic_ppc_8() {}
+	explicit atomic_ppc_64(T v) : i(v) {}
+	atomic_ppc_64() {}
 	T load(memory_order order=memory_order_seq_cst) const volatile
 	{
 		T v=*reinterpret_cast<volatile const T *>(&i);
@@ -228,38 +228,38 @@ private:
 #endif
 
 template<typename T>
-class __platform_atomic_integral<T, 4> : public build_atomic_from_typical<build_exchange<__atomic_ppc_4<T> > > {
+class platform_atomic_integral<T, 4> : public build_atomic_from_typical<build_exchange<atomic_ppc_32<T> > > {
 public:
-	typedef build_atomic_from_typical<build_exchange<__atomic_ppc_4<T> > > super;
-	explicit __platform_atomic_integral(T v) : super(v) {}
-	__platform_atomic_integral(void) {}
+	typedef build_atomic_from_typical<build_exchange<atomic_ppc_32<T> > > super;
+	explicit platform_atomic_integral(T v) : super(v) {}
+	platform_atomic_integral(void) {}
 };
 
 template<typename T>
-class __platform_atomic_integral<T, 1>: public build_atomic_from_larger_type<__atomic_ppc_4<uint32_t>, T> {
+class platform_atomic_integral<T, 1>: public build_atomic_from_larger_type<atomic_ppc_32<uint32_t>, T> {
 public:
-	typedef build_atomic_from_larger_type<__atomic_ppc_4<uint32_t>, T> super;
+	typedef build_atomic_from_larger_type<atomic_ppc_32<uint32_t>, T> super;
 	
-	explicit __platform_atomic_integral(T v) : super(v) {}
-	__platform_atomic_integral(void) {}
+	explicit platform_atomic_integral(T v) : super(v) {}
+	platform_atomic_integral(void) {}
 };
 
 template<typename T>
-class __platform_atomic_integral<T, 2>: public build_atomic_from_larger_type<__atomic_ppc_4<uint32_t>, T> {
+class platform_atomic_integral<T, 2>: public build_atomic_from_larger_type<atomic_ppc_32<uint32_t>, T> {
 public:
-	typedef build_atomic_from_larger_type<__atomic_ppc_4<uint32_t>, T> super;
+	typedef build_atomic_from_larger_type<atomic_ppc_32<uint32_t>, T> super;
 	
-	explicit __platform_atomic_integral(T v) : super(v) {}
-	__platform_atomic_integral(void) {}
+	explicit platform_atomic_integral(T v) : super(v) {}
+	platform_atomic_integral(void) {}
 };
 
 #if defined(__powerpc64__)
 template<typename T>
-class __platform_atomic_integral<T, 8> : public build_atomic_from_typical<build_exchange<__atomic_ppc_8<T> > > {
+class platform_atomic_integral<T, 8> : public build_atomic_from_typical<build_exchange<atomic_ppc_64<T> > > {
 public:
-	typedef build_atomic_from_typical<build_exchange<__atomic_ppc_8<T> > > super;
-	explicit __platform_atomic_integral(T v) : super(v) {}
-	__platform_atomic_integral(void) {}
+	typedef build_atomic_from_typical<build_exchange<atomic_ppc_64<T> > > super;
+	explicit platform_atomic_integral(T v) : super(v) {}
+	platform_atomic_integral(void) {}
 };
 #endif
 

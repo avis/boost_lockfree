@@ -9,9 +9,9 @@
 namespace boost {
 
 template<typename T>
-class atomic : public detail::atomic::__atomic<T> {
+class atomic : public detail::atomic::internal_atomic<T> {
 public:
-	typedef detail::atomic::__atomic<T> super;
+	typedef detail::atomic::internal_atomic<T> super;
 	
 	atomic() {}
 	explicit atomic(T v) : super(v) {}
@@ -22,9 +22,9 @@ private:
 
 
 template<>
-class atomic<bool> : private detail::atomic::__atomic<bool> {
+class atomic<bool> : private detail::atomic::internal_atomic<bool> {
 public:
-	typedef detail::atomic::__atomic<bool> super;
+	typedef detail::atomic::internal_atomic<bool> super;
 	
 	atomic() {}
 	explicit atomic(bool v) : super(v) {}
@@ -44,9 +44,9 @@ private:
 };
 
 template<>
-class atomic<void *> : private detail::atomic::__atomic<void *, sizeof(void *), int> {
+class atomic<void *> : private detail::atomic::internal_atomic<void *, sizeof(void *), int> {
 public:
-	typedef detail::atomic::__atomic<void *, sizeof(void *), int> super;
+	typedef detail::atomic::internal_atomic<void *, sizeof(void *), int> super;
 	
 	atomic() {}
 	explicit atomic(void * p) : super(p) {}
@@ -68,9 +68,9 @@ private:
 /* FIXME: pointer arithmetic still missing */
 
 template<typename T>
-class atomic<T *> : private detail::atomic::__atomic<intptr_t> {
+class atomic<T *> : private detail::atomic::internal_atomic<intptr_t> {
 public:
-	typedef detail::atomic::__atomic<intptr_t> super;
+	typedef detail::atomic::internal_atomic<intptr_t> super;
 	
 	atomic() {}
 	explicit atomic(T * p) : super((intptr_t)p) {}

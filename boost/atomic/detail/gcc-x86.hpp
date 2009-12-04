@@ -32,10 +32,10 @@ static inline void __fence_after(memory_order order)
 }
 
 template<typename T>
-class __atomic_x86_1 {
+class atomic_x86_8 {
 public:
-	explicit __atomic_x86_1(T v) : i(v) {}
-	__atomic_x86_1() {}
+	explicit atomic_x86_8(T v) : i(v) {}
+	atomic_x86_8() {}
 	T load(memory_order order=memory_order_seq_cst) const volatile
 	{
 		T v=*reinterpret_cast<volatile const T *>(&i);
@@ -78,18 +78,18 @@ private:
 };
 
 template<typename T>
-class __platform_atomic_integral<T, 1> : public build_atomic_from_add<__atomic_x86_1<T> > {
+class platform_atomic_integral<T, 1> : public build_atomic_from_add<atomic_x86_8<T> > {
 public:
-	typedef build_atomic_from_add<__atomic_x86_1<T> > super;
-	explicit __platform_atomic_integral(T v) : super(v) {}
-	__platform_atomic_integral(void) {}
+	typedef build_atomic_from_add<atomic_x86_8<T> > super;
+	explicit platform_atomic_integral(T v) : super(v) {}
+	platform_atomic_integral(void) {}
 };
 
 template<typename T>
-class __atomic_x86_2 {
+class atomic_x86_16 {
 public:
-	explicit __atomic_x86_2(T v) : i(v) {}
-	__atomic_x86_2() {}
+	explicit atomic_x86_16(T v) : i(v) {}
+	atomic_x86_16() {}
 	T load(memory_order order=memory_order_seq_cst) const volatile
 	{
 		T v=*reinterpret_cast<volatile const T *>(&i);
@@ -132,18 +132,18 @@ private:
 };
 
 template<typename T>
-class __platform_atomic_integral<T, 2> : public build_atomic_from_add<__atomic_x86_2<T> > {
+class platform_atomic_integral<T, 2> : public build_atomic_from_add<atomic_x86_16<T> > {
 public:
-	typedef build_atomic_from_add<__atomic_x86_2<T> > super;
-	explicit __platform_atomic_integral(T v) : super(v) {}
-	__platform_atomic_integral(void) {}
+	typedef build_atomic_from_add<atomic_x86_16<T> > super;
+	explicit platform_atomic_integral(T v) : super(v) {}
+	platform_atomic_integral(void) {}
 };
 
 template<typename T>
-class __atomic_x86_4 {
+class atomic_x86_32 {
 public:
-	explicit __atomic_x86_4(T v) : i(v) {}
-	__atomic_x86_4() {}
+	explicit atomic_x86_32(T v) : i(v) {}
+	atomic_x86_32() {}
 	T load(memory_order order=memory_order_seq_cst) const volatile
 	{
 		T v=*reinterpret_cast<volatile const T *>(&i);
@@ -186,19 +186,19 @@ private:
 };
 
 template<typename T>
-class __platform_atomic_integral<T, 4> : public build_atomic_from_add<__atomic_x86_4<T> > {
+class platform_atomic_integral<T, 4> : public build_atomic_from_add<atomic_x86_32<T> > {
 public:
-	typedef build_atomic_from_add<__atomic_x86_4<T> > super;
-	explicit __platform_atomic_integral(T v) : super(v) {}
-	__platform_atomic_integral(void) {}
+	typedef build_atomic_from_add<atomic_x86_32<T> > super;
+	explicit platform_atomic_integral(T v) : super(v) {}
+	platform_atomic_integral(void) {}
 };
 
 #if defined(__amd64__)
 template<typename T>
-class __atomic_x86_8 {
+class atomic_x86_64 {
 public:
-	explicit __atomic_x86_8(T v) : i(v) {}
-	__atomic_x86_8() {}
+	explicit atomic_x86_64(T v) : i(v) {}
+	atomic_x86_64() {}
 	T load(memory_order order=memory_order_seq_cst) const volatile
 	{
 		T v=*reinterpret_cast<volatile const T *>(&i);
@@ -242,12 +242,12 @@ private:
 #elif defined(__i686__)
 
 template<typename T>
-class __atomic_x86_8 {
+class atomic_x86_64 {
 private:
-	typedef __atomic_x86_8 this_type;
+	typedef atomic_x86_64 this_type;
 public:
-	explicit __atomic_x86_8(T v) : i(v) {}
-	__atomic_x86_8() {}
+	explicit atomic_x86_64(T v) : i(v) {}
+	atomic_x86_64() {}
 	
 	bool compare_exchange_strong(T &e, T d, memory_order order=memory_order_seq_cst) volatile
 	{
@@ -303,11 +303,11 @@ private:
 
 #if defined(__amd64__) || defined(__i686__)
 template<typename T>
-class __platform_atomic_integral<T, 8> : public build_atomic_from_add<__atomic_x86_8<T> >{
+class platform_atomic_integral<T, 8> : public build_atomic_from_add<atomic_x86_64<T> >{
 public:
-	typedef build_atomic_from_add<__atomic_x86_8<T> > super;
-	explicit __platform_atomic_integral(T v) : super(v) {}
-	__platform_atomic_integral(void) {}
+	typedef build_atomic_from_add<atomic_x86_64<T> > super;
+	explicit platform_atomic_integral(T v) : super(v) {}
+	platform_atomic_integral(void) {}
 };
 #endif
 

@@ -278,7 +278,7 @@
 			and assignment operator).
 		</LI>
 		<LI>
-			<code>boost::detail::atomic::__atomic&lt;T,S=sizeof(T),I=is_integral_type&lt;T&gt; &gt;</code>.
+			<code>boost::detail::atomic::internal_atomic&lt;T,S=sizeof(T),I=is_integral_type&lt;T&gt; &gt;</code>.
 			This layer is mainly responsible for providing the overloaded operators
 			mapping to API member functions (e.g. <code>+=</code> to <code>fetch_add</code>).
 			The defaulted template parameter <code>I</code> allows
@@ -289,16 +289,16 @@
 			additionally exports arithmetic and logic operations.
 			
 			Depending on whether the given type is integral, it
-			inherits from either <code>boost::detail::atomic::__platform_atomic&lt;T,S=sizeof(T)&gt;</code>
-			or <code>boost::detail::atomic::__platform_atomic_integral&lt;T,S=sizeof(T)&gt;</code>.
+			inherits from either <code>boost::detail::atomic::platform_atomic&lt;T,S=sizeof(T)&gt;</code>
+			or <code>boost::detail::atomic::platform_atomic_integral&lt;T,S=sizeof(T)&gt;</code>.
 			There is however some special-casing: for non-integral types
 			of size 1, 2, 4 or 8, it will coerce the datatype into an integer representation
-			and delegate to <code>boost::detail::atomic::__platform_atomic_integral&lt;T,S=sizeof(T)&gt;</code>
+			and delegate to <code>boost::detail::atomic::platform_atomic_integral&lt;T,S=sizeof(T)&gt;</code>
 			-- the rationale is that platform implementors only need to provide
 			integer-type operations.
 		</LI>
 		<LI>
-			<code>boost::detail::atomic::__platform_atomic_integral&lt;T,S=sizeof(T)&gt;</code>
+			<code>boost::detail::atomic::platform_atomic_integral&lt;T,S=sizeof(T)&gt;</code>
 			must provide the full set of operations for an integral type T
 			(i.e. <code>load</code>, <code>store</code>, <code>exchange</code>,
 			<code>compare_exchange_weak</code>, <code>compare_exchange_strong</code>,
@@ -322,7 +322,7 @@
 		</LI>
 		<LI>
 			At the lowest level,
-			<code>boost::detail::atomic::__platform_atomic&lt;T,S=sizeof(T)&gt;</code>
+			<code>boost::detail::atomic::platform_atomic&lt;T,S=sizeof(T)&gt;</code>
 			provides the most basic atomic operations (<code>load</code>, <code>store</code>,
 			<code>exchange</code>, <code>compare_exchange_weak</code>,
 			<code>compare_exchange_strong</code>) for arbitrarily generic data types.
@@ -348,15 +348,15 @@
 	<code>fetch_add</code>, <code>fetch_sub</code>, <code>fetch_and</code>,
 	<code>fetch_or</code>, <code>fetch_xor</code>, <code>is_lock_free</code>).
 	These must be implemented as partial template specializations for
-	<code>boost::detail::atomic::__platform_atomic_integral&lt;T,S=sizeof(T)&gt;</code>:
+	<code>boost::detail::atomic::platform_atomic_integral&lt;T,S=sizeof(T)&gt;</code>:
 	
 	\code
 		template<typename T>
-		class __platform_atomic_integral<T, 4>
+		class platform_atomic_integral<T, 4>
 		{
 		public:
-			explicit __platform_atomic_integral(T v) : i(v) {}
-			__platform_atomic_integral(void) {}
+			explicit platform_atomic_integral(T v) : i(v) {}
+			platform_atomic_integral(void) {}
 			
 			T load(memory_order order=memory_order_seq_cst) const volatile
 			{
@@ -419,14 +419,14 @@
 	
 	\code
 		template<typename T>
-		class __platform_atomic_integral<T, 4>
+		class platform_atomic_integral<T, 4>
 			: public boost::detail::atomic::build_atomic_from_minimal<my_atomic_32<T> >
 		{
 		public:
 			typedef build_atomic_from_minimal<my_atomic_32<T> > super;
 			
-			explicit __platform_atomic_integral(T v) : super(v) {}
-			__platform_atomic_integral(void) {}
+			explicit platform_atomic_integral(T v) : super(v) {}
+			platform_atomic_integral(void) {}
 		};
 	\endcode
 	
@@ -502,14 +502,14 @@
 	
 	\code
 		template<typename T>
-		class __platform_atomic_integral<T, 1> :
+		class platform_atomic_integral<T, 1> :
 			public build_atomic_from_larger_type<my_atomic_32<uint32_t>, T>
 		{
 		public:
 			typedef build_atomic_from_larger_type<my_atomic_32<uint32_t>, T> super;
 			
-			explicit __platform_atomic_integral(T v) : super(v) {}
-			__platform_atomic_integral(void) {}
+			explicit platform_atomic_integral(T v) : super(v) {}
+			platform_atomic_integral(void) {}
 		};
 	\endcode
 	
@@ -520,7 +520,7 @@
 	
 	These helper templates are defined in <code>boost/atomic/detail/builder.hpp</code>.
 	In unusual circumstances, an implementor may also opt to specialize
-	<code>public boost::detail::atomic::__platform_atomic&lt;T,S=sizeof(T)&gt;</code>
+	<code>public boost::detail::atomic::platform_atomic&lt;T,S=sizeof(T)&gt;</code>
 	to provide support for atomic objects not fitting an integral size.
 	If you do that, keep the following things in mind:
 	

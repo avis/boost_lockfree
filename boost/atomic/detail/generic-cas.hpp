@@ -105,12 +105,12 @@ namespace boost { namespace detail { namespace atomic {
 
 #ifdef BOOST_ATOMIC_HAVE_CAS32
 template<typename T>
-class __atomic_generic_cas_4 {
+class atomic_generic_cas32 {
 private:
-	typedef __atomic_generic_cas_4 this_type;
+	typedef atomic_generic_cas32 this_type;
 public:
-	explicit __atomic_generic_cas_4(T v) : i((int32_t)v) {}
-	__atomic_generic_cas_4() {}
+	explicit atomic_generic_cas32(T v) : i((int32_t)v) {}
+	atomic_generic_cas32() {}
 	T load(memory_order order=memory_order_seq_cst) const volatile
 	{
 		T expected=(T)i;
@@ -147,33 +147,31 @@ private:
 };
 
 template<typename T>
-class __platform_atomic_integral<T, 4> : public build_atomic_from_exchange<__atomic_generic_cas_4<T> > {
+class platform_atomic_integral<T, 4> : public build_atomic_from_exchange<atomic_generic_cas32<T> > {
 public:
-	typedef build_atomic_from_exchange<__atomic_generic_cas_4<T> > super;
-	explicit __platform_atomic_integral(T v) : super(v) {}
-	__platform_atomic_integral(void) {}
+	typedef build_atomic_from_exchange<atomic_generic_cas32<T> > super;
+	explicit platform_atomic_integral(T v) : super(v) {}
+	platform_atomic_integral(void) {}
 };
 
 template<typename T>
-class __platform_atomic_integral<T, 1>: public build_atomic_from_larger_type<__atomic_generic_cas_4<int32_t>, T> {
+class platform_atomic_integral<T, 1>: public build_atomic_from_larger_type<atomic_generic_cas32<int32_t>, T> {
 public:
-	typedef build_atomic_from_larger_type<__atomic_generic_cas_4<int32_t>, T> super;
+	typedef build_atomic_from_larger_type<atomic_generic_cas32<int32_t>, T> super;
 	
-	explicit __platform_atomic_integral(T v) : super(v) {}
-	__platform_atomic_integral(void) {}
+	explicit platform_atomic_integral(T v) : super(v) {}
+	platform_atomic_integral(void) {}
 };
 
 template<typename T>
-class __platform_atomic_integral<T, 2>: public build_atomic_from_larger_type<__atomic_generic_cas_4<int32_t>, T> {
+class platform_atomic_integral<T, 2>: public build_atomic_from_larger_type<atomic_generic_cas32<int32_t>, T> {
 public:
-	typedef build_atomic_from_larger_type<__atomic_generic_cas_4<int32_t>, T> super;
+	typedef build_atomic_from_larger_type<atomic_generic_cas32<int32_t>, T> super;
 	
-	explicit __platform_atomic_integral(T v) : super(v) {}
-	__platform_atomic_integral(void) {}
+	explicit platform_atomic_integral(T v) : super(v) {}
+	platform_atomic_integral(void) {}
 };
 #endif
-
-typedef __platform_atomic_integral<void *, sizeof(void *)> __platform_atomic_address;
 
 } } }
 
