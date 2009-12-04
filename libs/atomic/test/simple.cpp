@@ -66,7 +66,7 @@ void test_atomic_arithmetic(void)
 }
 
 template<typename T>
-void test_atomic(void)
+void test_atomic_base(void)
 {
 	atomic<T> i;
 	T n;
@@ -96,8 +96,41 @@ void test_atomic(void)
 	assert(i.load()==(T)20);
 }
 
+template<typename T>
+void test_atomic_ptr(void)
+{
+	test_atomic_base<T *>();
+	
+	T array[10], *p;
+	atomic<T *> ptr;
+	
+	ptr=&array[0];
+	
+	p=ptr++;
+	assert(p==&array[0]);
+	assert(ptr==&array[1]);
+	p=++ptr;
+	assert(p==&array[2]);
+	assert(ptr==&array[2]);
+	
+	p=ptr.fetch_add(4);
+	assert(p==&array[2]);
+	assert(ptr==&array[6]);
+	
+	p=ptr.fetch_sub(4);
+	assert(p==&array[6]);
+	assert(ptr==&array[2]);
+	
+	p=ptr--;
+	assert(p==&array[2]);
+	assert(ptr==&array[1]);
+	p=--ptr;
+	assert(p==&array[0]);
+	assert(ptr==&array[0]);
+}
+
 template<>
-void test_atomic<bool>(void)
+void test_atomic_base<bool>(void)
 {
 	atomic<bool> i;
 	bool n;
@@ -200,10 +233,10 @@ int main()
 	
 	//test_atomic_struct();
 	
-	test_atomic<void *>();
-	test_atomic<int *>();
-	test_atomic<bool>();
-	test_atomic<TestEnum>();
+	test_atomic_base<void *>();
+	test_atomic_ptr<int>();
+	test_atomic_base<bool>();
+	test_atomic_base<TestEnum>();
 	
 	test_atomic_flag();
 }

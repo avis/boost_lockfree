@@ -68,22 +68,57 @@ private:
 /* FIXME: pointer arithmetic still missing */
 
 template<typename T>
-class atomic<T *> : private detail::atomic::__atomic<T *, sizeof(T *), int> {
+class atomic<T *> : private detail::atomic::__atomic<intptr_t> {
 public:
-	typedef detail::atomic::__atomic<T *, sizeof(T *), int> super;
+	typedef detail::atomic::__atomic<intptr_t> super;
 	
 	atomic() {}
-	explicit atomic(T * p) : super(p) {}
-	using super::load;
-	using super::store;
-	using super::compare_exchange_strong;
-	using super::compare_exchange_weak;
-	using super::exchange;
+	explicit atomic(T * p) : super((intptr_t)p) {}
+	
+	T *load(memory_order order=memory_order_seq_cst) const volatile
+	{
+		return (T*)super::load(order);
+	}
+	void store(T *v, memory_order order=memory_order_seq_cst) volatile
+	{
+		super::store((intptr_t)v, order);
+	}
+	bool compare_exchange_weak(T * &expected, T*desired, memory_order order=memory_order_seq_cst) volatile
+	{
+		intptr_t expected_=(intptr_t)expected, desired_=(intptr_t)desired;
+		bool success=super::compare_exchange_weak(expected_, desired_, order);
+		expected=(T*)expected_;
+		return success;
+	}
+	bool compare_exchange_strong(T * &expected, T*desired, memory_order order=memory_order_seq_cst) volatile
+	{
+		intptr_t expected_=(intptr_t)expected, desired_=(intptr_t)desired;
+		bool success=super::compare_exchange_strong(expected_, desired_, order);
+		expected=(T*)expected_;
+		return success;
+	}
+	T *exchange(T * replacement, memory_order order=memory_order_seq_cst) volatile
+	{
+		return (T*)super::exchange((intptr_t)replacement, order);
+	}
 	using super::is_lock_free;
 	
 	operator T *(void) const volatile {return load();}
 	T * operator=(T * v) volatile {store(v); return v;}
 	
+	T * fetch_add(ptrdiff_t diff, memory_order order=memory_order_seq_cst) volatile
+	{
+		return (T*)super::fetch_add(diff*sizeof(T), order);
+	}
+	T * fetch_sub(ptrdiff_t diff, memory_order order=memory_order_seq_cst) volatile
+	{
+		return (T*)super::fetch_sub(diff*sizeof(T), order);
+	}
+	
+	T *operator++(void) volatile {return fetch_add(1)+1;}
+	T *operator++(int) volatile {return fetch_add(1);}
+	T *operator--(void) volatile {return fetch_sub(1)-1;}
+	T *operator--(int) volatile {return fetch_sub(1);}
 private:
 	atomic(const atomic &);
 	T * operator=(const atomic &);

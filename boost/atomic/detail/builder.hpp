@@ -2,6 +2,7 @@
 #define BOOST_DETAIL_ATOMIC_BUILDER_HPP
 
 #include <boost/detail/endian.hpp>
+#include <boost/atomic/detail/valid_integral_types.hpp>
 
 namespace boost {
 namespace detail {
@@ -61,7 +62,9 @@ class __build_const_fetch_add : public Base {
 public:
 	typedef typename Base::integral_type integral_type;
 	
-	integral_type fetch_add(long c, memory_order order=memory_order_seq_cst) volatile
+	integral_type fetch_add(
+		integral_type c,
+		memory_order order=memory_order_seq_cst) volatile
 	{
 		if (__builtin_constant_p(c)) {
 			switch(c) {
@@ -95,7 +98,8 @@ public:
 	
 	using Base::compare_exchange_weak;
 	
-	integral_type fetch_add(long c, memory_order order=memory_order_seq_cst) volatile
+	integral_type fetch_add(
+		integral_type c, memory_order order=memory_order_seq_cst) volatile
 	{
 		integral_type o=Base::load(memory_order_relaxed), n;
 		do {n=o+c;} while(!compare_exchange_weak(o, n, order));
@@ -120,7 +124,9 @@ public:
 	
 	using Base::fetch_add;
 	
-	integral_type fetch_sub(long c, memory_order order=memory_order_seq_cst) volatile
+	integral_type fetch_sub(
+		integral_type c,
+		memory_order order=memory_order_seq_cst) volatile
 	{
 		return fetch_add(-c, order);
 	}
