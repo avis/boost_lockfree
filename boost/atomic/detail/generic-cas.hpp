@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#include <boost/atomic/memory_order.hpp>
+#include <boost/memory_order.hpp>
 #include <boost/atomic/detail/base.hpp>
 #include <boost/atomic/detail/builder.hpp>
 
