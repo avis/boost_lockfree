@@ -92,14 +92,18 @@ public:
 		__fence_before(order);
 		int success;
 		__asm__ __volatile__(
-			"addi %1,0,0\n"
 			"lwarx %0,0,%2\n"
 			"cmpw %0, %3\n"
-			"bne- 1f\n"
+			"bne- 2f\n"
 			"stwcx. %4,0,%2\n"
-			"bne- 1f\n"
+			"bne- 2f\n"
 			"addi %1,0,1\n"
 			"1:"
+			
+			".subsection 2\n"
+			"2: addi %1,0,0\n"
+			"b 1b\n"
+			".previous\n"
 				: "=&b" (expected), "=&b" (success)
 				: "b" (&i), "b" (expected), "b" ((int)desired)
 			);
@@ -184,6 +188,19 @@ public:
 		__fence_before(order);
 		int success;
 		__asm__ __volatile__(
+			"ldarx %0,0,%2\n"
+			"cmpw %0, %3\n"
+			"bne- 2f\n"
+			"stdcx. %4,0,%2\n"
+			"bne- 2f\n"
+			"addi %1,0,1\n"
+			"1:"
+			
+			".subsection 2\n"
+			"2: addi %1,0,0\n"
+			"b 1b\n"
+			".previous\n"
+			
 			"addi %1,0,0\n"
 			"ldarx %0,0,%2\n"
 			"cmpw %0, %3\n"
