@@ -108,7 +108,7 @@ protected:
 	inline T fetch_add_var(T c, memory_order order) volatile
 	{
 		__fence_before(order);
-		int original, modified;
+		T original, modified;
 		__asm__ __volatile__(
 			"1: ldl_l %0, %2\n"
 			"addl %0, %3, %1\n"
