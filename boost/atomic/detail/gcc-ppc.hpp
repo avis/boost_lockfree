@@ -16,11 +16,9 @@ namespace boost {
 namespace detail {
 namespace atomic {
 
-/* note: the __asm__ constraint "b" instructs gcc to use any register
-except r0; this is required because r0 is not allowed in
-some places. Since I am sometimes unsure if it is allowed
-or not just play it safe and avoid r0 entirely -- ppc isn't
-exactly register-starved, so this really should not matter :) */
+/* FIXME: after reading more about ppc, proper fencing has
+become less clear again :( sync is probably too heavy,
+but lwsync is insufficient on ppc32? */
 
 static inline void __fence_before(memory_order order)
 {
@@ -46,6 +44,32 @@ static inline void __fence_after(memory_order order)
 	}
 }
 
+static inline void __fence_after_load(memory_order order)
+{
+	switch(order) {
+		case memory_order_acquire:
+		case memory_order_acq_rel:
+		case memory_order_seq_cst:
+		/* FIXME: either this, or
+		
+			cmpw %rX, %rX (of value just loaded)
+			bne- 2f
+			2: isync
+		
+		Collect timings? */
+			__asm__ __volatile__ ("eieio" ::: "memory");
+		case memory_order_consume:
+			__asm__ __volatile__ ("" ::: "memory");
+		default:;
+	}
+}
+
+/* note: the __asm__ constraint "b" instructs gcc to use any register
+except r0; this is required because r0 is not allowed in
+some places. Since I am sometimes unsure if it is allowed
+or not just play it safe and avoid r0 entirely -- ppc isn't
+exactly register-starved, so this really should not matter :) */
+
 template<typename T>
 class atomic_ppc_32 {
 public:
@@ -55,7 +79,7 @@ public:
 	T load(memory_order order=memory_order_seq_cst) const volatile
 	{
 		T v=*reinterpret_cast<volatile const T *>(&i);
-		__fence_after(order);
+		__fence_after_load(order);
 		return v;
 	}
 	void store(T v, memory_order order=memory_order_seq_cst) volatile
@@ -147,7 +171,7 @@ public:
 	T load(memory_order order=memory_order_seq_cst) const volatile
 	{
 		T v=*reinterpret_cast<volatile const T *>(&i);
-		__fence_after(order);
+		__fence_after_load(order);
 		return v;
 	}
 	void store(T v, memory_order order=memory_order_seq_cst) volatile
