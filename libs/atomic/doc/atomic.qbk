@@ -1,0 +1,180 @@
+[/
+ / Copyright (c) 2009 Helge Bahmann
+ /
+ / Distributed under the Boost Software License, Version 1.0. (See accompanying
+ / file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+ /]
+
+[library Boost.Atomic
+    [quickbook 1.4]
+    [authors [Bahmann, Helge]]
+    [copyright 2009 Helge Bahmann]
+    [id atomic]
+    [dirname atomic]
+    [purpose Atomic operations]
+    [license
+        Distributed under the Boost Software License, Version 1.0.
+        (See accompanying file LICENSE_1_0.txt or copy at
+        [@http://www.boost.org/LICENSE_1_0.txt])
+    ]
+]
+
+[section:introduction Introduction]
+
+[section:introduction_presenting Presenting Boost.Atomic]
+
+[*Boost.Atomic] is a library provides atomic operations
+for C++. It implements the interface defined for the proposed
+C++0x standard, but makes this feature available for
+platforms lacking system support for this particular C++0x
+feature.
+
+The implementation makes use of processor-specific instructions where
+possible (via inline assembler, platform libraries or compiler
+intrinsics), and falls back to "emulating" atomic operations via locking.
+
+[endsect]
+
+[endsect]
+
+[section:interface Programming interface]
+
+Atomic operations are applied to instances of `boost::atomic<T>`,
+where `T` is an integral or suitable user-defined type. Operations
+to be performed on a variable are implemented as member functions
+of this class. For each operation, the programmer specifies
+the order in which other operations performed by the same
+thread become "visible" to different threads. Specifying
+correct constraints is important in preventing other threads
+from possibly seeing incorrect data.
+
+[section:interface_memory_order Memory order]
+
+While a programmer may write operations accessing variables in a
+specific order (henceforth called the ['program order]),
+the compiler, the processor and the memory system may alter
+this order in unpredictable ways. Algorithms relying on a
+specific ['execution order] for correctness must therefore
+communicate these ordering constraints to the compiler.
+
+[* Boost.Atomic] provides such a mechanism by allowing
+the programmer to specify a ['memory order] argument to
+every atomic operation that expresses the required
+constraints. Programmers who wish to use atomic variables
+are strongly encourage to make themselves familiar with
+the these constraints and also have a look at section
+[link atomic.usage Using atomic operations].
+
+Each of the following ordering memory_order constraints
+limits how operations before or after the atomic operation
+(in program order) become visible to other threads with
+respect to the visibility of the effect of the atomic
+operation in question:
+
+* [^boost::memory_order_relaxed]: Atomic operation and other
+  memory operations may be reordered freely. Informally
+  speaking, following operations may be moved before,
+  preceding operations may be moved after the atomic
+  operation. This constraint is suitable only when
+  ['either]: a) no code in this thread depends on the
+  outcome of the atomic operation, or b) other
+  mechanisms are used to enforce ordering.
+  See section [link usage_atomic_counter Atomic counters].
+
+* [^boost::memory_order_release]: Atomic operation becomes visible
+  after all operations preciding in memory order become
+  visible. Informally speaking, preceding operations may not
+  be moved after the atomic operation. This constraint
+  is suitable when the thread wants to hand over an
+  object to another thread. See section [link usage_thread_coordination].
+
+* [^boost::memory_order_acquire]: Atomic operation becomes
+  visible before any operation following in memory order
+  becomes visible. Informally speaking, following operations
+  may not be moved before the atomic operation. This
+  constraint is suitable when the thread receives an
+  object from another thread. See section [link usage_thread_coordination].
+
+* [^boost::memory_order_consume]: Atomic operation becomes
+  visible before any operation computationally dependent
+  on the value returned for the atomic variable. Informally
+  speaking, this prevents operations depending on the value
+  of an atomic variable to be performed speculatively.
+  This is a weaker form of [^boost::memory_order_acquire], see
+  section [link usage_thread_coordination] for a discussion.
+
+* [^boost::memory_order_acq_rel]: Combines the constraints of
+  [^boost::memory_order_acquire] and [^boost::memory_order_release].
+
+* [^boost::memory_order_seq_cst]: Behaves like
+  [^boost::memory_order_seq_cst],
+  but additionally requires that there exists a total order for all operations qualified with [^memory_order_seq_cst].
+
+[endsect]
+
+[section:interface_atomic_generic [^boost::atomic<['T]>] template class]
+
+[^boost::atomic<['T]>] provides methods for atomically accessing
+variables of a suitable type [^['T]]. The type is suitable if
+it satisfys one of the following constraints:
+
+* it is an integer, boolean, enum or pointer type
+* it is any other data-type ([^class] or [^struct]) that has
+  a non-throwing default constructor and that is copyable via
+  [^memcpy]
+
+Note that all classes having a trivial default constructor,
+no destructor and no virtual methods satisfy the second condition
+according to C++98. On a given platform, other data-types ['may]
+also satisfy this constraint, however programmers should exercise
+caution as the behaviour becomes implementation-defined.
+
+Each atomic object supports the following operations:
+
+* [^atomic()] (default constructor): Initializes the atomic
+  variable to an unspecified value
+* [^atomic(T initial_value)]: Initializes the atomic
+  variable to the given value
+* [^T load(memory_order order=memory_order_seq_cst)]: Reads the
+  current value of the atomic variable
+* [void store(T new_value, memory_order order=memory_order_seq_cst)]:
+  Stores a new value for the atomic variable
+* T exchange(T new_value, memory_order order=memory_order_seq_cst)]:
+  Exchanges the value of the atomic variable with [^new_value]
+  and returns the old value
+
+[endsect]
+
+[section:interface_atomic_integral [^boost::atomic<['integral]>] template class]
+[endsect]
+
+[endsect]
+
+[section:usage Using atomic operations]
+
+bla bla
+
+[section:usage_atomic_counters Atomic counters]
+[endsect]
+
+[section:usage_thread_coordination]
+[endsect]
+
+[endsect]
+
+[section:platform_support Implementing support for additional platforms]
+[endsect]
+
+
+
+
+[section:tested_compilers Tested compilers]
+
+[*Boost.Atomic] has been tested on the following compilers/platforms:
+
+*  GCC 4.3.2/Linux x86_32 (aka i386), x86_64 (aka amd64), ppc32, alpha
+*  GCC 4.3.2/FreeBSD x86_32 (aka i386)
+
+[endsect]
+
+
