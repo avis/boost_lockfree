@@ -223,7 +223,7 @@ protected:
 		T original, modified;
 		__asm__ __volatile__(
 			"1: ldq_l %0, %2\n"
-			"addl %0, %3, %1\n"
+			"addq %0, %3, %1\n"
 			"stq_c %1, %2\n"
 			"beq %1, 2f\n"
 			
@@ -244,7 +244,7 @@ protected:
 		T original, modified;
 		__asm__ __volatile__(
 			"1: ldq_l %0, %2\n"
-			"addl %0, 1, %1\n"
+			"addq %0, 1, %1\n"
 			"stq_c %1, %2\n"
 			"beq %1, 2f\n"
 			
@@ -265,7 +265,7 @@ protected:
 		T original, modified;
 		__asm__ __volatile__(
 			"1: ldq_l %0, %2\n"
-			"subl %0, 1, %1\n"
+			"subq %0, 1, %1\n"
 			"stq_c %1, %2\n"
 			"beq %1, 2f\n"
 			
