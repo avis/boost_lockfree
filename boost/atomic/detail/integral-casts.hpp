@@ -24,21 +24,29 @@ public:
 	{
 		return from_integral(super::load(order));
 	}
-	bool compare_exchange_strong(T &expected, T desired, memory_order order=memory_order_seq_cst) volatile
+	bool compare_exchange_strong(
+		T &expected,
+		T desired,
+		memory_order success_order,
+		memory_order failure_order) volatile
 	{
 		uint8_t _expected, _desired;
 		_expected=to_integral(expected);
 		_desired=to_integral(desired);
-		bool success=super::compare_exchange_strong(_expected, _desired, order);
+		bool success=super::compare_exchange_strong(_expected, _desired, success_order, failure_order);
 		expected=from_integral(_expected);
 		return success;
 	}
-	bool compare_exchange_weak(T &expected, T desired, memory_order order=memory_order_seq_cst) volatile
+	bool compare_exchange_weak(
+		T &expected,
+		T desired,
+		memory_order success_order,
+		memory_order failure_order) volatile
 	{
 		uint8_t _expected, _desired;
 		_expected=to_integral(expected);
 		_desired=to_integral(desired);
-		bool success=super::compare_exchange_weak(_expected, _desired, order);
+		bool success=super::compare_exchange_weak(_expected, _desired, success_order, failure_order);
 		expected=from_integral(_expected);
 		return success;
 	}
@@ -86,21 +94,29 @@ public:
 	{
 		return from_integral(super::load(order));
 	}
-	bool compare_exchange_strong(T &expected, T desired, memory_order order=memory_order_seq_cst) volatile
+	bool compare_exchange_strong(
+		T &expected,
+		T desired,
+		memory_order success_order,
+		memory_order failure_order) volatile
 	{
 		uint16_t _expected, _desired;
 		_expected=to_integral(expected);
 		_desired=to_integral(desired);
-		bool success=super::compare_exchange_strong(_expected, _desired, order);
+		bool success=super::compare_exchange_strong(_expected, _desired, success_order, failure_order);
 		expected=from_integral(_expected);
 		return success;
 	}
-	bool compare_exchange_weak(T &expected, T desired, memory_order order=memory_order_seq_cst) volatile
+	bool compare_exchange_weak(
+		T &expected,
+		T desired,
+		memory_order success_order,
+		memory_order failure_order) volatile
 	{
 		uint16_t _expected, _desired;
 		_expected=to_integral(expected);
 		_desired=to_integral(desired);
-		bool success=super::compare_exchange_weak(_expected, _desired, order);
+		bool success=super::compare_exchange_weak(_expected, _desired, success_order, failure_order);
 		expected=from_integral(_expected);
 		return success;
 	}
@@ -148,21 +164,29 @@ public:
 	{
 		return from_integral(super::load(order));
 	}
-	bool compare_exchange_strong(T &expected, T desired, memory_order order=memory_order_seq_cst) volatile
+	bool compare_exchange_strong(
+		T &expected,
+		T desired,
+		memory_order success_order,
+		memory_order failure_order) volatile
 	{
 		uint32_t _expected, _desired;
 		_expected=to_integral(expected);
 		_desired=to_integral(desired);
-		bool success=super::compare_exchange_strong(_expected, _desired, order);
+		bool success=super::compare_exchange_strong(_expected, _desired, success_order, failure_order);
 		expected=from_integral(_expected);
 		return success;
 	}
-	bool compare_exchange_weak(T &expected, T desired, memory_order order=memory_order_seq_cst) volatile
+	bool compare_exchange_weak(
+		T &expected,
+		T desired,
+		memory_order success_order,
+		memory_order failure_order) volatile
 	{
 		uint32_t _expected, _desired;
 		_expected=to_integral(expected);
 		_desired=to_integral(desired);
-		bool success=super::compare_exchange_weak(_expected, _desired, order);
+		bool success=super::compare_exchange_weak(_expected, _desired, success_order, failure_order);
 		expected=from_integral(_expected);
 		return success;
 	}
@@ -210,21 +234,29 @@ public:
 	{
 		return from_integral(super::load(order));
 	}
-	bool compare_exchange_strong(T &expected, T desired, memory_order order=memory_order_seq_cst) volatile
+	bool compare_exchange_strong(
+		T &expected,
+		T desired,
+		memory_order success_order,
+		memory_order failure_order) volatile
 	{
 		uint64_t _expected, _desired;
 		_expected=to_integral(expected);
 		_desired=to_integral(desired);
-		bool success=super::compare_exchange_strong(_expected, _desired, order);
+		bool success=super::compare_exchange_strong(_expected, _desired, success_order, failure_order);
 		expected=from_integral(_expected);
 		return success;
 	}
-	bool compare_exchange_weak(T &expected, T desired, memory_order order=memory_order_seq_cst) volatile
+	bool compare_exchange_weak(
+		T &expected,
+		T desired,
+		memory_order success_order,
+		memory_order failure_order) volatile
 	{
 		uint64_t _expected, _desired;
 		_expected=to_integral(expected);
 		_desired=to_integral(desired);
-		bool success=super::compare_exchange_weak(_expected, _desired, order);
+		bool success=super::compare_exchange_weak(_expected, _desired, success_order, failure_order);
 		expected=from_integral(_expected);
 		return success;
 	}

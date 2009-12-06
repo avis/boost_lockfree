@@ -13,8 +13,8 @@ void test_atomic_arithmetic(void)
 	
 	T n;
 	
-	printf("Type=%s, size=%d, atomic_size=%d, lockfree=%d\n",
-		typeid(T).name(), sizeof(n), sizeof(i), i.is_lock_free());
+	printf("Type=%s, size=%ld, atomic_size=%ld, lockfree=%d\n",
+		typeid(T).name(), (long)sizeof(n), (long)sizeof(i), i.is_lock_free());
 	
 	assert(sizeof(i)>=sizeof(n));
 	
@@ -71,8 +71,8 @@ void test_atomic_base(void)
 	atomic<T> i;
 	T n;
 	
-	printf("Type=%s, size=%d, atomic_size=%d, lockfree=%d\n",
-		typeid(T).name(), sizeof(n), sizeof(i), i.is_lock_free());
+	printf("Type=%s, size=%ld, atomic_size=%ld, lockfree=%d\n",
+		typeid(T).name(), (long)sizeof(n), (long)sizeof(i), i.is_lock_free());
 	
 	assert(sizeof(i)>=sizeof(n));
 	
@@ -80,7 +80,7 @@ void test_atomic_base(void)
 	
 	i.store((T)0);
 	n=(T)40;
-	success=i.compare_exchange_strong(n, (T)44);
+	success=i.compare_exchange_strong(n, (T)44 /*boost::memory_order_relaxed*/);
 	assert(!success);
 	assert(n==(T)0);
 	assert(i.load()==(T)0);
@@ -135,8 +135,8 @@ void test_atomic_base<bool>(void)
 	atomic<bool> i;
 	bool n;
 	
-	printf("Type=bool, size=%d, atomic_size=%d, lockfree=%d\n",
-		sizeof(n), sizeof(i), i.is_lock_free());
+	printf("Type=bool, size=%ld, atomic_size=%ld, lockfree=%d\n",
+		(long)sizeof(n), (long)sizeof(i), i.is_lock_free());
 	
 	assert(sizeof(i)>=sizeof(n));
 	
@@ -231,7 +231,7 @@ int main()
 	test_atomic_arithmetic<long long>();
 	test_atomic_arithmetic<unsigned long long>();
 	
-	//test_atomic_struct();
+	test_atomic_struct();
 	
 	test_atomic_base<void *>();
 	test_atomic_ptr<int>();

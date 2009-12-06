@@ -24,11 +24,15 @@ public:
 	using Base::load;
 	using Base::compare_exchange_weak;
 	
-	bool compare_exchange_strong(integral_type &expected, integral_type desired, memory_order order=memory_order_seq_cst) volatile
+	bool compare_exchange_strong(
+		integral_type &expected,
+		integral_type desired,
+		memory_order success_order,
+		memory_order failure_order) volatile
 	{
 		integral_type expected_save=expected;
 		while(true) {
-			if (compare_exchange_weak(expected, desired, order)) return true;
+			if (compare_exchange_weak(expected, desired, success_order, failure_order)) return true;
 			if (expected_save!=expected) return false;
 			expected=expected_save;
 		}
@@ -37,7 +41,7 @@ public:
 	integral_type exchange(integral_type replacement, memory_order order=memory_order_seq_cst) volatile
 	{
 		integral_type o=load(memory_order_relaxed);
-		do {} while(!compare_exchange_weak(o, replacement, order));
+		do {} while(!compare_exchange_weak(o, replacement, order, memory_order_relaxed));
 		return o;
 	}
 	
@@ -102,7 +106,7 @@ public:
 		integral_type c, memory_order order=memory_order_seq_cst) volatile
 	{
 		integral_type o=Base::load(memory_order_relaxed), n;
-		do {n=o+c;} while(!compare_exchange_weak(o, n, order));
+		do {n=o+c;} while(!compare_exchange_weak(o, n, order, memory_order_relaxed));
 		return o;
 	}
 	
@@ -154,19 +158,19 @@ public:
 	integral_type fetch_and(integral_type c, memory_order order=memory_order_seq_cst) volatile
 	{
 		integral_type o=load(memory_order_relaxed), n;
-		do {n=o&c;} while(!compare_exchange_weak(o, n, order));
+		do {n=o&c;} while(!compare_exchange_weak(o, n, order, memory_order_relaxed));
 		return o;
 	}
 	integral_type fetch_or(integral_type c, memory_order order=memory_order_seq_cst) volatile
 	{
 		integral_type o=load(memory_order_relaxed), n;
-		do {n=o|c;} while(!compare_exchange_weak(o, n, order));
+		do {n=o|c;} while(!compare_exchange_weak(o, n, order, memory_order_relaxed));
 		return o;
 	}
 	integral_type fetch_xor(integral_type c, memory_order order=memory_order_seq_cst) volatile
 	{
 		integral_type o=load(memory_order_relaxed), n;
-		do {n=o^c;} while(!compare_exchange_weak(o, n, order));
+		do {n=o^c;} while(!compare_exchange_weak(o, n, order, memory_order_relaxed));
 		return o;
 	}
 	
@@ -285,7 +289,8 @@ public:
 	}
 	bool compare_exchange_weak(integral_type &expected,
 		integral_type desired,
-		memory_order order=memory_order_seq_cst) volatile
+		memory_order success_order,
+		memory_order failure_order) volatile
 	{
 		larger_integral_type expected_;
 		larger_integral_type desired_;
@@ -293,7 +298,7 @@ public:
 		expected_=get_base().load(memory_order_relaxed);
 		expected_=insert(expected_, expected);
 		desired_=insert(expected_, desired);
-		bool success=get_base().compare_exchange_weak(expected_, desired_, order);
+		bool success=get_base().compare_exchange_weak(expected_, desired_, success_order, failure_order);
 		expected=extract(expected_);
 		return success;
 	}
@@ -304,7 +309,7 @@ public:
 		expected=get_base().load(memory_order_relaxed);
 		do {
 			desired=insert(expected, v);
-		} while(!get_base().compare_exchange_weak(expected, desired, order));
+		} while(!get_base().compare_exchange_weak(expected, desired, order, memory_order_relaxed));
 	}
 	
 	bool is_lock_free(void)

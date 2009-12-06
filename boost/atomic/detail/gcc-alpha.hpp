@@ -78,9 +78,13 @@ public:
 		__fence_before(order);
 		*reinterpret_cast<volatile int *>(&i)=(int)v;
 	}
-	bool compare_exchange_weak(T &expected, T desired, memory_order order=memory_order_seq_cst) volatile
+	bool compare_exchange_weak(
+		T &expected,
+		T desired,
+		memory_order success_order,
+		memory_order failure_order) volatile
 	{
-		__fence_before(order);
+		__fence_before(success_order);
 		int current, success;
 		__asm__ __volatile__(
 			"1: ldl_l %2, %4\n"
@@ -99,7 +103,8 @@ public:
 			: "m" (i)
 			:
 		);
-		__fence_after(order);
+		if (desired) __fence_after(success_order);
+		else __fence_after(failure_order);
 		return desired;
 	}
 	
@@ -189,10 +194,13 @@ public:
 		__fence_before(order);
 		*reinterpret_cast<volatile T *>(&i)=v;
 	}
-	bool compare_exchange_weak(T &expected, T desired, memory_order order=memory_order_seq_cst) volatile
+	bool compare_exchange_weak(
+		T &expected,
+		T desired,
+		memory_order success_order,
+		memory_order failure_order) volatile
 	{
-		__fence_before(order);
-		__fence_before(order);
+		__fence_before(success_order);
 		int current, success;
 		__asm__ __volatile__(
 			"1: ldq_l %2, %4\n"
@@ -211,7 +219,8 @@ public:
 			: "m" (i)
 			:
 		);
-		__fence_after(order);
+		if (desired) __fence_after(success_order);
+		else __fence_after(failure_order);
 		return desired;
 	}
 	

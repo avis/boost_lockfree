@@ -9,6 +9,15 @@ namespace boost {
 namespace detail {
 namespace atomic {
 
+static inline memory_order calculate_failure_order(memory_order order)
+{
+	switch(order) {
+		case memory_order_acq_rel: return memory_order_acquire;
+		case memory_order_release: return memory_order_relaxed;
+		default: return order;
+	}
+}
+
 template<typename T, unsigned short Size=sizeof(T)>
 class platform_atomic : public fallback_atomic<T> {
 public:
@@ -31,8 +40,6 @@ protected:
 	typedef typename super::integral_type integral_type;
 };
 
-/**/
-
 template<typename T, unsigned short Size=sizeof(T), typename Int=typename is_integral_type<T>::test>
 class internal_atomic;
 
@@ -50,10 +57,38 @@ public:
 	using super::is_lock_free;
 	using super::load;
 	using super::store;
-	using super::compare_exchange_strong;
-	using super::compare_exchange_weak;
 	using super::exchange;
 	
+	bool compare_exchange_strong(
+		T &expected,
+		T desired,
+		memory_order order=memory_order_seq_cst) volatile
+	{
+		return super::compare_exchange_strong(expected, desired, order, calculate_failure_order(order));
+	}
+	bool compare_exchange_weak(
+		T &expected,
+		T desired,
+		memory_order order=memory_order_seq_cst) volatile
+	{
+		return super::compare_exchange_strong(expected, desired, order, calculate_failure_order(order));
+	}
+	bool compare_exchange_strong(
+		T &expected,
+		T desired,
+		memory_order success_order,
+		memory_order failure_order) volatile
+	{
+		return super::compare_exchange_strong(expected, desired, success_order, failure_order);
+	}
+	bool compare_exchange_weak(
+		T &expected,
+		T desired,
+		memory_order success_order,
+		memory_order failure_order) volatile
+	{
+		return super::compare_exchange_strong(expected, desired, success_order, failure_order);
+	}
 private:
 	internal_atomic(const internal_atomic &);
 	void operator=(const internal_atomic &);
@@ -71,8 +106,6 @@ public:
 	using super::is_lock_free;
 	using super::load;
 	using super::store;
-	using super::compare_exchange_strong;
-	using super::compare_exchange_weak;
 	using super::exchange;
 	using super::fetch_add;
 	using super::fetch_sub;
@@ -95,11 +128,40 @@ public:
 	integral_type operator--(void) volatile {return fetch_sub(1)-1;}
 	integral_type operator--(int) volatile {return fetch_sub(1);}
 	
+	bool compare_exchange_strong(
+		integral_type &expected,
+		integral_type desired,
+		memory_order order=memory_order_seq_cst) volatile
+	{
+		return super::compare_exchange_strong(expected, desired, order, calculate_failure_order(order));
+	}
+	bool compare_exchange_weak(
+		integral_type &expected,
+		integral_type desired,
+		memory_order order=memory_order_seq_cst) volatile
+	{
+		return super::compare_exchange_strong(expected, desired, order, calculate_failure_order(order));
+	}
+	bool compare_exchange_strong(
+		integral_type &expected,
+		integral_type desired,
+		memory_order success_order,
+		memory_order failure_order) volatile
+	{
+		return super::compare_exchange_strong(expected, desired, success_order, failure_order);
+	}
+	bool compare_exchange_weak(
+		integral_type &expected,
+		integral_type desired,
+		memory_order success_order,
+		memory_order failure_order) volatile
+	{
+		return super::compare_exchange_strong(expected, desired, success_order, failure_order);
+	}
 private:
 	internal_atomic(const internal_atomic &);
 	void operator=(const internal_atomic &);
 };
-
 
 }
 }

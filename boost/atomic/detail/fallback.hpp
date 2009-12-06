@@ -26,7 +26,11 @@ public:
 		memcpy(&tmp, (T*)&i, sizeof(T));
 		return tmp;
 	}
-	bool compare_exchange_strong(T &expected, T desired, memory_order order=memory_order_seq_cst) volatile
+	bool compare_exchange_strong(
+		T &expected,
+		T desired,
+		memory_order success_order,
+		memory_order failure_order) volatile
 	{
 		detail::spinlock_pool<0>::scoped_lock guard(const_cast<T*>(&i));
 		if (memcmp((void*)&i, &expected, sizeof(T))==0) {
@@ -37,9 +41,13 @@ public:
 			return false;
 		}
 	}
-	bool compare_exchange_weak(T &expected, T desired, memory_order order=memory_order_seq_cst) volatile
+	bool compare_exchange_weak(
+		T &expected,
+		T desired,
+		memory_order success_order,
+		memory_order failure_order) volatile
 	{
-		return compare_exchange_strong(expected, desired, order);
+		return compare_exchange_strong(expected, desired, success_order, failure_order);
 	}
 	T exchange(T replacement, memory_order order=memory_order_seq_cst) volatile
 	{

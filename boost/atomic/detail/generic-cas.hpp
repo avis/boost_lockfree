@@ -114,29 +114,37 @@ public:
 	T load(memory_order order=memory_order_seq_cst) const volatile
 	{
 		T expected=(T)i;
-		do { } while(!const_cast<this_type *>(this)->compare_exchange_weak(expected, expected, order));
+		do { } while(!const_cast<this_type *>(this)->compare_exchange_weak(expected, expected, order, memory_order_relaxed));
 		return expected;
 	}
 	void store(T v, memory_order order=memory_order_seq_cst) volatile
 	{
 		exchange(v);
 	}
-	bool compare_exchange_strong(T &e, T d, memory_order order=memory_order_seq_cst) volatile
+	bool compare_exchange_strong(
+		T &expected,
+		T desired,
+		memory_order success_order,
+		memory_order failure_order) volatile
 	{
 		T found;
-		found=(T)fenced_compare_exchange_strong_32(&i, (int32_t)e, (int32_t)d);
-		bool success=(found==e);
-		e=found;
+		found=(T)fenced_compare_exchange_strong_32(&i, (int32_t)expected, (int32_t)desired);
+		bool success=(found==expected);
+		expected=found;
 		return success;
 	}
-	bool compare_exchange_weak(T &expected, T desired, memory_order order=memory_order_seq_cst) volatile
+	bool compare_exchange_weak(
+		T &expected,
+		T desired,
+		memory_order success_order,
+		memory_order failure_order) volatile
 	{
-		return compare_exchange_strong(expected, desired, order);
+		return compare_exchange_strong(expected, desired, success_order, failure_order);
 	}
 	T exchange(T r, memory_order order=memory_order_seq_cst) volatile
 	{
 		T expected=(T)i;
-		do { } while(!compare_exchange_weak(expected, r, order));
+		do { } while(!compare_exchange_weak(expected, r, order, memory_order_relaxed));
 		return expected;
 	}
 	

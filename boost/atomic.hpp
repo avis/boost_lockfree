@@ -1,6 +1,8 @@
 #ifndef BOOST_ATOMIC_HPP
 #define BOOST_ATOMIC_HPP
 
+#include <cstddef>
+
 #include <boost/memory_order.hpp>
 #include <boost/atomic/platform.hpp>
 #include <boost/atomic/detail/base.hpp>
@@ -83,17 +85,39 @@ public:
 	{
 		super::store((intptr_t)v, order);
 	}
-	bool compare_exchange_weak(T * &expected, T*desired, memory_order order=memory_order_seq_cst) volatile
+	bool compare_exchange_strong(
+		T * &expected,
+		T * desired,
+		memory_order order=memory_order_seq_cst) volatile
+	{
+		return compare_exchange_strong(expected, desired, order, detail::atomic::calculate_failure_order(order));
+	}
+	bool compare_exchange_weak(
+		T * &expected,
+		T *desired,
+		memory_order order=memory_order_seq_cst) volatile
+	{
+		return compare_exchange_weak(expected, desired, order, detail::atomic::calculate_failure_order(order));
+	}
+	bool compare_exchange_weak(
+		T * &expected,
+		T *desired,
+		memory_order success_order,
+		memory_order failure_order) volatile
 	{
 		intptr_t expected_=(intptr_t)expected, desired_=(intptr_t)desired;
-		bool success=super::compare_exchange_weak(expected_, desired_, order);
+		bool success=super::compare_exchange_weak(expected_, desired_, success_order, failure_order);
 		expected=(T*)expected_;
 		return success;
 	}
-	bool compare_exchange_strong(T * &expected, T*desired, memory_order order=memory_order_seq_cst) volatile
+	bool compare_exchange_strong(
+		T * &expected,
+		T *desired,
+		memory_order success_order,
+		memory_order failure_order) volatile
 	{
 		intptr_t expected_=(intptr_t)expected, desired_=(intptr_t)desired;
-		bool success=super::compare_exchange_strong(expected_, desired_, order);
+		bool success=super::compare_exchange_strong(expected_, desired_, success_order, failure_order);
 		expected=(T*)expected_;
 		return success;
 	}

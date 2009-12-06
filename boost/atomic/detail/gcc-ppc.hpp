@@ -87,9 +87,13 @@ public:
 		__fence_before(order);
 		*reinterpret_cast<volatile T *>(&i)=v;
 	}
-	bool compare_exchange_weak(T &expected, T desired, memory_order order=memory_order_seq_cst) volatile
+	bool compare_exchange_weak(
+		T &expected,
+		T desired,
+		memory_order success_order,
+		memory_order failure_order) volatile
 	{
-		__fence_before(order);
+		__fence_before(success_order);
 		int success;
 		__asm__ __volatile__(
 			"lwarx %0,0,%2\n"
@@ -107,7 +111,8 @@ public:
 				: "=&b" (expected), "=&b" (success)
 				: "b" (&i), "b" (expected), "b" ((int)desired)
 			);
-		__fence_after(order);
+		if (success_order) __fence_after(success_order);
+		else __fence_after(failure_order);
 		return success;
 	}
 	
@@ -183,9 +188,13 @@ public:
 		__fence_before(order);
 		*reinterpret_cast<volatile T *>(&i)=v;
 	}
-	bool compare_exchange_weak(T &expected, T desired, memory_order order=memory_order_seq_cst) volatile
+	bool compare_exchange_weak(
+		T &expected,
+		T desired,
+		memory_order success_order,
+		memory_order failure_order) volatile
 	{
-		__fence_before(order);
+		__fence_before(success_order);
 		int success;
 		__asm__ __volatile__(
 			"ldarx %0,0,%2\n"
@@ -200,18 +209,11 @@ public:
 			"2: addi %1,0,0\n"
 			"b 1b\n"
 			".previous\n"
-			
-			"addi %1,0,0\n"
-			"ldarx %0,0,%2\n"
-			"cmpw %0, %3\n"
-			"bne- 1f\n"
-			"stdcx. %4,0,%2\n"
-			"bne- 1f\n"
-			"addi %1,0,1\n"
-			"1:"
 				: "=&b" (expected), "=&b" (success)
 				: "b" (&i), "b" (expected), "b" ((int)desired)
 			);
+		if (success_order) __fence_after(success_order);
+		else __fence_after(failure_order);
 		__fence_after(order);
 		return success;
 	}
