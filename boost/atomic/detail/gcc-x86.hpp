@@ -312,7 +312,8 @@ protected:
 	typedef T integral_type;
 private:
 	T i;
-};
+} __attribute__((aligned(8)));
+
 #elif defined(__i686__)
 
 template<typename T>
@@ -382,7 +383,7 @@ protected:
 	typedef T integral_type;
 private:
 	T i;
-};
+} __attribute__((aligned(8))) ;
 
 #endif
 
