@@ -8,6 +8,8 @@ namespace boost {
 namespace detail {
 namespace atomic {
 
+/* FIXME: need fences for seq_cst */
+
 static inline void __fence_before(memory_order order)
 {
 	switch(order) {
@@ -31,6 +33,18 @@ static inline void __fence_after(memory_order order)
 	}
 }
 
+static inline void __fence_after_load(memory_order order)
+{
+	switch(order) {
+		case memory_order_acquire:
+		case memory_order_acq_rel:
+			__asm__ __volatile__ ("" ::: "memory");
+		case memory_order_seq_cst:
+			__asm__ __volatile__("lock addl $0, $0(%esp)" ::: "memory");
+		default:;
+	}
+}
+
 template<typename T>
 class atomic_x86_8 {
 public:
@@ -39,13 +53,17 @@ public:
 	T load(memory_order order=memory_order_seq_cst) const volatile
 	{
 		T v=*reinterpret_cast<volatile const T *>(&i);
-		__fence_after(order);
+		__fence_after_load(order);
 		return v;
 	}
 	void store(T v, memory_order order=memory_order_seq_cst) volatile
 	{
-		__fence_before(order);
-		*reinterpret_cast<volatile T *>(&i)=v;
+		if (order!=memory_order_seq_cst) {
+			__fence_before(order);
+			*reinterpret_cast<volatile T *>(&i)=v;
+		} else {
+			exchange(v);
+		}
 	}
 	bool compare_exchange_strong(
 		T &expected,
@@ -109,8 +127,12 @@ public:
 	}
 	void store(T v, memory_order order=memory_order_seq_cst) volatile
 	{
-		__fence_before(order);
-		*reinterpret_cast<volatile T *>(&i)=v;
+		if (order!=memory_order_seq_cst) {
+			__fence_before(order);
+			*reinterpret_cast<volatile T *>(&i)=v;
+		} else {
+			exchange(v);
+		}
 	}
 	bool compare_exchange_strong(
 		T &expected,
@@ -174,8 +196,12 @@ public:
 	}
 	void store(T v, memory_order order=memory_order_seq_cst) volatile
 	{
-		__fence_before(order);
-		*reinterpret_cast<volatile T *>(&i)=v;
+		if (order!=memory_order_seq_cst) {
+			__fence_before(order);
+			*reinterpret_cast<volatile T *>(&i)=v;
+		} else {
+			exchange(v);
+		}
 	}
 	bool compare_exchange_strong(
 		T &expected,
@@ -240,8 +266,12 @@ public:
 	}
 	void store(T v, memory_order order=memory_order_seq_cst) volatile
 	{
-		__fence_before(order);
-		*reinterpret_cast<volatile T *>(&i)=v;
+		if (order!=memory_order_seq_cst) {
+			__fence_before(order);
+			*reinterpret_cast<volatile T *>(&i)=v;
+		} else {
+			exchange(v);
+		}
 	}
 	bool compare_exchange_strong(
 		T &expected,
