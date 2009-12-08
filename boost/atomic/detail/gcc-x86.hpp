@@ -36,11 +36,11 @@ static inline void __fence_after(memory_order order)
 static inline void __fence_after_load(memory_order order)
 {
 	switch(order) {
+		case memory_order_seq_cst:
+			__asm__ __volatile__("lock addl $0, (%%esp)" ::: "memory");
 		case memory_order_acquire:
 		case memory_order_acq_rel:
 			__asm__ __volatile__ ("" ::: "memory");
-		case memory_order_seq_cst:
-			__asm__ __volatile__("lock addl $0, $0(%esp)" ::: "memory");
 		default:;
 	}
 }
