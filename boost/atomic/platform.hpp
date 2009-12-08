@@ -1,3 +1,5 @@
+#include <boost/config.hpp>
+
 #if defined(__GNUC__) && (defined(__i386__) || defined(__amd64__))
 
 	#include <boost/atomic/detail/gcc-x86.hpp>
@@ -9,6 +11,10 @@
 #elif defined(__GNUC__) && (defined(__POWERPC__) || defined(__PPC__))
 
 	#include <boost/atomic/detail/gcc-ppc.hpp>
+
+#elif defined(BOOST_USE_WINDOWS_H) || defined(_WIN32_CE) || defined(BOOST_MSVC) || defined(BOOST_INTEL_WIN) || defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__CYGWIN__)
+
+	#include <boost/atomic/detail/interlocked.hpp>
 
 #else
 	
