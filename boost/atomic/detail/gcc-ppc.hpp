@@ -16,48 +16,53 @@ namespace boost {
 namespace detail {
 namespace atomic {
 
-/* FIXME: after reading more about ppc, proper fencing has
-become less clear again :( sync is probably too heavy,
-but lwsync is insufficient on ppc32? */
-
 static inline void __fence_before(memory_order order)
 {
 	switch(order) {
 		case memory_order_release:
 		case memory_order_acq_rel:
+#if defined(__powerpc64__)
+			__asm__ __volatile__ ("lwsync" ::: "memory");
+#else
+			__asm__ __volatile__ ("sync" ::: "memory");
+#endif
+			break;
 		case memory_order_seq_cst:
 			__asm__ __volatile__ ("sync" ::: "memory");
 		default:;
 	}
 }
 
-static inline void __fence_after(memory_order order)
+static inline void fence_after(memory_order order)
 {
 	switch(order) {
 		case memory_order_acquire:
 		case memory_order_acq_rel:
 		case memory_order_seq_cst:
-			__asm__ __volatile__ ("isync" ::: "memory");
+			__asm__ __volatile__ ("isync");
 		case memory_order_consume:
 			__asm__ __volatile__ ("" ::: "memory");
 		default:;
 	}
 }
 
-static inline void __fence_after_load(memory_order order)
+template<typename T>
+static inline void fence_after_load(memory_order order, T value)
 {
 	switch(order) {
 		case memory_order_acquire:
 		case memory_order_acq_rel:
 		case memory_order_seq_cst:
-		/* FIXME: either this, or
-		
-			cmpw %rX, %rX (of value just loaded)
-			bne- 2f
-			2: isync
-		
-		Collect timings? */
-			__asm__ __volatile__ ("eieio" ::: "memory");
+			/* perform a "fake" branch formally depending
+			on the value loaded from memory; this will
+			cause the subsequent "isync" to delay
+			subsequent instructions until the load
+			has finished */
+			__asm__ __volatile__ (
+				"cmpw %0, %0\n"
+				"bne- 1f\n"
+				"1f: isync\n"
+				: "+b"(value));
 		case memory_order_consume:
 			__asm__ __volatile__ ("" ::: "memory");
 		default:;
@@ -79,7 +84,7 @@ public:
 	T load(memory_order order=memory_order_seq_cst) const volatile
 	{
 		T v=*reinterpret_cast<volatile const T *>(&i);
-		__fence_after_load(order);
+		fence_after_load(order, v);
 		return v;
 	}
 	void store(T v, memory_order order=memory_order_seq_cst) volatile
@@ -111,8 +116,8 @@ public:
 				: "=&b" (expected), "=&b" (success)
 				: "b" (&i), "b" (expected), "b" ((int)desired)
 			);
-		if (success_order) __fence_after(success_order);
-		else __fence_after(failure_order);
+		if (success) fence_after(success_order);
+		else fence_after(failure_order);
 		return success;
 	}
 	
@@ -130,7 +135,7 @@ protected:
 			: "=&b" (original), "=&b" (tmp)
 			: "b" (&i), "b" (c)
 			: "cc");
-		__fence_after(order);
+		fence_after(order);
 		return original;
 	}
 	inline T fetch_inc(memory_order order) volatile
@@ -145,7 +150,7 @@ protected:
 			: "=&b" (original), "=&b" (tmp)
 			: "b" (&i)
 			: "cc");
-		__fence_after(order);
+		fence_after(order);
 		return original;
 	}
 	inline T fetch_dec(memory_order order) volatile
@@ -160,7 +165,7 @@ protected:
 			: "=&b" (original), "=&b" (tmp)
 			: "b" (&i)
 			: "cc");
-		__fence_after(order);
+		fence_after(order);
 		return original;
 	}
 private:
@@ -180,7 +185,7 @@ public:
 	T load(memory_order order=memory_order_seq_cst) const volatile
 	{
 		T v=*reinterpret_cast<volatile const T *>(&i);
-		__fence_after_load(order);
+		fence_after_load(order, v);
 		return v;
 	}
 	void store(T v, memory_order order=memory_order_seq_cst) volatile
@@ -212,9 +217,9 @@ public:
 				: "=&b" (expected), "=&b" (success)
 				: "b" (&i), "b" (expected), "b" ((int)desired)
 			);
-		if (success_order) __fence_after(success_order);
-		else __fence_after(failure_order);
-		__fence_after(order);
+		if (success) fence_after(success_order);
+		else fence_after(failure_order);
+		fence_after(order);
 		return success;
 	}
 	
@@ -232,7 +237,7 @@ protected:
 			: "=&b" (original), "=&b" (tmp)
 			: "b" (&i), "b" (c)
 			: "cc");
-		__fence_after(order);
+		fence_after(order);
 		return original;
 	}
 	inline T fetch_inc(memory_order order) volatile
@@ -247,7 +252,7 @@ protected:
 			: "=&b" (original), "=&b" (tmp)
 			: "b" (&i)
 			: "cc");
-		__fence_after(order);
+		fence_after(order);
 		return original;
 	}
 	inline T fetch_dec(memory_order order) volatile
@@ -262,7 +267,7 @@ protected:
 			: "=&b" (original), "=&b" (tmp)
 			: "b" (&i)
 			: "cc");
-		__fence_after(order);
+		fence_after(order);
 		return original;
 	}
 private:
