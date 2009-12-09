@@ -8,9 +8,7 @@ namespace boost {
 namespace detail {
 namespace atomic {
 
-/* FIXME: need fences for seq_cst */
-
-static inline void __fence_before(memory_order order)
+static inline void fence_before(memory_order order)
 {
 	switch(order) {
 		case memory_order_consume:
@@ -22,7 +20,7 @@ static inline void __fence_before(memory_order order)
 	}
 }
 
-static inline void __fence_after(memory_order order)
+static inline void fence_after(memory_order order)
 {
 	switch(order) {
 		case memory_order_acquire:
@@ -33,7 +31,7 @@ static inline void __fence_after(memory_order order)
 	}
 }
 
-static inline void __fence_after_load(memory_order order)
+static inline void fence_after_load(memory_order order)
 {
 	switch(order) {
 		case memory_order_seq_cst:
@@ -53,13 +51,13 @@ public:
 	T load(memory_order order=memory_order_seq_cst) const volatile
 	{
 		T v=*reinterpret_cast<volatile const T *>(&i);
-		__fence_after_load(order);
+		fence_after_load(order);
 		return v;
 	}
 	void store(T v, memory_order order=memory_order_seq_cst) volatile
 	{
 		if (order!=memory_order_seq_cst) {
-			__fence_before(order);
+			fence_before(order);
 			*reinterpret_cast<volatile T *>(&i)=v;
 		} else {
 			exchange(v);
@@ -71,12 +69,12 @@ public:
 		memory_order success_order,
 		memory_order failure_order) volatile
 	{
-		__fence_before(success_order);
+		fence_before(success_order);
 		T prev=expected;
 		__asm__ __volatile__("lock cmpxchgb %1, %2\n" : "=a" (prev) : "q" (desired), "m" (i), "a" (expected) : "memory");
 		bool success=(prev==expected);
-		if (success) __fence_after(success_order);
-		else __fence_after(failure_order);
+		if (success) fence_after(success_order);
+		else fence_after(failure_order);
 		expected=prev;
 		return success;
 	}
@@ -122,13 +120,13 @@ public:
 	T load(memory_order order=memory_order_seq_cst) const volatile
 	{
 		T v=*reinterpret_cast<volatile const T *>(&i);
-		__fence_after(order);
+		fence_after_load(order);
 		return v;
 	}
 	void store(T v, memory_order order=memory_order_seq_cst) volatile
 	{
 		if (order!=memory_order_seq_cst) {
-			__fence_before(order);
+			fence_before(order);
 			*reinterpret_cast<volatile T *>(&i)=v;
 		} else {
 			exchange(v);
@@ -140,12 +138,12 @@ public:
 		memory_order success_order,
 		memory_order failure_order) volatile
 	{
-		__fence_before(success_order);
+		fence_before(success_order);
 		T prev=expected;
 		__asm__ __volatile__("lock cmpxchgw %1, %2\n" : "=a" (prev) : "q" (desired), "m" (i), "a" (expected) : "memory");
 		bool success=(prev==expected);
-		if (success) __fence_after(success_order);
-		else __fence_after(failure_order);
+		if (success) fence_after(success_order);
+		else fence_after(failure_order);
 		expected=prev;
 		return success;
 	}
@@ -191,13 +189,13 @@ public:
 	T load(memory_order order=memory_order_seq_cst) const volatile
 	{
 		T v=*reinterpret_cast<volatile const T *>(&i);
-		__fence_after(order);
+		fence_after_load(order);
 		return v;
 	}
 	void store(T v, memory_order order=memory_order_seq_cst) volatile
 	{
 		if (order!=memory_order_seq_cst) {
-			__fence_before(order);
+			fence_before(order);
 			*reinterpret_cast<volatile T *>(&i)=v;
 		} else {
 			exchange(v);
@@ -209,12 +207,12 @@ public:
 		memory_order success_order,
 		memory_order failure_order) volatile
 	{
-		__fence_before(success_order);
+		fence_before(success_order);
 		T prev=expected;
 		__asm__ __volatile__("lock cmpxchgl %1, %2\n" : "=a" (prev) : "q" (desired), "m" (i), "a" (expected) : "memory");
 		bool success=(prev==expected);
-		if (success) __fence_after(success_order);
-		else __fence_after(failure_order);
+		if (success) fence_after(success_order);
+		else fence_after(failure_order);
 		expected=prev;
 		return success;
 	}
@@ -261,13 +259,13 @@ public:
 	T load(memory_order order=memory_order_seq_cst) const volatile
 	{
 		T v=*reinterpret_cast<volatile const T *>(&i);
-		__fence_after(order);
+		fence_after_load(order);
 		return v;
 	}
 	void store(T v, memory_order order=memory_order_seq_cst) volatile
 	{
 		if (order!=memory_order_seq_cst) {
-			__fence_before(order);
+			fence_before(order);
 			*reinterpret_cast<volatile T *>(&i)=v;
 		} else {
 			exchange(v);
@@ -279,12 +277,12 @@ public:
 		memory_order success_order,
 		memory_order failure_order) volatile
 	{
-		__fence_before(success_order);
+		fence_before(success_order);
 		T prev=expected;
 		__asm__ __volatile__("lock cmpxchgq %1, %2\n" : "=a" (prev) : "q" (desired), "m" (i), "a" (expected) : "memory");
 		bool success=(prev==expected);
-		if (success) __fence_after(success_order);
-		else __fence_after(failure_order);
+		if (success) fence_after(success_order);
+		else fence_after(failure_order);
 		expected=prev;
 		return success;
 	}
@@ -330,13 +328,13 @@ public:
 		memory_order success_order,
 		memory_order failure_order) volatile
 	{
-		__fence_before(success_order);
+		fence_before(success_order);
 		T prev=expected;
 		__asm__ __volatile__("lock cmpxchg8b %3\n" :
 			"=A" (prev) : "b" ((long)desired), "c" ((long)(desired>>32)), "m" (i), "0" (prev) : "memory");
 		bool success=(prev==expected);
-		if (success) __fence_after(success_order);
-		else __fence_after(failure_order);
+		if (success) fence_after(success_order);
+		else fence_after(failure_order);
 		expected=prev;
 		return success;
 	}
