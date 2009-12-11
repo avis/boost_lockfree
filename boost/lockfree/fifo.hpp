@@ -49,7 +49,7 @@ class fifo:
             data(v)
         {
             /* increment tag to avoid ABA problem */
-            tagged_ptr_t old_next = next.load(memory_order_acquire);
+            tagged_ptr_t old_next = next.load(memory_order_relaxed);
             tagged_ptr_t new_next (NULL, old_next.get_tag()+1);
             next.store(new_next, memory_order_release);
         }
@@ -123,12 +123,13 @@ public:
 
         for (;;)
         {
-            tagged_ptr_t tail = tail_.load();
-            tagged_ptr_t next = tail->next.load();
+            tagged_ptr_t tail = tail_.load(memory_order_acquire);
+            tagged_ptr_t next = tail->next.load(memory_order_acquire);
+            node * next_ptr = next.get_ptr();
 
-            if (likely(tail == tail_.load()))
+            if (likely(tail == tail_.load(memory_order_acquire)))
             {
-                if (next.get_ptr() == 0)
+                if (next_ptr == 0)
                 {
                     if ( tail->next.compare_exchange_strong(next, tagged_ptr_t(n, next.get_tag() + 1)) )
                     {
@@ -137,7 +138,7 @@ public:
                     }
                 }
                 else
-                    tail_.compare_exchange_strong(tail, tagged_ptr_t(next.get_ptr(), tail.get_tag() + 1));
+                    tail_.compare_exchange_strong(tail, tagged_ptr_t(next_ptr, tail.get_tag() + 1));
             }
         }
     }
@@ -146,22 +147,25 @@ public:
     {
         for (;;)
         {
-            tagged_ptr_t head = head_.load();
-            tagged_ptr_t tail = tail_.load();
-            node * next = head->next.load(memory_order_acquire).get_ptr();
+            tagged_ptr_t head = head_.load(memory_order_acquire);
+            tagged_ptr_t tail = tail_.load(memory_order_acquire);
+            tagged_ptr_t next = head->next.load(memory_order_acquire);
+            node * next_ptr = next.get_ptr();
 
-            if (likely(head == head_.load()))
+            if (likely(head == head_.load(memory_order_acquire)))
             {
                 if (head.get_ptr() == tail.get_ptr())
                 {
-                    if (next == 0)
+                    if (next_ptr == 0)
                         return false;
-                    tail_.compare_exchange_strong(tail, tagged_ptr_t(next, tail.get_tag() + 1));
+                    tail_.compare_exchange_strong(tail, tagged_ptr_t(next_ptr, tail.get_tag() + 1));
                 }
                 else
                 {
-                    *ret = next->data;
-                    if (head_.compare_exchange_strong(head, tagged_ptr_t(next, head.get_tag() + 1)))
+                    if (next_ptr == 0) /* this check shouldn't be needed, but it crashes without :/ */
+                        continue;
+                    *ret = next_ptr->data;
+                    if (head_.compare_exchange_strong(head, tagged_ptr_t(next_ptr, head.get_tag() + 1)))
                     {
                         dealloc_node(head.get_ptr());
                         return true;
