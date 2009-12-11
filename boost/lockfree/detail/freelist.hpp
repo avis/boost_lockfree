@@ -61,11 +61,11 @@ class caching_freelist:
 
 public:
     caching_freelist(void):
-        pool_(NULL)
+        pool_(tagged_ptr(NULL, 0))
     {}
 
     explicit caching_freelist(std::size_t initial_nodes):
-        pool_(NULL)
+        pool_(tagged_ptr(NULL, 0))
     {
         for (std::size_t i = 0; i != initial_nodes; ++i)
         {
@@ -83,15 +83,15 @@ public:
     {
         for(;;)
         {
-            tagged_ptr old_pool(pool_);
+            tagged_ptr old_pool = pool_.load(memory_order_consume);
 
-            if (!old_pool)
+            if (!old_pool.get_ptr())
                 return detail::dummy_freelist<T, Alloc>::allocate();
 
-            read_memory_barrier();
-            freelist_node * new_pool = old_pool->next.get_ptr();
+            freelist_node * new_pool_ptr = old_pool->next.get_ptr();
+            tagged_ptr new_pool (new_pool_ptr, old_pool.get_tag() + 1);
 
-            if (pool_.cas(old_pool, new_pool)) {
+            if (pool_.compare_exchange_strong(old_pool, new_pool)) {
                 void * ptr = old_pool.get_ptr();
                 return reinterpret_cast<T*>(ptr);
             }
@@ -103,13 +103,14 @@ public:
         void * node = n;
         for(;;)
         {
-            tagged_ptr old_pool (pool_);
+            tagged_ptr old_pool = pool_.load(memory_order_consume);
 
-            freelist_node * new_pool = reinterpret_cast<freelist_node*>(node);
+            freelist_node * new_pool_ptr = reinterpret_cast<freelist_node*>(node);
+            tagged_ptr new_pool (new_pool_ptr, old_pool.get_tag() + 1);
 
             new_pool->next.set_ptr(old_pool.get_ptr());
 
-            if (pool_.cas(old_pool,new_pool))
+            if (pool_.compare_exchange_strong(old_pool, new_pool))
                 return;
         }
     }
@@ -127,7 +128,7 @@ private:
         }
     }
 
-    volatile tagged_ptr pool_;
+    atomic<tagged_ptr> pool_;
 };
 
 template <typename T, typename Alloc = std::allocator<T> >
@@ -143,7 +144,7 @@ class static_freelist:
 
 public:
     explicit static_freelist(std::size_t max_nodes):
-        pool_(NULL), total_nodes(max_nodes)
+        pool_(tagged_ptr(NULL, 0)), total_nodes(max_nodes)
     {
         chunks = Alloc::allocate(max_nodes);
         for (std::size_t i = 0; i != max_nodes; ++i)
@@ -162,15 +163,15 @@ public:
     {
         for(;;)
         {
-            tagged_ptr old_pool(pool_);
+            tagged_ptr old_pool = pool_.load(memory_order_consume);
 
-            if (!old_pool)
-                return 0;       /* allocation fails */
+            if (!old_pool.get_ptr())
+                return NULL; /* allocation fails */
 
-            read_memory_barrier();
-            freelist_node * new_pool = old_pool->next.get_ptr();
+            freelist_node * new_pool_ptr = old_pool->next.get_ptr();
+            tagged_ptr new_pool (new_pool_ptr, old_pool.get_tag() + 1);
 
-            if (pool_.cas(old_pool, new_pool)) {
+            if (pool_.compare_exchange_strong(old_pool, new_pool)) {
                 void * ptr = old_pool.get_ptr();
                 return reinterpret_cast<T*>(ptr);
             }
@@ -182,19 +183,20 @@ public:
         void * node = n;
         for(;;)
         {
-            tagged_ptr old_pool (pool_);
+            tagged_ptr old_pool = pool_.load(memory_order_consume);
 
-            freelist_node * new_pool = reinterpret_cast<freelist_node*>(node);
+            freelist_node * new_pool_ptr = reinterpret_cast<freelist_node*>(node);
+            tagged_ptr new_pool (new_pool_ptr, old_pool.get_tag() + 1);
 
             new_pool->next.set_ptr(old_pool.get_ptr());
 
-            if (pool_.cas(old_pool,new_pool))
+            if (pool_.compare_exchange_strong(old_pool, new_pool))
                 return;
         }
     }
 
 private:
-    volatile tagged_ptr pool_;
+    atomic<tagged_ptr> pool_;
 
     const std::size_t total_nodes;
     T* chunks;

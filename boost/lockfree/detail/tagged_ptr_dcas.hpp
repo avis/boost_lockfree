@@ -39,6 +39,11 @@ public:
         set(p);
     }
 
+    tagged_ptr(tagged_ptr const & p)//: ptr(0), tag(0)
+    {
+        set(p);
+    }
+
     explicit tagged_ptr(T * p, tag_t t = 0):
         ptr(p), tag(t)
     {}
