@@ -66,7 +66,7 @@ struct stack_tester
 
     void run(void)
     {
-        BOOST_CHECK((boost::lockfree::stack<long, freelist_t>::is_lockfree));
+        BOOST_WARN((boost::lockfree::stack<long, freelist_t>::is_lockfree));
 
         running = true;
 
