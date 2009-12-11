@@ -53,7 +53,7 @@ class stack:
                                      >::type pool_t;
 
 public:
-    static const bool is_lockfree = node::tagged_ptr_t::is_lockfree;
+    static const bool is_lockfree = false;
 
     stack(void):
         tos(tagged_ptr_t(NULL, 0)), pool(128)

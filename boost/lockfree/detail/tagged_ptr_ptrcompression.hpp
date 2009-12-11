@@ -11,7 +11,6 @@
 #ifndef BOOST_LOCKFREE_TAGGED_PTR_PTRCOMPRESSION_HPP_INCLUDED
 #define BOOST_LOCKFREE_TAGGED_PTR_PTRCOMPRESSION_HPP_INCLUDED
 
-#include <boost/lockfree/detail/cas.hpp>
 #include <boost/lockfree/detail/branch_hints.hpp>
 
 #include <cstddef>              /* for std::size_t */
@@ -62,48 +61,22 @@ private:
     }
 
 public:
-    static const bool is_lockfree = boost::lockfree::atomic_cas<compressed_ptr_t>::is_lockfree;
-
     /** uninitialized constructor */
     tagged_ptr(void)//: ptr(0), tag(0)
     {}
 
     /** copy constructor */
-    tagged_ptr(volatile tagged_ptr const & p)//: ptr(0), tag(0)
-    {
-        set(p);
-    }
+    tagged_ptr(tagged_ptr const & p):
+        ptr(p.ptr)
+    {}
 
-    /** copy constructor */
-    tagged_ptr(tagged_ptr const & p)//: ptr(0), tag(0)
-    {
-        set(p);
-    }
     explicit tagged_ptr(T * p, tag_t t = 0):
         ptr(pack_ptr(p, t))
     {}
 
-    /** atomic set operations */
-    /* @{ */
-    void operator= (tagged_ptr const & p)
-    {
-        atomic_set(p);
-    }
-
-    void atomic_set(tagged_ptr const & p)
-    {
-        set(p);
-    }
-
-    void atomic_set(T * p, tag_t t)
-    {
-        ptr = pack_ptr(p, t);
-    }
-    /* @} */
-
     /** unsafe set operation */
     /* @{ */
-    void set(volatile tagged_ptr const & p)
+    void operator= (tagged_ptr const & p)
     {
         ptr = p.ptr;
     }
@@ -152,28 +125,6 @@ public:
     {
         T * p = get_ptr();
         ptr = pack_ptr(p, t);
-    }
-    /* @} */
-
-    /** compare and swap  */
-    /* @{ */
-private:
-    bool cas(compressed_ptr_t const & oldval, compressed_ptr_t const & newval) volatile
-    {
-        return boost::lockfree::atomic_cas<compressed_ptr_t>::cas(&(this->ptr), oldval, newval);
-    }
-
-public:
-    bool cas(tagged_ptr const & oldval, T * newptr) volatile
-    {
-        compressed_ptr_t new_compressed_ptr = pack_ptr(newptr, extract_tag(oldval.ptr)+1);
-        return cas(oldval.ptr, new_compressed_ptr);
-    }
-
-    bool cas(tagged_ptr const & oldval, T * newptr, tag_t t) volatile
-    {
-        compressed_ptr_t new_compressed_ptr = pack_ptr(newptr, t);
-        return boost::lockfree::atomic_cas<compressed_ptr_t>::cas(&(this->ptr), oldval.ptr, new_compressed_ptr);
     }
     /* @} */
 

@@ -81,7 +81,7 @@ class fifo:
     }
 
 public:
-    static const bool is_lockfree = node::tagged_ptr_t::is_lockfree;
+    static const bool is_lockfree = false;
 
     fifo(void):
         pool(128)

@@ -123,7 +123,7 @@ private:
         while (current)
         {
             void * n = current.get_ptr();
-            current.set(current->next);
+            current = current->next;
             detail::dummy_freelist<T, Alloc>::deallocate(reinterpret_cast<T*>(n));
         }
     }
