@@ -15,6 +15,7 @@
 #ifndef BOOST_LOCKFREE_FIFO_HPP_INCLUDED
 #define BOOST_LOCKFREE_FIFO_HPP_INCLUDED
 
+#include <boost/atomic.hpp>
 #include <boost/lockfree/detail/tagged_ptr.hpp>
 #include <boost/lockfree/detail/freelist.hpp>
 
@@ -47,14 +48,17 @@ class fifo:
         node(T const & v):
             data(v)
         {
-            next.set(NULL, next.get_tag()+1); /* increment tag to avoid ABA problem */
+            /* increment tag to avoid ABA problem */
+            tagged_ptr_t old_next = next.load(memory_order_acquire);
+            tagged_ptr_t new_next (NULL, old_next.get_tag()+1);
+            next.store(new_next, memory_order_release);
         }
 
         node (void):
-            next(NULL)
+            next(tagged_ptr_t(NULL, 0))
         {}
 
-        tagged_ptr_t next;
+        atomic<tagged_ptr_t> next;
         T data;
     };
 
@@ -123,7 +127,7 @@ public:
             {
                 if (next.get_ptr() == 0)
                 {
-                    if ( tail->next.cas(next, n) )
+                    if ( tail->next.compare_exchange_strong(next, tagged_ptr<node>(n, next.get_tag() + 1)) )
                     {
                         tail_.cas(tail, n);
                         return true;
@@ -143,7 +147,7 @@ public:
             read_memory_barrier();
 
             atomic_node_ptr tail(tail_);
-            node * next = head->next.get_ptr();
+            node * next = head->next.load(memory_order_acquire).get_ptr();
             read_memory_barrier();
 
             if (likely(head == head_))
