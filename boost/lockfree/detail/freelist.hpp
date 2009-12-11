@@ -12,7 +12,7 @@
 #define BOOST_LOCKFREE_FREELIST_HPP_INCLUDED
 
 #include <boost/lockfree/detail/tagged_ptr.hpp>
-#include <boost/lockfree/atomic_int.hpp>
+#include <boost/atomic.hpp>
 #include <boost/noncopyable.hpp>
 
 #include <boost/mpl/map.hpp>
@@ -139,7 +139,7 @@ private:
     }
 
     tagged_ptr pool_;
-    atomic_int<unsigned long> free_list_size;
+    boost::atomic<unsigned long> free_list_size;
 };
 
 template <typename T, typename Alloc = std::allocator<T> >

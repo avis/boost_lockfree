@@ -18,7 +18,6 @@
 #include <boost/lockfree/detail/freelist.hpp>
 #include <boost/noncopyable.hpp>
 
-
 namespace boost
 {
 namespace lockfree

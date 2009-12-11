@@ -85,7 +85,7 @@ struct fifo_tester
 {
     fifo<int, freelist_t> sf;
 
-    atomic_int<long> fifo_cnt;
+    atomic<long> fifo_cnt, received_nodes;
 
     static_hashed_set<int, 1<<16 > working_set;
 
@@ -93,6 +93,10 @@ struct fifo_tester
 
     static const int reader_threads = 2;
     static const int writer_threads = 2;
+
+    fifo_tester(void):
+        fifo_cnt(0), received_nodes(0)
+    {}
 
     void add(void)
     {
@@ -113,8 +117,6 @@ struct fifo_tester
             ++fifo_cnt;
         }
     }
-
-    atomic_int<long> received_nodes;
 
     bool get_element(void)
     {

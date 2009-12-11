@@ -15,7 +15,6 @@
 #ifndef BOOST_LOCKFREE_FIFO_HPP_INCLUDED
 #define BOOST_LOCKFREE_FIFO_HPP_INCLUDED
 
-#include <boost/lockfree/atomic_int.hpp>
 #include <boost/lockfree/detail/tagged_ptr.hpp>
 #include <boost/lockfree/detail/freelist.hpp>
 

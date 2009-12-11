@@ -5,12 +5,12 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 
 #include <boost/thread/thread.hpp>
-#include <boost/lockfree/atomic_int.hpp>
+#include <boost/atomic.hpp>
 #include <boost/lockfree/stack.hpp>
 #include <iostream>
 
-boost::lockfree::atomic_int<int> producer_count(0);
-boost::lockfree::atomic_int<int> consumer_count(0);
+boost::atomic_int producer_count(0);
+boost::atomic_int consumer_count(0);
 
 boost::lockfree::stack<int> stack;
 
