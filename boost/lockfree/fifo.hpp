@@ -200,8 +200,7 @@ private:
     }
 
     atomic<tagged_ptr_t> head_;
-    static const int padding_size = 64 - sizeof(tagged_ptr_t); /* cache lines on current cpus seem to
-                                                                   * be 64 byte */
+    static const int padding_size = BOOST_LOCKFREE_CACHELINE_BYTES - sizeof(tagged_ptr_t);
     char padding1[padding_size];
     atomic<tagged_ptr_t> tail_;
     char padding2[padding_size];
