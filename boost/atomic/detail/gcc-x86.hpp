@@ -31,18 +31,37 @@ static inline void fence_after(memory_order order)
 	}
 }
 
-static inline void fence_after_load(memory_order order)
+static inline void full_fence(void)
 {
-	switch(order) {
-		case memory_order_seq_cst:
 #if defined(__amd64__)
 			__asm__ __volatile__("mfence" ::: "memory");
 #else
 			/* could use mfence iff i686, but it does not appear to matter much */
 			__asm__ __volatile__("lock addl $0, (%%esp)"  ::: "memory");
 #endif
+}
+
+static inline void fence_after_load(memory_order order)
+{
+	switch(order) {
+		case memory_order_seq_cst:
+			full_fence();
 		case memory_order_acquire:
 		case memory_order_acq_rel:
+			__asm__ __volatile__ ("" ::: "memory");
+		default:;
+	}
+}
+
+template<>
+void platform_atomic_thread_fence(memory_order order)
+{
+	switch(order) {
+		case memory_order_acquire:
+		case memory_order_consume:
+		case memory_order_seq_cst:
+			full_fence();
+		case memory_order_release:
 			__asm__ __volatile__ ("" ::: "memory");
 		default:;
 	}
