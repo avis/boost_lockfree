@@ -11,43 +11,41 @@
 
 #include <vector>
 
+
 class dummy
 {
     int foo[64];
 };
 
-boost::lockfree::caching_freelist<dummy> cfl;
-
-BOOST_AUTO_TEST_CASE( freelist_test2 )
+template <typename freelist_type>
+void run_test(void)
 {
+    freelist_type fl(1024);
+
     std::vector<dummy*> nodes;
 
     for (int i = 0; i != 128; ++i)
-        nodes.push_back(cfl.allocate());
+        nodes.push_back(fl.allocate());
 
     BOOST_FOREACH(dummy * d, nodes)
-        cfl.deallocate(d);
+        fl.deallocate(d);
+
+    nodes.clear();
+    for (int i = 0; i != 128; ++i)
+        nodes.push_back(fl.allocate());
+
+    BOOST_FOREACH(dummy * d, nodes)
+        fl.deallocate(d);
 
     for (int i = 0; i != 128; ++i)
-        nodes.push_back(cfl.allocate());
+        nodes.push_back(fl.allocate());
 }
 
-boost::lockfree::static_freelist<dummy> sfl(128);
-
-BOOST_AUTO_TEST_CASE( freelist_test3 )
+BOOST_AUTO_TEST_CASE( freelist_tests )
 {
-    std::vector<dummy*> nodes;
-
-    for (int i = 0; i != 128; ++i)
-        nodes.push_back(sfl.allocate());
-
-    BOOST_FOREACH(dummy * d, nodes)
-        sfl.deallocate(d);
-
-    for (int i = 0; i != 128; ++i)
-        nodes.push_back(sfl.allocate());
+    run_test<boost::lockfree::caching_freelist<dummy> >();
+    run_test<boost::lockfree::static_freelist<dummy> >();
 }
-
 /* using namespace boost; */
 /* using namespace boost::mpl; */
 
