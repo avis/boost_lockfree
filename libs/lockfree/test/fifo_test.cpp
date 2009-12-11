@@ -21,7 +21,7 @@ BOOST_AUTO_TEST_CASE( simple_fifo_test )
 {
     fifo<int> f(64);
 
-    BOOST_WARN(fifo<int>::is_lockfree);
+    BOOST_WARN(f.is_lock_free());
 
     BOOST_REQUIRE(f.empty());
     f.enqueue(1);

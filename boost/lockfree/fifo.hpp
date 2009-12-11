@@ -81,7 +81,10 @@ class fifo:
     }
 
 public:
-    static const bool is_lockfree = false;
+    const bool is_lock_free (void) const
+    {
+        return head_.is_lock_free();
+    }
 
     fifo(void):
         pool(128)

@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
 {
     using namespace std;
     cout << "boost::lockfree::stack is ";
-    if (!boost::lockfree::stack<int>::is_lockfree)
+    if (!stack.is_lock_free())
         cout << "not ";
     cout << "lockfree" << endl;
 

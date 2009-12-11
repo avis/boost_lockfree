@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
 {
     using namespace std;
     cout << "boost::lockfree::fifo is ";
-    if (!boost::lockfree::fifo<int>::is_lockfree)
+    if (!fifo.is_lock_free())
         cout << "not ";
     cout << "lockfree" << endl;
 
