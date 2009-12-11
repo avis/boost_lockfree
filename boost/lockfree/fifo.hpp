@@ -62,7 +62,7 @@ class fifo:
         T data;
     };
 
-    typedef tagged_ptr<node> atomic_node_ptr;
+    typedef tagged_ptr<node> tagged_ptr_t;
 
     typedef typename Alloc::template rebind<node>::other node_allocator;
 /*     typedef typename select_freelist<node, node_allocator, freelist_t>::type pool_t; */
@@ -72,23 +72,27 @@ class fifo:
                                      static_freelist<node, node_allocator>
                                      >::type pool_t;
 
+    void initialize(void)
+    {
+        node * n = alloc_node();
+        tagged_ptr_t dummy_node(n, 0);
+        head_.store(dummy_node, memory_order_relaxed);
+        tail_.store(dummy_node, memory_order_release);
+    }
+
 public:
     static const bool is_lockfree = node::tagged_ptr_t::is_lockfree;
 
     fifo(void):
         pool(128)
     {
-        node * n = alloc_node();
-        head_.set_ptr(n);
-        tail_.set_ptr(n);
+        initialize();
     }
 
     explicit fifo(std::size_t initial_nodes):
         pool(initial_nodes)
     {
-        node * n = alloc_node();
-        head_.set_ptr(n);
-        tail_.set_ptr(n);
+        initialize();
     }
 
     ~fifo(void)
@@ -102,12 +106,12 @@ public:
                     break;
             }
         }
-        dealloc_node(head_.get_ptr());
+        dealloc_node(head_.load(memory_order_relaxed).get_ptr());
     }
 
     bool empty(void)
     {
-        return head_.get_ptr() == tail_.get_ptr();
+        return head_.load().get_ptr() == tail_.load().get_ptr();
     }
 
     bool enqueue(T const & t)
@@ -119,22 +123,21 @@ public:
 
         for (;;)
         {
-            atomic_node_ptr tail (tail_);
-            read_memory_barrier();
-            atomic_node_ptr next (tail->next);
+            tagged_ptr_t tail = tail_.load();
+            tagged_ptr_t next = tail->next.load();
 
-            if (likely(tail == tail_))
+            if (likely(tail == tail_.load()))
             {
                 if (next.get_ptr() == 0)
                 {
-                    if ( tail->next.compare_exchange_strong(next, tagged_ptr<node>(n, next.get_tag() + 1)) )
+                    if ( tail->next.compare_exchange_strong(next, tagged_ptr_t(n, next.get_tag() + 1)) )
                     {
-                        tail_.cas(tail, n);
+                        tail_.compare_exchange_strong(tail, tagged_ptr_t(n, tail.get_tag() + 1));
                         return true;
                     }
                 }
                 else
-                    tail_.cas(tail, next.get_ptr());
+                    tail_.compare_exchange_strong(tail, tagged_ptr_t(next.get_ptr(), tail.get_tag() + 1));
             }
         }
     }
@@ -143,29 +146,24 @@ public:
     {
         for (;;)
         {
-            atomic_node_ptr head (head_);
-            read_memory_barrier();
-
-            atomic_node_ptr tail(tail_);
+            tagged_ptr_t head = head_.load();
+            tagged_ptr_t tail = tail_.load();
             node * next = head->next.load(memory_order_acquire).get_ptr();
-            read_memory_barrier();
 
-            if (likely(head == head_))
+            if (likely(head == head_.load()))
             {
                 if (head.get_ptr() == tail.get_ptr())
                 {
                     if (next == 0)
                         return false;
-
-                    tail_.cas(tail, next);
+                    tail_.compare_exchange_strong(tail, tagged_ptr_t(next, tail.get_tag() + 1));
                 }
                 else
                 {
                     *ret = next->data;
-                    if (head_.cas(head, next))
+                    if (head_.compare_exchange_strong(head, tagged_ptr_t(next, head.get_tag() + 1)))
                     {
                         dealloc_node(head.get_ptr());
-
                         return true;
                     }
                 }
@@ -194,11 +192,11 @@ private:
         pool.deallocate(n);
     }
 
-    volatile atomic_node_ptr head_;
-    static const int padding_size = 64 - sizeof(atomic_node_ptr); /* cache lines on current cpus seem to
+    atomic<tagged_ptr_t> head_;
+    static const int padding_size = 64 - sizeof(tagged_ptr_t); /* cache lines on current cpus seem to
                                                                    * be 64 byte */
     char padding1[padding_size];
-    volatile atomic_node_ptr tail_;
+    atomic<tagged_ptr_t> tail_;
     char padding2[padding_size];
 
     pool_t pool;
