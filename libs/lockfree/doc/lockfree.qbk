@@ -264,6 +264,7 @@ public:
     explicit fifo(std::size_t initial_nodes);
     ~fifo(void);
 
+    bool is_lock_free(void) const;
     bool empty(void) const;
 
     bool enqueue(T const & t);
@@ -279,6 +280,7 @@ public:
     explicit fifo(std::size_t initial_nodes);
     ~fifo(void);
 
+    bool is_lock_free(void) const;
     bool empty(void) const;
 
     bool enqueue(T * t);
@@ -314,6 +316,15 @@ Construct fifo with a number of initially allocated fifo nodes.
 Destroys stored nodes and fifo, free all nodes from freelist.
 
 [warning Not thread-safe, no enqueue/dequeue operation is allowed, when the destructor is running]
+
+[heading Lockfree Property]
+
+    bool is_lock_free(void) const;
+
+Returns: true, if fifo implementation is lock-free.
+
+[warning It only checks, if the fifo head node is lockfree. on most platforms, this should be sufficient, though]
+
 
 [heading Empty]
 
@@ -392,6 +403,7 @@ public:
     stack(void);
     explicit stack(std::size_t n);
 
+    bool is_lock_free(void) const;
     bool empty(void) const;
 
     bool push(T const & v);
@@ -422,6 +434,16 @@ Construct stack with a number of initially allocated stack nodes.
     ~stack(void);
 
 Destroys stack, free all nodes from freelist.
+
+
+[heading Lockfree Property]
+
+    bool is_lock_free(void) const;
+
+Returns: true, if fifo implementation is lock-free.
+
+[warning It only checks, if the fifo head node is lockfree. on most platforms, this should be sufficient, though]
+
 
 [heading Empty]
 
