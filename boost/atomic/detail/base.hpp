@@ -40,6 +40,13 @@ protected:
 	typedef typename super::integral_type integral_type;
 };
 
+template<typename T>
+static inline void platform_atomic_thread_fence(T order)
+{
+	platform_atomic<int> a;
+	a.exchange(0, order);
+}
+
 template<typename T, unsigned short Size=sizeof(T), typename Int=typename is_integral_type<T>::test>
 class internal_atomic;
 

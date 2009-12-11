@@ -188,6 +188,11 @@ typedef atomic<long long> atomic_llong;
 typedef atomic<void*> atomic_address;
 typedef atomic<bool> atomic_bool;
 
+static inline void atomic_thread_fence(memory_order order)
+{
+	detail::atomic::platform_atomic_thread_fence<memory_order>(order);
+}
+
 }
 
 #endif
