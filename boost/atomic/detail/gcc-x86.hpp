@@ -57,10 +57,11 @@ template<>
 void platform_atomic_thread_fence(memory_order order)
 {
 	switch(order) {
-		case memory_order_acquire:
-		case memory_order_consume:
 		case memory_order_seq_cst:
 			full_fence();
+		case memory_order_acquire:
+		case memory_order_consume:
+		case memory_order_acq_rel:
 		case memory_order_release:
 			__asm__ __volatile__ ("" ::: "memory");
 		default:;
