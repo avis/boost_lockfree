@@ -9,6 +9,7 @@
 #ifndef BOOST_LOCKFREE_STACK_HPP_INCLUDED
 #define BOOST_LOCKFREE_STACK_HPP_INCLUDED
 
+#include <boost/atomic.hpp>
 #include <boost/checked_delete.hpp>
 
 #include <boost/static_assert.hpp>
@@ -41,7 +42,7 @@ class stack:
         T v;
     };
 
-    typedef tagged_ptr<node> ptr_type;
+    typedef tagged_ptr<node> tagged_ptr_t;
 
     typedef typename Alloc::template rebind<node>::other node_allocator;
 /*     typedef typename detail::select_freelist<node, node_allocator, freelist_t>::type pool_t; */
@@ -55,11 +56,11 @@ public:
     static const bool is_lockfree = node::tagged_ptr_t::is_lockfree;
 
     stack(void):
-        tos(NULL), pool(128)
+        tos(tagged_ptr_t(NULL, 0)), pool(128)
     {}
 
     explicit stack(std::size_t n):
-        tos(NULL), pool(n)
+        tos(tagged_ptr_t(NULL, 0)), pool(n)
     {}
 
     ~stack(void)
@@ -82,30 +83,30 @@ public:
         if (newnode == 0)
             return false;
 
-        ptr_type old_tos;
-        do
+        for (;;)
         {
-            old_tos.set(tos);
+            tagged_ptr_t old_tos = tos.load(memory_order_relaxed);
+            tagged_ptr_t new_tos (newnode, old_tos.get_tag() + 1);
             newnode->next.set_ptr(old_tos.get_ptr());
-        }
-        while (!tos.cas(old_tos, newnode));
 
-        return true;
+            if (tos.compare_exchange_strong(old_tos, new_tos))
+                return true;
+        }
     }
 
     bool pop(T * ret)
     {
         for (;;)
         {
-            ptr_type old_tos(tos);
+            tagged_ptr_t old_tos = tos.load(memory_order_consume);
 
-            if (!old_tos)
+            if (!old_tos.get_ptr())
                 return false;
-            read_memory_barrier();
 
-            node * new_tos = old_tos->next.get_ptr();
+            node * new_tos_ptr = old_tos->next.get_ptr();
+            tagged_ptr_t new_tos(new_tos_ptr, old_tos.get_tag() + 1);
 
-            if (tos.cas(old_tos, new_tos))
+            if (tos.compare_exchange_strong(old_tos, new_tos))
             {
                 *ret = old_tos->v;
                 dealloc_node(old_tos.get_ptr());
@@ -116,7 +117,7 @@ public:
 
     bool empty(void) const
     {
-        return tos.get_ptr() == NULL;
+        return tos.load().get_ptr() == NULL;
     }
 
 private:
@@ -133,9 +134,9 @@ private:
         pool.deallocate(n);
     }
 
-    volatile ptr_type tos;
+    atomic<tagged_ptr_t> tos;
 
-    static const int padding_size = 64 - sizeof(ptr_type); /* cache lines on current cpus seem to
+    static const int padding_size = 64 - sizeof(tagged_ptr_t); /* cache lines on current cpus seem to
                                                             * be 64 byte */
     char padding[padding_size];
 
