@@ -23,11 +23,13 @@
 
 [section:introduction_presenting Presenting Boost.Atomic]
 
-[*Boost.Atomic] is a library provides atomic operations
+[*Boost.Atomic] is a library that provides atomic operations
 for C++. It implements the interface defined for the proposed
 C++0x standard, but makes this feature available for
-platforms lacking system support for this particular C++0x
-feature.
+platforms lacking system/compiler support for this particular C++0x
+feature. Additionally it also supports the "free-standing"
+[^atomic_thread_fence] functions that can be used in conjunction
+with atomic variables for thread coordination.
 
 The implementation makes use of processor-specific instructions where
 possible (via inline assembler, platform libraries or compiler
@@ -42,92 +44,129 @@ intrinsics), and falls back to "emulating" atomic operations via locking.
 Atomic operations are applied to instances of `boost::atomic<T>`,
 where `T` is an integral or suitable user-defined type. Operations
 to be performed on a variable are implemented as member functions
-of this class. For each operation, the programmer specifies
-the order in which other operations performed by the same
-thread become "visible" to different threads. Specifying
-correct constraints is important in preventing other threads
-from possibly seeing incorrect data.
+of this class.
+
+When using atomic variables as a mechanism for inter-thread coordination
+of access to non-atomic variables, you must also consider the issue
+of memory order. This can be specified through either the free-standing
+[funcref:boost::atomic_thread_fence atomic_thread_fence] function, or
+specified along-side with an atomic operation.
 
 [section:interface_memory_order Memory order]
 
-While a programmer may write operations accessing variables in a
-specific order (henceforth called the ['program order]),
-the compiler, the processor and the memory system may alter
-this order in unpredictable ways. Algorithms relying on a
-specific ['execution order] for correctness must therefore
-communicate these ordering constraints to the compiler.
+[^boost::atomic<T>] provides one mechanism to share data 
+between threads: Each access to an instance of this class
+is atomic, other threads can therefore never observe
+"partially completed" operations. If you want to just stay
+with only [^atomic] objects that are accessed from
+multiple threads without locking, then you can skip most
+of this section.
 
-[* Boost.Atomic] provides such a mechanism by allowing
-the programmer to specify a ['memory order] argument to
-every atomic operation that expresses the required
-constraints. Programmers who wish to use atomic variables
-are strongly encourage to make themselves familiar with
-the these constraints and also have a look at section
-[link atomic.usage Using atomic operations].
+[^atomic] objects may be used as a mechanism for
+implementing your own thread-coordination scheme that
+allows access to non-atomic shared data structures
+without locking. In this case, atomic variables are
+used to prevent threads from "conflicting" access
+to the same data structure (i.e. concurrent modification
+of a non-atomic object, or concurrent read/write).
 
-Each of the following ordering memory_order constraints
-limits how operations before or after the atomic operation
-(in program order) become visible to other threads with
-respect to the visibility of the effect of the atomic
-operation in question:
+This library provides ['release/acquire] consistency
+for enforcing ordering of operations between threads.
+An operation A in thread #1 "happens before"
+an operation B in thread #2 if:
 
-* [^boost::memory_order_relaxed]: Atomic operation and other
-  memory operations may be reordered freely. Informally
-  speaking, following operations may be moved before,
+- thread #1 performs A
+
+- thread #1 performs a "release" operation
+
+- thread #1 writes an [^atomic] variable
+
+- thread #2 reads the value written by thread #1 (or any "later" value)
+  to the [^atomic] variable
+
+- thread #2 performs an "acquire" operation
+
+- thread #2 performs B
+
+(The "happens before" relationship is transitive.) The required
+"release" and "acquire" operations can be performed in two different
+ways: Either through an explicit call to
+[funcref boost::atomic_thread_fence atomic_thread_fence], or
+by specifying the memory ordering constraint directly with the atomic
+operation, so that the above sequence will typically
+be shortened to:
+
+- thread #1 performs A
+
+- thread #1 writes an [^atomic] variable with "release" ordering constraint
+
+- thread #2 reads the value written by thread #1 (or any "later" value)
+  to the [^atomic] variable with "acquire" ordering constraint
+
+- thread #2 performs B
+
+The default ordering constraint (if none is specified) of every atomic
+operation is [^boost::memory_order_seq_cst] which implies both
+"release" and an "acquire". You may want to specify a weaker
+constraint for performance reasons, but be careful that "wrong" constraints may
+cause the code to be incorrect and subject to spurious failures.
+
+The supported constraints are:
+
+* [^boost::memory_order_relaxed]: No ordering is implied.
+  Informally speaking, following operations may be moved before,
   preceding operations may be moved after the atomic
   operation. This constraint is suitable only when
-  ['either]: a) no code in this thread depends on the
-  outcome of the atomic operation, or b) other
-  mechanisms are used to enforce ordering.
-  See section [link usage_atomic_counter Atomic counters].
+  either a) further operations do not depend on the outcome
+  of the atomic operation or b) ordering is enforced through
+  other mechanisms (e.g. [funcref:atomic_thread_fence]).
 
-* [^boost::memory_order_release]: Atomic operation becomes visible
-  after all operations preciding in memory order become
-  visible. Informally speaking, preceding operations may not
-  be moved after the atomic operation. This constraint
-  is suitable when the thread wants to hand over an
-  object to another thread. See section [link usage_thread_coordination].
+* [^boost::memory_order_release]: Forces all earlier operations performed
+  by this thread in program order to become visible to another thread
+  that has read the value written by this atomic operation. Used
+  in conjunction with [^boost::memory_order_acquire] to enforce
+  inter-thread ordering of operations.
 
-* [^boost::memory_order_acquire]: Atomic operation becomes
-  visible before any operation following in memory order
-  becomes visible. Informally speaking, following operations
-  may not be moved before the atomic operation. This
-  constraint is suitable when the thread receives an
-  object from another thread. See section [link usage_thread_coordination].
+* [^boost::memory_order_acquire]: Forces all later operations performed by
+  this thread in program order to "happen after" the corresponding
+  release operation(s). Used in conjunction with [^boost::memory_order_release]
+  to enforce inter-thread ordering of operations.
 
-* [^boost::memory_order_consume]: Atomic operation becomes
-  visible before any operation computationally dependent
-  on the value returned for the atomic variable. Informally
-  speaking, this prevents operations depending on the value
-  of an atomic variable to be performed speculatively.
-  This is a weaker form of [^boost::memory_order_acquire], see
-  section [link usage_thread_coordination] for a discussion.
+* [^boost::memory_order_consume]: Forces all later operations performed by
+  this thread in program order that computationally depend on the value obtained
+  from the atomic variable to "happen after" the corresponding
+  release operation(s). This is a weaker (and more efficient) form of
+  "acquire" that is suitable in certain situations. See the discussion in
+  section FIXME.
 
 * [^boost::memory_order_acq_rel]: Combines the constraints of
   [^boost::memory_order_acquire] and [^boost::memory_order_release].
 
 * [^boost::memory_order_seq_cst]: Behaves like
-  [^boost::memory_order_seq_cst],
-  but additionally requires that there exists a total order for all operations qualified with [^memory_order_seq_cst].
+  [^boost::memory_order_acq_rel],
+  but additionally requires that there exists a total order for all
+  operations qualified with [^memory_order_seq_cst].
 
 [endsect]
 
 [section:interface_atomic_generic [^boost::atomic<['T]>] template class]
 
-[^boost::atomic<['T]>] provides methods for atomically accessing
+[classref boost::atomic boost::atomic<['T]>] provides methods for atomically accessing
 variables of a suitable type [^['T]]. The type is suitable if
-it satisfys one of the following constraints:
+it satisfies one of the following constraints:
 
 * it is an integer, boolean, enum or pointer type
 * it is any other data-type ([^class] or [^struct]) that has
-  a non-throwing default constructor and that is copyable via
-  [^memcpy]
+  a non-throwing default constructor, that is copyable via
+  [^memcpy] and comparable via [^memcmp].
 
 Note that all classes having a trivial default constructor,
 no destructor and no virtual methods satisfy the second condition
 according to C++98. On a given platform, other data-types ['may]
-also satisfy this constraint, however programmers should exercise
-caution as the behaviour becomes implementation-defined.
+also satisfy this constraint, however you should exercise
+caution as the behaviour becomes implementation-defined. Also be warned
+that structures with "padding" between data members may compare
+non-equal via [^memcmp] even though all members are equal.
 
 Each atomic object supports the following operations:
 
@@ -135,38 +174,547 @@ Each atomic object supports the following operations:
   variable to an unspecified value
 * [^atomic(T initial_value)]: Initializes the atomic
   variable to the given value
-* [^T load(memory_order order=memory_order_seq_cst)]: Reads the
+* [memberref boost::atomic::load load]: Reads the
   current value of the atomic variable
-* [void store(T new_value, memory_order order=memory_order_seq_cst)]:
+* [memberref boost::atomic::store store]:
   Stores a new value for the atomic variable
-* T exchange(T new_value, memory_order order=memory_order_seq_cst)]:
-  Exchanges the value of the atomic variable with [^new_value]
-  and returns the old value
+* [memberref boost::atomic::exchange exchange]:
+  Exchanges the value of the atomic variable with a new
+  value and returns the old value
+* [memberref boost::atomic::compare_exchange_weak compare_exchange_weak]:
+  Tests if the value of the atomic variable with an
+  "expected" value, and if it matches, exchanges it
+  with a new value (allows for spurious failures).
+* [memberref boost::atomic::compare_exchange_strong compare_exchange_strong]:
+  Tests if the value of the atomic variable with an
+  "expected" value, and if it matches, exchanges it
+  with a new value.
+
+In addition to these explicit operations, each
+[classref boost::atomic atomic<['T]>] object also supports
+implicit [^store] and [^load] through the use of assignment
+and conversion operators. Avoid using these operators,
+as they do not allow explicit specification of a memory ordering
+constraint.
 
 [endsect]
 
 [section:interface_atomic_integral [^boost::atomic<['integral]>] template class]
+
+In addition to the operations listed in the previous section,
+[classref boost::atomic boost::atomic<['I]>] for integral
+types [^['I]] supports the following operations:
+
+* [memberref boost::atomic::fetch_add fetch_add]: Adds value
+  to atomic variable and returns old value
+* [memberref boost::atomic::fetch_sub fetch_sub]: Subtracts value
+  from atomic variable and returns old value
+* [memberref boost::atomic::fetch_sub fetch_and]: Combines
+  atomic variable bitwise "and" with operand and returns old value
+* [memberref boost::atomic::fetch_sub fetch_or]: Combines
+  atomic variable bitwise "or" with operand and returns old value
+* [memberref boost::atomic::fetch_sub fetch_xor]: Combines
+  atomic variable bitwise "xor" with operand and returns old value
+
+In addition to these explicit operations, each
+[classref boost::atomic boost::atomic<['I]>] object also
+supports implicit pre-/post- increment/decrement, as well
+as the operators [^+=], [^-=], [^&=], [^|=] and [^^=].
+Avoid using these operators,
+as they do not allow explicit specification of a memory ordering
+constraint.
+
 [endsect]
 
 [endsect]
+
 
 [section:usage Using atomic operations]
 
-bla bla
+[section:example_statistic_counters Statistic counters]
 
-[section:usage_atomic_counters Atomic counters]
 [endsect]
 
-[section:usage_thread_coordination]
+[section:example_reference_counters Reference counting]
+
+The purpose of a ['reference counter] is to count the number
+of pointers to an object. The object can be destroyed as
+soon as the reference counter reaches zero.
+
+[section Implementation]
+
+[c++]
+  
+  #include <boost/intrusive_ptr.hpp>
+  #include <boost/atomic.hpp>
+   
+  class X {
+  public:
+    typedef boost::intrusive_ptr<X> pointer;
+    X() : refcount_(0) {}
+  
+  private:
+    mutable boost::atomic<int> refcount_;
+    friend void intrusive_ptr_add_ref(const X * x)
+    {
+      x->refcount_.fetch_add(1, boost::memory_order_relaxed);
+    }
+    friend void intrusive_ptr_release(const X * x)
+    {
+      if (x->refcount_.fetch_sub(1, boost::memory_order_release)==1) {
+        boost::atomic_thread_fence(boost::memory_order_acquire);
+        delete x;
+      }
+    }
+  };
+
 [endsect]
+
+[section Usage]
+
+[c++]
+  
+  X::pointer x=new X;
+
+[endsect]
+
+[section Discussion]
+
+Increasing the reference counter can always be done with
+[^memory_order_relaxed]: New references to an object can only
+be formed from an existing reference, an passing an existing
+reference from one thread to another must already provide any
+required synchronization.
+
+It is important to enforce any possible access to the object in
+one thread (through an existing reference) to ['happen before]
+deleting the object in a different thread. This is achieved
+by a "release" operation after dropping a reference (any
+access to the object through this reference must obviously
+happened before), and an "acquire" operation before
+deleting the object.
+
+It would be possible to use [^memory_order_acq_rel] for the
+[^fetch_sub] operation, but this results in unneeded "acquire"
+operations when the reference counter does not yet reach zero
+and may impose a performance penalty.
+
+[endsect]
+
+[endsect]
+
+[section:example_reference_counters_weak Reference counting with weak references]
+
+The purpose of a ['reference counter] is to count the number
+of pointers to an object. The object can be destroyed as
+soon as the reference counter reaches zero. There may be
+"weak references" to the object that do not count towards preventing
+the object from being freed. "True" references may be formed from
+"weak" references unless the object has been deleted already.
+
+FIXME: The point to make here is that for upgrading "weak" to "full"
+references requires memory_order_acquire.
+
+[endsect]
+
+[section:example_spinlock Spinlock]
+
+The purpose of a ['spin lock] is to prevent multiple threads
+from concurrently accessing a shared data structure. In contrast
+to a mutex, threads will busy-wait and waste CPU cycles instead
+of yielding the CPU to another thread. ['Do not use spinlocks
+unless you are certain that you understand the consequences.]
+
+[section Implementation]
+
+[c++]
+  
+  #include <boost/atomic.hpp>
+   
+  class spinlock {
+  private:
+    typedef enum {Locked, Unlocked} LockState;
+    boost::atomic<LockState> state_;
+  
+  public:
+    spinlock() : state_(Unlocked) {}
+    
+    lock()
+    {
+      while(state_.exchange(Locked, boost::memory_order_acquire)==Locked) ;
+    }
+    unlock()
+    {
+      state_.store(Unlocked, boost::memory_order_release);
+    }
+  };
+
+[endsect]
+
+[section Usage]
+
+[c++]
+  
+  spinlock s;
+  
+  s.lock();
+  // access data structure here
+  s.unlock();
+
+[endsect]
+
+[section Discussion]
+
+The purpose of the spinlock is to make sure that one access
+to the shared data structure always strictly "happens before"
+another. The usage of acquire/release in lock/unlock is required
+and sufficient to guarantee this ordering.
+
+It would be correct to write the "lock" operation in the following
+way:
+
+[c++]
+  
+  lock()
+  {
+    while(state_.exchange(Locked, boost::memory_order_relaxed)==Locked) ;
+    atomic_thread_fence(boost::memory_order_acquire);
+  }
+
+This "optimization" is however a) useless and b) may in fact hurt:
+a) Since the thread will be busily spinning on a blocked spinlock,
+it does not matter if it will waste the CPU cycles with just
+"exchange" operations or with both useless "exchange" and "acquire"
+operations. b) A tight "exchange" loop without any
+processor-synchronizing instruction introduced through an "acquire"
+operation will on some systems monopolize the memory subsystem
+and degrade the performance of other system components.
+
+[endsect]
+
+[endsect]
+
+[section:example_singleton Double-checked singleton pattern]
+
+The purpose of the ['double-cheked singleton pattern] is to ensure
+that at most one instance of a particular object is created.
+If one instance has been created already, access to the existing
+object should be as light-weight as possible.
+
+[section Implementation]
+
+[c++]
+  
+  #include <boost/atomic.hpp>
+  #include <boost/thread/mutex.hpp>
+  
+  class X {
+  public:
+    static X * instance()
+    {
+      X * tmp=instance_.load(boost::memory_order_consume);
+      if (!tmp) {
+        boost::mutex::scoped_lock l(instantiation_mutex);
+        tmp=instance_.load(boost::memory_order_consume);
+        if (!tmp) {
+          tmp=new X;
+          instance_.store(tmp, boost::memory_order_release);
+        }
+      }
+      return tmp;
+    }
+  private:
+    static boost::atomic<X *> instance_;
+    static boost::mutex instantion_mutex;
+  }
+  
+  boost::atomic<X *> X::instance_(0);
+
+[endsect]
+
+[section Usage]
+
+[c++]
+  
+  X * x=X::instance();
+  // dereference x
+
+[endsect]
+
+[section Discussion]
+
+The mutex makes sure that only one instance of the object is
+ever created. The [^instance] method must make sure that any
+dereference of the object strictly "happens after" creating
+the instance in another thread. The use of [^memory_order_release]
+after creating and initializing the object and [^memory_order_consume]
+before dereferencing the object provides this guarantee.
+
+It would be permissible to use [^memory_order_acquire] instead of
+[^memory_order_consume], but this provides a stronger guarantee
+than is required since only operations depending on the value of
+the pointer need to be ordered.
+
+[endsect]
+
+[endsect]
+
+[section:example_ringbuffer Wait-free ring buffer]
+
+A ['wait-free ring buffer] provides a mechanism for relaying objects
+from one single "producer" thread to one single "consumer" thread without
+any locks. The operations on this data structure are "wait-free" which
+means that each operation finites within a constant number of steps.
+This makes this data structure suitable for use in hard real-time systems
+or for communication with interrupt/signal handlers.
+
+[section Implementation]
+
+[c++]
+  
+  #include <boost/atomic.hpp>
+  
+  template<typename T, size_t Size>
+  class ringbuffer {
+  public:
+    ringbuffer() : head_(0), tail_(0) {}
+    
+    bool push(const T & value)
+    {
+      size_t head=head_.load(boost::memory_order_relaxed);
+      size_t next_head=next(head);
+      if (next_head==tail_.load(boost::memory_order_acquire)) return false;
+      ring_[head]=value;
+      head_.store(next_head, boost::memory_order_release);
+      return true;
+    }
+    bool pop(T & value)
+    {
+      size_t tail=tail_.load(boost::memory_order_relaxed);
+      if (tail==head_.load(boost::memory_order_acquire)) return false;
+      value=ring_[tail];
+      tail_.store(next(tail), boost::memory_odrder_release));
+      return true;
+    }
+  private:
+    size_t next(size_t current) {return current+1;}
+    T ring_[Size];
+    boost::atomic<size_t> head_, tail_;
+  }
+
+[endsect]
+
+[section Usage]
+
+[c++]
+  
+  ringbuffer<int, 32> r;
+  
+  // try to insert an element
+  if (r.push(42)) { /* succeeded */ }
+  else { /* buffer full */ }
+
+  // try to retrieve an element
+  int value;
+  if (r.pop(value)) { /* succeeded */ }
+  else { /* buffer empty */ }
+
+[endsect]
+
+[section Discussion]
+
+The implementation makes sure that the ring indices do
+not "lap-around" each other to ensure that no elements
+are either lost or read twice.
+
+Furthermore it must guarantee that read-access to a
+particular object in [^pop] "happens after" it has been
+written in [^push]. This is achieved by writing [^head_]
+with "release" and reading it with "acquire". Conversely
+the implementation also ensures that read access to
+a particular ring element "happens before" before
+rewriting this element with a new value by accessing [^tail_]
+with appropriate ordering constraints.
+
+[endsect]
+
+[endsect]
+
+[section:example_mp_queue Wait-free multi-producer queue]
+
+The purpose of the ['wait-free multi-producer queue] is to allow
+an arbitrary number of producers to enqueue objects which are
+retrieved and processed in FIFO order by a single consumer.
+
+[section Implementation]
+
+[c++]
+
+  // assume that every "T" object has a pointer "T * T::next"
+  template<typename T>
+  class waitfree_queue {
+  public:
+    struct node {
+      T data;
+      node * next;
+    }
+    void push(const T &data)
+    {
+      node * n=new node;
+      n.data=data;
+      node * stale_head=head_.load(boost::memory_order_relaxed);
+      do {
+        node->next=stale_head;
+      } while(!head_.compare_exchange_weak(stale_head, node, boost::memory_order_release);
+    }
+    
+    node * pop_all(void)
+    {
+      T *last=pop_all_reverse(), *first=0;
+      while(last) {
+        T * tmp=last;
+        last=last->next;
+        tmp->next=first;
+        first=tmp;
+      }
+      return first;
+    }
+    
+    waitfree_queue() : head_(0) {}
+    
+    // alternative interface if ordering is of no importance
+    node * pop_all_reverse(void)
+    {
+      return head_.exchange(0, boost::memory_order_consume);
+    }
+  private:
+    boost::atomic<node *> head_;
+  }
+
+[endsect]
+
+[section Usage]
+
+[c++]
+  
+  waitfree_queue<int> q;
+  
+  // insert elements
+  q.push(42);
+  q.push(2);
+  
+  // pop elements
+  waitfree_queue<int>::node * x=q.pop_all()
+  while(x) {
+    X * tmp=x;
+    x=x->next;
+    // process tmp->data, probably delete it afterwards
+    delete tmp;
+  }
+
+[endsect]
+
+[section Discussion]
+
+The implementation guarantees that all objects enqueued are
+processed in the order they were enqueued by building a singly-linked
+list of object in reverse processing order. The queue is atomically
+emptied by the consumer and brought into correct order.
+
+It must be guaranteed that any access to an object to be enqueued
+by the producer "happens before" any access by the consumer. This
+is assured by inserting objects into the list with "release" and
+dequeuing them with "consume" memory order.
+
+[endsect]
+
+[endsect]
+
+[/
+Keeping track of the number of instances of a class
+requires a counter variable. If instances are created
+and destroyed in multiple threads concurrently, then
+the counter may be updated concurrently as well.
+Using an non-atomic variable for the counter:
+
+[c++]
+
+   class X {
+   public:
+     X() {counter_++;}
+     ~X() {counter_--;}
+   private:
+     static int counter_;
+   };
+   
+   int X::counter_=0;
+
+risks corrupting the counter as the increment/decrement
+operations are mapped to processor instructions that
+essentially perform the equivalent of:
+
+[c++]
+
+   int processor_register=counter_;
+   processer_register=processor_register+1;
+   counter_=processer_register;
+
+As a result, increments/decrements may be "lost". Written
+correctly using [^boost::atomic] the implementation
+could look like:
+
+[c++]
+
+   class X {
+   public:
+     X() {counter_.fetch_add(1, boost::memory_order_relaxed);}
+     ~X() {counter_.fetch_sub(1, boost::memory_order_relaxed);}
+   private:
+     static boost::atomic<int> counter_;
+   };
+   
+   boost::atomic<int> X::counter_=0;
+
+This scheme can used for implementing reference-counters
+for use by smart pointers:
+
+[c++]
+
+   #include <boost/intrusive_ptr.hpp>
+   
+   class X {
+   public:
+     typedef boost::intrusive_ptr<X> pointer;
+     X() : reference_count_(0) {}
+     ~X() {}
+   
+     boost::atomic<int> reference_count_;
+   };
+   
+   void intrusive_ptr_add_ref(X * x)
+   {
+     x->reference_count_.fetch_add(1, boost::memory_order_relaxed);
+   }
+   
+   void intrusive_ptr_release(X * x)
+   {
+     // delete object when reference counter drops to zero
+     // note that fetch_sub returns value before subtracting 1
+     if (x->reference_count_.fetch_sub(1, boost::memory_order_relaxed)==1)
+       delete x;
+   }
+
+Note the use of [^memory_order_relaxed] in all of the examples
+above -- the counter is only used to keep track of the number of
+[^X::pointer] instances to a specific object, 
+]
 
 [endsect]
 
 [section:platform_support Implementing support for additional platforms]
 [endsect]
 
-
-
+[xinclude autodoc.xml]
 
 [section:tested_compilers Tested compilers]
 

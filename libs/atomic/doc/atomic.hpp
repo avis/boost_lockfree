@@ -576,7 +576,7 @@ namespace boost {
 	source code ("program order") does not necessarily match
 	the order in which they are actually executed on the target system:
 	Both compiler as well as processor may reorder operations
-	quite arbitrarily. <B>Specify the wrong ordering
+	quite arbitrarily. <B>Specifying the wrong ordering
 	constraint will therefore generally result in an incorrect program.</B>
 */
 enum memory_order {
@@ -624,6 +624,8 @@ enum memory_order {
 	
 	- integral data types (char, short, int, ...)
 	- pointer data types
+	- any other data type that has a non-throwing default
+	  constructor and that can be copied via <TT>memcpy</TT>
 	
 	Unless specified otherwise, any memory ordering constraint can be used
 	with any of the atomic operations.
@@ -649,22 +651,22 @@ public:
 		\return Current value of the variable
 		
 		Valid memory ordering constraints are:
-		- memory_order_relaxed
-		- memory_order_consume
-		- memory_order_acquire
-		- memory_order_seq_cst
+		- @c memory_order_relaxed
+		- @c memory_order_consume
+		- @c memory_order_acquire
+		- @c memory_order_seq_cst
 	*/
 	Type load(memory_order order=memory_order_seq_cst) const;
 	
 	/**
-		\brief Write new value for atomic variable
+		\brief Write new value to atomic variable
 		\param value New value
 		\param order Memory ordering constraint, see \ref memory_order
 		
 		Valid memory ordering constraints are:
-		- memory_order_relaxed
-		- memory_order_release
-		- memory_order_seq_cst
+		- @c memory_order_relaxed
+		- @c memory_order_release
+		- @c memory_order_seq_cst
 	*/
 	void store(Type value, memory_order order=memory_order_seq_cst);
 	
@@ -691,9 +693,56 @@ public:
 		is unchanged even though the expected value was found (this is the
 		case on architectures using "load-linked"/"store conditional" to
 		implement the operation).
+		
+		The established memory order will be @c order if the operation
+		is successful. If the operation is unsuccesful, the
+		memory order will be
+		
+		- @c memory_order_relaxed if @c order is @c memory_order_acquire ,
+		  @c memory_order_relaxed or @c memory_order_consume
+		- @c memory_order_release if @c order is @c memory_order_acq_release
+		  or @c memory_order_release
+		- @c memory_order_seq_cst if @c order is @c memory_order_seq_cst
 	*/
-	bool compare_exchange_weak(Type &expected, desired, memory_order order=memory_order_seq_cst);
+	bool compare_exchange_weak(
+		Type &expected,
+		Type desired,
+		memory_order order=memory_order_seq_cst);
 	
+	/**
+		\brief Atomically compare and exchange variable
+		\param expected Expected old value
+		\param desired Desired new value
+		\param success_order Memory ordering constraint if operation
+		is successful
+		\param failure_order Memory ordering constraint if operation is unsuccesful
+		\return @c true if value was changed
+		
+		Atomically performs the following operation
+		
+		\code
+		if (variable==expected) {
+			variable=desired;
+			return true;
+		} else {
+			expected=variable;
+			return false;
+		}
+		\endcode
+		
+		This operation may fail "spuriously", i.e. the state of the variable
+		is unchanged even though the expected value was found (this is the
+		case on architectures using "load-linked"/"store conditional" to
+		implement the operation).
+		
+		The constraint imposed by @c success_order may not be
+		weaker than the constraint imposed by @c failure_order.
+	*/
+	bool compare_exchange_weak(
+		Type &expected,
+		Type desired,
+		memory_order success_order,
+		memory_order failure_order);
 	/**
 		\brief Atomically compare and exchange variable
 		\param expected Expected old value
@@ -717,9 +766,56 @@ public:
 		fail spuriously. Since compare-and-swap must generally be retried
 		in a loop, implementors are advised to prefer \ref compare_exchange_weak
 		where feasible.
+		
+		The established memory order will be @c order if the operation
+		is successful. If the operation is unsuccesful, the
+		memory order will be
+		
+		- @c memory_order_relaxed if @c order is @c memory_order_acquire ,
+		  @c memory_order_relaxed or @c memory_order_consume
+		- @c memory_order_release if @c order is @c memory_order_acq_release
+		  or @c memory_order_release
+		- @c memory_order_seq_cst if @c order is @c memory_order_seq_cst
 	*/
-	bool compare_exchange_strong(Type &expected, desired, memory_order order=memory_order_seq_cst);
+	bool compare_exchange_strong(
+		Type &expected,
+		Type desired,
+		memory_order order=memory_order_seq_cst);
 	
+	/**
+		\brief Atomically compare and exchange variable
+		\param expected Expected old value
+		\param desired Desired new value
+		\param success_order Memory ordering constraint if operation
+		is successful
+		\param failure_order Memory ordering constraint if operation is unsuccesful
+		\return @c true if value was changed
+		
+		Atomically performs the following operation
+		
+		\code
+		if (variable==expected) {
+			variable=desired;
+			return true;
+		} else {
+			expected=variable;
+			return false;
+		}
+		\endcode
+		
+		In contrast to \ref compare_exchange_weak, this operation will never
+		fail spuriously. Since compare-and-swap must generally be retried
+		in a loop, implementors are advised to prefer \ref compare_exchange_weak
+		where feasible.
+		
+		The constraint imposed by @c success_order may not be
+		weaker than the constraint imposed by @c failure_order.
+	*/
+	bool compare_exchange_strong(
+		Type &expected,
+		Type desired,
+		memory_order success_order,
+		memory_order failure_order);
 	/**
 		\brief Atomically exchange variable
 		\param value New value
@@ -749,6 +845,12 @@ public:
 		
 		Atomically subtracts operand from the variable and returns its
 		old value.
+		
+		This method is available only if \c Type is an integral type
+		or a non-void pointer type. If it is a pointer type,
+		@c operand is of type @c ptrdiff_t and the operation
+		is performed following the rules for pointer arithmetic
+		in C++.
 	*/
 	Type fetch_sub(Type operand, memory_order order=memory_order_seq_cst);
 	
@@ -761,7 +863,11 @@ public:
 		Atomically performs bitwise "AND" with the variable and returns its
 		old value.
 		
-		This method is available only if \c Type is an integral type.
+		This method is available only if \c Type is an integral type
+		or a non-void pointer type. If it is a pointer type,
+		@c operand is of type @c ptrdiff_t and the operation
+		is performed following the rules for pointer arithmetic
+		in C++.
 	*/
 	Type fetch_and(Type operand, memory_order order=memory_order_seq_cst);
 	
@@ -857,7 +963,11 @@ public:
 		Avoid using the implicit add operator, use \ref fetch_add
 		with an explicit memory ordering constraint.
 		
-		This method is available only if \c Type is an integral type.
+		This method is available only if \c Type is an integral type
+		or a non-void pointer type. If it is a pointer type,
+		@c operand is of type @c ptrdiff_t and the operation
+		is performed following the rules for pointer arithmetic
+		in C++.
 	*/
 	Type operator+=(Type operand);
 	
@@ -869,6 +979,12 @@ public:
 		The same as <tt>fetch_sub(operand, memory_order_seq_cst)-operand</tt>.
 		Avoid using the implicit subtract operator, use \ref fetch_sub
 		with an explicit memory ordering constraint.
+		
+		This method is available only if \c Type is an integral type
+		or a non-void pointer type. If it is a pointer type,
+		@c operand is of type @c ptrdiff_t and the operation
+		is performed following the rules for pointer arithmetic
+		in C++.
 	*/
 	Type operator-=(Type operand);
 	
@@ -879,6 +995,12 @@ public:
 		The same as <tt>fetch_add(1, memory_order_seq_cst)+1</tt>.
 		Avoid using the implicit increment operator, use \ref fetch_add
 		with an explicit memory ordering constraint.
+		
+		This method is available only if \c Type is an integral type
+		or a non-void pointer type. If it is a pointer type,
+		the operation
+		is performed following the rules for pointer arithmetic
+		in C++.
 	*/
 	Type operator++(void);
 	/**
@@ -888,6 +1010,12 @@ public:
 		The same as <tt>fetch_add(1, memory_order_seq_cst)</tt>.
 		Avoid using the implicit increment operator, use \ref fetch_add
 		with an explicit memory ordering constraint.
+		
+		This method is available only if \c Type is an integral type
+		or a non-void pointer type. If it is a pointer type,
+		the operation
+		is performed following the rules for pointer arithmetic
+		in C++.
 	*/
 	Type operator++(int);
 	/**
@@ -897,6 +1025,12 @@ public:
 		The same as <tt>fetch_sub(1, memory_order_seq_cst)-1</tt>.
 		Avoid using the implicit increment operator, use \ref fetch_sub
 		with an explicit memory ordering constraint.
+		
+		This method is available only if \c Type is an integral type
+		or a non-void pointer type. If it is a pointer type,
+		the operation
+		is performed following the rules for pointer arithmetic
+		in C++.
 	*/
 	Type operator--(void);
 	/**
@@ -906,6 +1040,12 @@ public:
 		The same as <tt>fetch_sub(1, memory_order_seq_cst)</tt>.
 		Avoid using the implicit increment operator, use \ref fetch_sub
 		with an explicit memory ordering constraint.
+		
+		This method is available only if \c Type is an integral type
+		or a non-void pointer type. If it is a pointer type,
+		the operation
+		is performed following the rules for pointer arithmetic
+		in C++.
 	*/
 	Type operator--(int);
 	
