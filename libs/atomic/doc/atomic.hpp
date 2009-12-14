@@ -1056,4 +1056,24 @@ private:
 	void operator=(const atomic &);
 };
 
+/**
+	\brief Insert explicit fence
+	\param order Memory ordering constraint
+	
+	Inserts an explicit fence. The exact semantic depends on the
+	type of fence inserted:
+	
+	- \c memory_order_relaxed: No operation
+	- \c memory_order_release: Performs a "release" operation
+	- \c memory_order_acquire or \c memory_order_consume: Performs an
+	  "acquire" operation
+	- \c memory_order_acq_rel: Performs both an "acquire" and a "release"
+	  operation
+	- \c memory_order_seq_cst: Performs both an "acquire" and a "release"
+	  operation and in addition there exists a global total order of
+	  all \c memory_order_seq_cst operations
+	  
+*/
+void atomic_thread_fence(memory_order order);
+
 }

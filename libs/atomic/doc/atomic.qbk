@@ -712,6 +712,9 @@ above -- the counter is only used to keep track of the number of
 [endsect]
 
 [section:platform_support Implementing support for additional platforms]
+
+[include platform.qbk]
+
 [endsect]
 
 [xinclude autodoc.xml]
