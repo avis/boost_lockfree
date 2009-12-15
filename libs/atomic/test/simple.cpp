@@ -209,6 +209,11 @@ enum TestEnum {
 	Foo, Bar
 };
 
+void test_fence()
+{
+	atomic_thread_fence(memory_order_acquire);
+}
+
 int main()
 {
 	test_atomic_arithmetic<char>();
@@ -237,6 +242,10 @@ int main()
 	test_atomic_ptr<int>();
 	test_atomic_base<bool>();
 	test_atomic_base<TestEnum>();
+	
+	atomic_thread_fence(memory_order_seq_cst);
+	
+	test_fence();
 	
 	test_atomic_flag();
 }

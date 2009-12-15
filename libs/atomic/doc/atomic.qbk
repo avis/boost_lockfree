@@ -351,10 +351,15 @@ operation.
 
 [section:tested_compilers Tested compilers]
 
-[*Boost.Atomic] has been tested on the following compilers/platforms:
+[*Boost.Atomic] has been tested on and is known to work on
+the following compilers/platforms:
 
-*  GCC 4.3.2/Linux x86_32 (aka i386), x86_64 (aka amd64), ppc32, alpha
-*  GCC 4.3.2/FreeBSD x86_32 (aka i386)
+* GCC 4.3.2/Linux x86_32 (aka i386), x86_64 (aka amd64), ppc32, alpha
+* GCC 4.3.2/FreeBSD x86_32 (aka i386)
+* Visual Studio Express 2008/Windows XP, x86_32 (aka i386)
+
+If you have an unsupported platform, contact me and I will
+work to add support for it.
 
 [endsect]
 
