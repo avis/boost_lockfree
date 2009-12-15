@@ -19,9 +19,9 @@ template<> struct is_integral_type<unsigned int> {typedef int test;};
 template<> struct is_integral_type<signed int> {typedef int test;};
 template<> struct is_integral_type<unsigned long> {typedef int test;};
 template<> struct is_integral_type<long> {typedef int test;};
-#ifndef BOOST_NO_INT64_T
-template<> struct is_integral_type<uint64_t> {typedef int test;};
-template<> struct is_integral_type<int64_t> {typedef int test;};
+#ifdef BOOST_HAS_LONG_LONG
+template<> struct is_integral_type<unsigned long long> {typedef int test;};
+template<> struct is_integral_type<signed long long> {typedef int test;};
 #endif
 
 }
