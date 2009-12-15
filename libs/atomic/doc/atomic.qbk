@@ -133,8 +133,8 @@ Each atomic object supports the following operations:
 
 In addition to these explicit operations, each
 [classref boost::atomic atomic<['T]>] object also supports
-implicit [^store] and [^load] through the use of assignment
-and conversion operators. Avoid using these operators,
+implicit [^store] and [^load] through the use of "assignment"
+and "conversion to [^T]" operators. Avoid using these operators,
 as they do not allow explicit specification of a memory ordering
 constraint.
 
