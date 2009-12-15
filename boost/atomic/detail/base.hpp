@@ -43,6 +43,9 @@ protected:
 template<typename T>
 static inline void platform_atomic_thread_fence(T order)
 {
+	/* FIXME: this does not provide
+	sequential consistency, need one global
+	variable for that... */
 	platform_atomic<int> a;
 	a.exchange(0, order);
 }
