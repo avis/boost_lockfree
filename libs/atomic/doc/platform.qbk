@@ -103,6 +103,8 @@ These must be implemented as partial template specializations for
 As noted above, it will usually suffice to specialize on the second
 template argument, indicating the size of the data type in bytes.
 
+[section:automatic_buildup Templates for automatic build-up]
+
 Often only a portion of the required operations can be
 usefully mapped to machine instructions. Several helper template
 classes are provided that can automatically synthesize missing methods to
@@ -130,7 +132,8 @@ At the minimum, an implementor must provide the
       // platform-specific code
     }
     bool compare_exchange_weak(T &expected, T desired,
-      memory_order order=memory_order_seq_cst) volatile
+      memory_order success_order,
+      memory_order_failure_order) volatile
     {
       // platform-specific code
     }
@@ -164,28 +167,28 @@ atomic implementations from different starting points:
 * [^build_atomic_from_minimal] requires
   * [^load]
   * [^store]
-  * [^compare_exchange_weak]
+  * [^compare_exchange_weak] (4-operand version)
 
 * [^build_atomic_from_exchange] requires
   * [^load]
   * [^store]
-  * [^compare_exchange_weak]
-  * [^compare_exchange_strong]
+  * [^compare_exchange_weak] (4-operand version)
+  * [^compare_exchange_strong] (4-operand version)
   * [^exchange]
   
 * [^build_atomic_from_add] requires
   * [^load]
   * [^store]
-  * [^compare_exchange_weak]
-  * [^compare_exchange_strong]
+  * [^compare_exchange_weak] (4-operand version)
+  * [^compare_exchange_strong] (4-operand version)
   * [^exchange]
   * [^fetch_add]
   
 * [^build_atomic_from_typical] (<I>supported on gcc only</I>) requires
   * [^load]
   * [^store]
-  * [^compare_exchange_weak]
-  * [^compare_exchange_strong]
+  * [^compare_exchange_weak] (4-operand version)
+  * [^compare_exchange_strong] (4-operand version)
   * [^exchange]
   * [^fetch_add_var] (protected method)
   * [^fetch_inc] (protected method)
@@ -210,6 +213,12 @@ atomic implementations from different starting points:
       T fetch_add_var(T counter, memory_order order) volatile;
     };
 
+These helper templates are defined in [^boost/atomic/detail/builder.hpp].
+
+[endsect]
+
+[section:automatic_buildup_small Build sub-word-sized atomic data types]
+
 There is one other helper template that can build sub-word-sized
 atomic data types even though the underlying architecture allows
 only word-sized atomic operations:
@@ -232,7 +241,10 @@ use masking and shifts to map it to 32-bit atomic operations.
 The base type must implement [^load], [^store]
 and [^compare_exchange_weak] for this to work.
 
-These helper templates are defined in [^boost/atomic/detail/builder.hpp].
+[endsect]
+
+[section:other_sizes Atomic data types for unusual object sizes]
+
 In unusual circumstances, an implementor may also opt to specialize
 [^public boost::detail::atomic::platform_atomic<T,S=sizeof(T)>]
 to provide support for atomic objects not fitting an integral size.
@@ -243,8 +255,8 @@ If you do that, keep the following things in mind:
 * Only the following methods need to be implemented:
   * [^load]
   * [^store]
-  * [^compare_exchange_weak]
-  * [^compare_exchange_strong]
+  * [^compare_exchange_weak] (4-operand version)
+  * [^compare_exchange_strong] (4-operand version)
   * [^exchange]
 
 The type of the data to be stored in the atomic
@@ -259,6 +271,26 @@ invoke either of these operators (using e.g.
 
 [endsect]
 
+[endsect]
+
+[section:platform_atomic_fences Fences]
+
+Platform implementors need to provide a function performing
+the action required for [funcref boost::atomic_thread_fence atomic_thread_fence]
+(the fallback implementation will just perform an atomic operation
+on an integer object). This is achieved by specializing the
+[^boost::detail::atomic::platform_atomic_thread_fence] template
+function in the following way:
+
+[c++]
+  
+  template<>
+  void platform_atomic_thread_fence(memory_order order)
+  {
+    // platform-specific code here
+  }
+
+[endsect]
 
 [section:platform_atomic_puttogether Putting it altogether]
 
