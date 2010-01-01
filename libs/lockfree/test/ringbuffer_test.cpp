@@ -35,6 +35,62 @@ BOOST_AUTO_TEST_CASE( simple_ringbuffer_test )
     BOOST_REQUIRE(f.empty());
 }
 
+BOOST_AUTO_TEST_CASE( simple_ringbuffer_buffer_test )
+{
+    const size_t xqueue_size = 6;
+
+    ringbuffer<int, 16> f;
+
+    int data[xqueue_size];
+
+    for (size_t i = 0; i != xqueue_size; ++i)
+        data[i] = i*2;
+
+    BOOST_REQUIRE(f.empty());
+    BOOST_REQUIRE_EQUAL(f.enqueue(data, xqueue_size), xqueue_size);
+
+    int out[xqueue_size];
+
+    BOOST_REQUIRE_EQUAL(f.dequeue(out, xqueue_size), xqueue_size);
+
+    for (size_t i = 0; i != xqueue_size; ++i)
+        BOOST_REQUIRE_EQUAL(data[i], out[i]);
+}
+
+BOOST_AUTO_TEST_CASE( simple_ringbuffer_buffer_test_2 )
+{
+    const size_t xqueue_size = 15;
+
+    ringbuffer<int, 16> f;
+
+    int data[xqueue_size];
+
+    for (size_t i = 0; i != xqueue_size; ++i)
+        data[i] = i*2;
+
+    BOOST_REQUIRE(f.empty());
+    BOOST_REQUIRE_EQUAL(f.enqueue(data, xqueue_size), xqueue_size);
+
+    int out[xqueue_size];
+
+    BOOST_REQUIRE_EQUAL(f.dequeue(out, xqueue_size), xqueue_size);
+
+    for (size_t i = 0; i != xqueue_size; ++i)
+        BOOST_REQUIRE_EQUAL(data[i], out[i]);
+
+    BOOST_REQUIRE(f.empty());
+    BOOST_REQUIRE_EQUAL(f.enqueue(data, xqueue_size), xqueue_size);
+
+    BOOST_REQUIRE_EQUAL(f.dequeue(out, xqueue_size), xqueue_size);
+
+    for (size_t i = 0; i != xqueue_size; ++i)
+        BOOST_REQUIRE_EQUAL(data[i], out[i]);
+
+    BOOST_REQUIRE(f.empty());
+}
+
+
+static const uint nodes_per_thread = 500000;
 
 struct ringbuffer_tester
 {
@@ -44,11 +100,6 @@ struct ringbuffer_tester
 
     static_hashed_set<int, 1<<16 > working_set;
 
-    static const uint nodes_per_thread = 20000000;
-
-    static const int reader_threads = 1;
-    static const int writer_threads = 1;
-
     ringbuffer_tester(void):
         ringbuffer_cnt(0), received_nodes(0)
     {}
@@ -57,17 +108,12 @@ struct ringbuffer_tester
     {
         for (uint i = 0; i != nodes_per_thread; ++i)
         {
-            while(ringbuffer_cnt > 10000)
-                thread::yield();
-
             int id = generate_id<int>();
 
             working_set.insert(id);
 
             while (sf.enqueue(id) == false)
-            {
-                thread::yield();
-            }
+            {}
 
             ++ringbuffer_cnt;
         }
@@ -100,8 +146,6 @@ struct ringbuffer_tester
             bool success = get_element();
             if (not running and not success)
                 return;
-            if (not success)
-                thread::yield();
         }
     }
 
@@ -109,34 +153,129 @@ struct ringbuffer_tester
     {
         running = true;
 
-        thread_group writer;
-        thread_group reader;
-
         BOOST_REQUIRE(sf.empty());
-        for (int i = 0; i != reader_threads; ++i)
-            reader.create_thread(boost::bind(&ringbuffer_tester::get, this));
 
-        for (int i = 0; i != writer_threads; ++i)
-            writer.create_thread(boost::bind(&ringbuffer_tester::add, this));
+        thread reader(boost::bind(&ringbuffer_tester::get, this));
+        thread writer(boost::bind(&ringbuffer_tester::add, this));
         cout << "reader and writer threads created" << endl;
 
-        writer.join_all();
+        writer.join();
         cout << "writer threads joined. waiting for readers to finish" << endl;
 
         running = false;
-        reader.join_all();
+        reader.join();
 
-        BOOST_REQUIRE_EQUAL(received_nodes, writer_threads * nodes_per_thread);
+        BOOST_REQUIRE_EQUAL(received_nodes, nodes_per_thread);
         BOOST_REQUIRE_EQUAL(ringbuffer_cnt, 0);
         BOOST_REQUIRE(sf.empty());
         BOOST_REQUIRE(working_set.count_nodes() == 0);
     }
 };
 
-
-
 BOOST_AUTO_TEST_CASE( ringbuffer_test_caching )
 {
     ringbuffer_tester test1;
+    //test1.run();
+}
+
+struct ringbuffer_tester_buffering
+{
+    ringbuffer<int, 128> sf;
+
+    atomic<long> ringbuffer_cnt;
+
+    static_hashed_set<int, 1<<16 > working_set;
+    atomic<long> received_nodes;
+
+    ringbuffer_tester_buffering(void):
+        ringbuffer_cnt(0), received_nodes(0)
+    {}
+
+    static const size_t buf_size = 5;
+
+    void add(void)
+    {
+        boost::array<int, buf_size> input_buffer;
+        for (uint i = 0; i != nodes_per_thread; i+=buf_size)
+        {
+            for (size_t i = 0; i != buf_size; ++i)
+            {
+                int id = generate_id<int>();
+                working_set.insert(id);
+                input_buffer[i] = id;
+            }
+
+            size_t enqueued = 0;
+
+            do
+            {
+                enqueued += sf.enqueue(input_buffer.c_array() + enqueued,
+                                       input_buffer.size()    - enqueued);
+            }
+            while (enqueued != buf_size);
+
+            ringbuffer_cnt+=buf_size;
+        }
+    }
+
+    bool get_elements(void)
+    {
+        boost::array<int, buf_size> output_buffer;
+
+        size_t dequeued = sf.dequeue(output_buffer.c_array(), output_buffer.size());
+
+        if (dequeued)
+        {
+            received_nodes += dequeued;
+            ringbuffer_cnt -= dequeued;
+
+            for (size_t i = 0; i != dequeued; ++i)
+            {
+                bool erased = working_set.erase(output_buffer[i]);
+                assert(erased);
+            }
+
+            return true;
+        }
+        else
+            return false;
+    }
+
+    volatile bool running;
+
+    void get(void)
+    {
+        for(;;)
+        {
+            bool success = get_elements();
+            if (not running and not success)
+                return;
+        }
+    }
+
+    void run(void)
+    {
+        running = true;
+
+        thread reader(boost::bind(&ringbuffer_tester_buffering::get, this));
+        thread writer(boost::bind(&ringbuffer_tester_buffering::add, this));
+        cout << "reader and writer threads created" << endl;
+
+        writer.join();
+        cout << "writer threads joined. waiting for readers to finish" << endl;
+
+        running = false;
+        reader.join();
+
+        BOOST_REQUIRE_EQUAL(received_nodes, nodes_per_thread);
+        BOOST_REQUIRE_EQUAL(ringbuffer_cnt, 0);
+        BOOST_REQUIRE(sf.empty());
+        BOOST_REQUIRE(working_set.count_nodes() == 0);
+    }
+};
+
+BOOST_AUTO_TEST_CASE( ringbuffer_test_buffering )
+{
+    ringbuffer_tester_buffering test1;
     test1.run();
 }
