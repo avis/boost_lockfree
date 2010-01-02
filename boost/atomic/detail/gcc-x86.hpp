@@ -453,7 +453,7 @@ public:
         memory_order success_order,
         memory_order failure_order) volatile
     {
-        T prev = __sync_val_compare_and_swap_16(addr, expected, desired);
+        T prev = __sync_val_compare_and_swap_16(&i, expected, desired);
         bool success=(prev==expected);
         if (success) fence_after(success_order);
         else fence_after(failure_order);
@@ -470,7 +470,7 @@ public:
     }
     T exchange(T r, memory_order order=memory_order_seq_cst) volatile
     {
-        while (!__sync_bool_compare_and_swap_16(&i, i, r)
+        while (!__sync_bool_compare_and_swap_16(&i, i, r))
         {};
 
         return r;
