@@ -182,12 +182,16 @@ public:
         return empty(write_index_.load(memory_order_relaxed), read_index_.load(memory_order_relaxed));
     }
 
+    bool is_lock_free(void) const
+    {
+        return write_index_.is_lock_free() && read_index_.is_lock_free();
+    }
+
 private:
     bool empty(size_t write_index, size_t read_index)
     {
         return write_index == read_index;
     }
-
 };
 
 } /* namespace detail */
@@ -228,7 +232,7 @@ class ringbuffer<T, 0>:
     scoped_array<T> array_;
 
 public:
-    ringbuffer(size_t max_size):
+    explicit ringbuffer(size_t max_size):
         max_size_(max_size), array_(new T[max_size])
     {}
 

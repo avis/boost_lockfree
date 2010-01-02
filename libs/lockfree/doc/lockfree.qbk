@@ -50,6 +50,7 @@ The following data structures are provided:
 
 * [classref boost::lockfree::fifo], a lock-free fifo queue
 * [classref boost::lockfree::stack], a lock-free stack
+* [classref boost::lockfree::ringbuffer], a lock-free single-producer/single-consumer ringbuffer
 
 [endsect]
 
@@ -459,6 +460,122 @@ system, and `struct static_freelist_t` uses a fixed-sized freelist. With a fixed
 may fail, while with a caching freelist, the push operation may block.
 
 [endsect]
+
+[endsect]
+
+[section boost::lockfree::ringbuffer]
+
+[classref boost::lockfree::ringbuffer boost::lockfree::ringbuffer] provides a single-writer/single-reader lockfree ringbuffer
+class. If more than one thread is used for enqueueing or dequeuing, additional locking has to be done. The ringbuffer size can
+be set at compile-time by setting the max_size template argument. If max_size is 0, the buffer size can be set at run-time.
+
+[section Synopsis]
+
+[c++]
+
+``
+namespace boost {
+namespace lockfree {
+
+template <typename T, size_t max_size>
+class ringbuffer
+{
+public:
+    bool enqueue(T const & t);
+    bool dequeue(T * ret);
+
+    size_t enqueue(T const * t, size_t size);
+    size_t dequeue(T * ret, size_t size);
+};
+
+template <typename T>
+class ringbuffer<T, 0>:
+    public detail::ringbuffer_internal<T>
+{
+public:
+    ringbuffer(size_t max_size);
+
+    bool enqueue(T const & t);
+    bool dequeue(T * ret);
+
+    size_t enqueue(T const * t, size_t size);
+    size_t dequeue(T * ret, size_t size);
+};
+
+
+} /* namespace lockfree */
+} /* namespace boost */
+``
+
+[endsect]
+
+[section Members]
+
+[heading Constructors]
+
+    ringbuffer(void);
+
+Default Constructor, for static sized ringbuffer.
+
+    explicit fifo(std::size_t max_size);
+
+Construct ringbuffer with a buffer of max_size elements.
+
+[heading Lockfree Property]
+
+    bool is_lock_free(void) const;
+
+Returns: true, if ringbuffer implementation is lock-free.
+
+[heading Empty]
+
+    bool empty(void) const;
+
+Returns: true, if ringbuffer is empty.
+
+[warning Not thread-safe, use for debugging purposes only]
+
+
+[heading Enqueue]
+
+    bool enqueue(T const & t);
+
+Enqueues object t to the ringbuffer. Enqueueing may fail, if the ringbuffer is full.
+
+Returns: true, if the enqueue operation is successful.
+
+
+    size_t enqueue(T const * t, size_t size)
+
+Enqueues size objects from the array t to the ringbuffer. Enqueueing may fail, if the ringbuffer is full.
+
+Returns: number of enqueued items
+
+[note Thread-safe and non-blocking]
+
+[heading Dequeue]
+
+    bool dequeue (T * ret);
+
+Dequeue object from ringbuffer.
+
+Returns: true, if the dequeue operation is successful, false if ringbuffer was empty.
+
+Effect: if dequeue operation is successful, object is written to memory location denoted by ret.
+
+    size_t dequeue(T * ret, size_t size)
+
+Dequeue a maximum of size objects from ringbuffer.
+
+Returns: number of dequeued items
+
+Effect: if dequeue operation is successful, object is written to memory location denoted by ret.
+
+
+[note Thread-safe and non-blocking]
+
+[endsect]
+
 
 [endsect]
 
