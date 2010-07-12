@@ -74,12 +74,13 @@ protected:
 
     bool enqueue(T const & t, T * buffer, size_t max_size)
     {
-        size_t next = next_index(write_index_.load(memory_order_acquire), max_size);
+        size_t write_index = write_index_.load(memory_order_acquire);
+        size_t next = next_index(write_index, max_size);
 
         if (next == read_index_.load(memory_order_acquire))
             return false; /* ringbuffer is full */
 
-        buffer[next] = t;
+        buffer[write_index] = t;
 
         write_index_.store(next, memory_order_release);
 
@@ -93,8 +94,8 @@ protected:
         if (empty(write_index, read_index))
             return false;
 
+        *ret = buffer[read_index];
         size_t next = next_index(read_index, max_size);
-        *ret = buffer[next];
         read_index_.store(next, memory_order_release);
         return true;
     }
