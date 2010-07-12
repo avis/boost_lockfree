@@ -67,7 +67,7 @@ protected:
     static size_t write_available(size_t write_index, size_t read_index, size_t max_size)
     {
         size_t ret = read_index - write_index - 1;
-        if (write_index > read_index)
+        if (write_index >= read_index)
             ret += max_size;
         return ret;
     }
