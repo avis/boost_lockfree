@@ -11,7 +11,13 @@
 #ifndef BOOST_LOCKFREE_FREELIST_HPP_INCLUDED
 #define BOOST_LOCKFREE_FREELIST_HPP_INCLUDED
 
+#include <boost/version.hpp>
+#if (BOOST_VERSION < 104200)  && !defined(memory_order_consume)
+#define memory_order_consume (boost::memory_order)8
+#endif
+
 #include <boost/lockfree/detail/tagged_ptr.hpp>
+
 #include <boost/atomic.hpp>
 #include <boost/noncopyable.hpp>
 

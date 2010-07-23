@@ -14,6 +14,11 @@
 #ifndef BOOST_LOCKFREE_RINGBUFFER_HPP_INCLUDED
 #define BOOST_LOCKFREE_RINGBUFFER_HPP_INCLUDED
 
+#include <boost/version.hpp>
+#if (BOOST_VERSION < 104200)  && !defined(memory_order_consume)
+#define memory_order_consume (boost::memory_order)8
+#endif
+
 #include <boost/atomic.hpp>
 #include <boost/array.hpp>
 #include <boost/noncopyable.hpp>
