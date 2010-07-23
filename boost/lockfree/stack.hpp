@@ -118,9 +118,10 @@ public:
         if (newnode == 0)
             return false;
 
+        tagged_ptr_t old_tos = tos.load(memory_order_relaxed);
+
         for (;;)
         {
-            tagged_ptr_t old_tos = tos.load(memory_order_relaxed);
             tagged_ptr_t new_tos (newnode, old_tos.get_tag());
             newnode->next.set_ptr(old_tos.get_ptr());
 
@@ -140,10 +141,10 @@ public:
      * */
     bool pop(T * ret)
     {
+        tagged_ptr_t old_tos = tos.load(memory_order_consume);
+
         for (;;)
         {
-            tagged_ptr_t old_tos = tos.load(memory_order_consume);
-
             if (!old_tos.get_ptr())
                 return false;
 

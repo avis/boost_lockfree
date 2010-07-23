@@ -82,10 +82,9 @@ public:
 
     T * allocate (void)
     {
+        tagged_ptr old_pool = pool_.load(memory_order_consume);
         for(;;)
         {
-            tagged_ptr old_pool = pool_.load(memory_order_consume);
-
             if (!old_pool.get_ptr())
                 return detail::dummy_freelist<T, Alloc>::allocate();
 
@@ -102,13 +101,12 @@ public:
     void deallocate (T * n)
     {
         void * node = n;
+        tagged_ptr old_pool = pool_.load(memory_order_consume);
+        freelist_node * new_pool_ptr = reinterpret_cast<freelist_node*>(node);
+
         for(;;)
         {
-            tagged_ptr old_pool = pool_.load(memory_order_consume);
-
-            freelist_node * new_pool_ptr = reinterpret_cast<freelist_node*>(node);
             tagged_ptr new_pool (new_pool_ptr, old_pool.get_tag() + 1);
-
             new_pool->next.set_ptr(old_pool.get_ptr());
 
             if (pool_.compare_exchange_strong(old_pool, new_pool))
@@ -162,10 +160,9 @@ public:
 
     T * allocate (void)
     {
+        tagged_ptr old_pool = pool_.load(memory_order_consume);
         for(;;)
         {
-            tagged_ptr old_pool = pool_.load(memory_order_consume);
-
             if (!old_pool.get_ptr())
                 return NULL; /* allocation fails */
 
@@ -182,13 +179,12 @@ public:
     void deallocate (T * n)
     {
         void * node = n;
+        tagged_ptr old_pool = pool_.load(memory_order_consume);
+        freelist_node * new_pool_ptr = reinterpret_cast<freelist_node*>(node);
+
         for(;;)
         {
-            tagged_ptr old_pool = pool_.load(memory_order_consume);
-
-            freelist_node * new_pool_ptr = reinterpret_cast<freelist_node*>(node);
             tagged_ptr new_pool (new_pool_ptr, old_pool.get_tag());
-
             new_pool->next.set_ptr(old_pool.get_ptr());
 
             if (pool_.compare_exchange_strong(old_pool, new_pool))
