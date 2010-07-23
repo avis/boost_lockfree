@@ -4,7 +4,7 @@
 
 project boost/lockfree/example
     : requirements
-       <library>/boost/thread//boost_thread
+       <library>/usr/lib/libboost_thread.so # temporary hack
     ;
 
 exe fifo : fifo.cpp ;
