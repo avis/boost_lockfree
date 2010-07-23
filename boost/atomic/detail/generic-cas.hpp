@@ -1,6 +1,12 @@
 #ifndef BOOST_DETAIL_ATOMIC_GENERIC_CAS_HPP
 #define BOOST_DETAIL_ATOMIC_GENERIC_CAS_HPP
 
+//  Copyright (c) 2009 Helge Bahmann
+//
+//  Distributed under the Boost Software License, Version 1.0.
+//  See accompanying file LICENSE_1_0.txt or copy at
+//  http://www.boost.org/LICENSE_1_0.txt)
+
 #include <stdint.h>
 
 #include <boost/memory_order.hpp>

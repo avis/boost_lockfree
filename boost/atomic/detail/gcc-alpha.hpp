@@ -1,6 +1,12 @@
 #ifndef BOOST_DETAIL_ATOMIC_GCC_ALPHA_HPP
 #define BOOST_DETAIL_ATOMIC_GCC_ALPHA_HPP
 
+//  Copyright (c) 2009 Helge Bahmann
+//
+//  Distributed under the Boost Software License, Version 1.0.
+//  See accompanying file LICENSE_1_0.txt or copy at
+//  http://www.boost.org/LICENSE_1_0.txt)
+
 #include <boost/atomic/detail/base.hpp>
 #include <boost/atomic/detail/builder.hpp>
 
@@ -38,7 +44,7 @@ namespace boost {
 namespace detail {
 namespace atomic {
 
-static inline void __fence_before(memory_order order)
+static inline void fence_before(memory_order order)
 {
 	switch(order) {
 		case memory_order_consume:
@@ -50,10 +56,24 @@ static inline void __fence_before(memory_order order)
 	}
 }
 
-static inline void __fence_after(memory_order order)
+static inline void fence_after(memory_order order)
 {
 	switch(order) {
 		case memory_order_acquire:
+		case memory_order_acq_rel:
+		case memory_order_seq_cst:
+			__asm__ __volatile__ ("mb" ::: "memory");
+		default:;
+	}
+}
+
+template<>
+void platform_atomic_thread_fence(memory_order order)
+{
+	switch(order) {
+		case memory_order_acquire:
+		case memory_order_consume:
+		case memory_order_release:
 		case memory_order_acq_rel:
 		case memory_order_seq_cst:
 			__asm__ __volatile__ ("mb" ::: "memory");
@@ -70,12 +90,12 @@ public:
 	T load(memory_order order=memory_order_seq_cst) const volatile
 	{
 		T v=*reinterpret_cast<volatile const int *>(&i);
-		__fence_after(order);
+		fence_after(order);
 		return v;
 	}
 	void store(T v, memory_order order=memory_order_seq_cst) volatile
 	{
-		__fence_before(order);
+		fence_before(order);
 		*reinterpret_cast<volatile int *>(&i)=(int)v;
 	}
 	bool compare_exchange_weak(
@@ -84,7 +104,7 @@ public:
 		memory_order success_order,
 		memory_order failure_order) volatile
 	{
-		__fence_before(success_order);
+		fence_before(success_order);
 		int current, success;
 		__asm__ __volatile__(
 			"1: ldl_l %2, %4\n"
@@ -103,8 +123,8 @@ public:
 			: "m" (i)
 			:
 		);
-		if (desired) __fence_after(success_order);
-		else __fence_after(failure_order);
+		if (desired) fence_after(success_order);
+		else fence_after(failure_order);
 		return desired;
 	}
 	
@@ -112,7 +132,7 @@ public:
 protected:
 	inline T fetch_add_var(T c, memory_order order) volatile
 	{
-		__fence_before(order);
+		fence_before(order);
 		T original, modified;
 		__asm__ __volatile__(
 			"1: ldl_l %0, %2\n"
@@ -128,12 +148,12 @@ protected:
 			: "m" (i), "r" (c)
 			:
 		);
-		__fence_after(order);
+		fence_after(order);
 		return original;
 	}
 	inline T fetch_inc(memory_order order) volatile
 	{
-		__fence_before(order);
+		fence_before(order);
 		int original, modified;
 		__asm__ __volatile__(
 			"1: ldl_l %0, %2\n"
@@ -149,12 +169,12 @@ protected:
 			: "m" (i)
 			:
 		);
-		__fence_after(order);
+		fence_after(order);
 		return original;
 	}
 	inline T fetch_dec(memory_order order) volatile
 	{
-		__fence_before(order);
+		fence_before(order);
 		int original, modified;
 		__asm__ __volatile__(
 			"1: ldl_l %0, %2\n"
@@ -170,7 +190,7 @@ protected:
 			: "m" (i)
 			:
 		);
-		__fence_after(order);
+		fence_after(order);
 		return original;
 	}
 private:
@@ -186,12 +206,12 @@ public:
 	T load(memory_order order=memory_order_seq_cst) const volatile
 	{
 		T v=*reinterpret_cast<volatile const T *>(&i);
-		__fence_after(order);
+		fence_after(order);
 		return v;
 	}
 	void store(T v, memory_order order=memory_order_seq_cst) volatile
 	{
-		__fence_before(order);
+		fence_before(order);
 		*reinterpret_cast<volatile T *>(&i)=v;
 	}
 	bool compare_exchange_weak(
@@ -200,7 +220,7 @@ public:
 		memory_order success_order,
 		memory_order failure_order) volatile
 	{
-		__fence_before(success_order);
+		fence_before(success_order);
 		int current, success;
 		__asm__ __volatile__(
 			"1: ldq_l %2, %4\n"
@@ -219,8 +239,8 @@ public:
 			: "m" (i)
 			:
 		);
-		if (desired) __fence_after(success_order);
-		else __fence_after(failure_order);
+		if (desired) fence_after(success_order);
+		else fence_after(failure_order);
 		return desired;
 	}
 	
@@ -228,7 +248,7 @@ public:
 protected:
 	inline T fetch_add_var(T c, memory_order order) volatile
 	{
-		__fence_before(order);
+		fence_before(order);
 		T original, modified;
 		__asm__ __volatile__(
 			"1: ldq_l %0, %2\n"
@@ -244,12 +264,12 @@ protected:
 			: "m" (i), "r" (c)
 			:
 		);
-		__fence_after(order);
+		fence_after(order);
 		return original;
 	}
 	inline T fetch_inc(memory_order order) volatile
 	{
-		__fence_before(order);
+		fence_before(order);
 		T original, modified;
 		__asm__ __volatile__(
 			"1: ldq_l %0, %2\n"
@@ -265,12 +285,12 @@ protected:
 			: "m" (i)
 			:
 		);
-		__fence_after(order);
+		fence_after(order);
 		return original;
 	}
 	inline T fetch_dec(memory_order order) volatile
 	{
-		__fence_before(order);
+		fence_before(order);
 		T original, modified;
 		__asm__ __volatile__(
 			"1: ldq_l %0, %2\n"
@@ -286,7 +306,7 @@ protected:
 			: "m" (i)
 			:
 		);
-		__fence_after(order);
+		fence_after(order);
 		return original;
 	}
 private:

@@ -1,6 +1,12 @@
 #ifndef BOOST_DETAIL_ATOMIC_BASE_HPP
 #define BOOST_DETAIL_ATOMIC_BASE_HPP
 
+//  Copyright (c) 2009 Helge Bahmann
+//
+//  Distributed under the Boost Software License, Version 1.0.
+//  See accompanying file LICENSE_1_0.txt or copy at
+//  http://www.boost.org/LICENSE_1_0.txt)
+
 #include <boost/atomic/detail/fallback.hpp>
 #include <boost/atomic/detail/builder.hpp>
 #include <boost/atomic/detail/valid_integral_types.hpp>
@@ -39,6 +45,16 @@ public:
 protected:
 	typedef typename super::integral_type integral_type;
 };
+
+template<typename T>
+static inline void platform_atomic_thread_fence(T order)
+{
+	/* FIXME: this does not provide
+	sequential consistency, need one global
+	variable for that... */
+	platform_atomic<int> a;
+	a.exchange(0, order);
+}
 
 template<typename T, unsigned short Size=sizeof(T), typename Int=typename is_integral_type<T>::test>
 class internal_atomic;

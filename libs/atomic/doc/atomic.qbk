@@ -23,10 +23,13 @@
 
 [section:introduction_presenting Presenting Boost.Atomic]
 
-[*Boost.Atomic] is a library provides atomic operations
-for C++. It implements the interface defined for the proposed
+[*Boost.Atomic] is a library that provides [classref boost::atomic atomic]
+data types and operations on these data types. Additionally it
+also supports the concept of "memory order" for coordinating
+multiple threads through atomic variables.
+It implements the interface defined for the proposed
 C++0x standard, but makes this feature available for
-platforms lacking system support for this particular C++0x
+platforms lacking system/compiler support for this particular C++0x
 feature.
 
 The implementation makes use of processor-specific instructions where
@@ -35,99 +38,76 @@ intrinsics), and falls back to "emulating" atomic operations via locking.
 
 [endsect]
 
+[section:introduction_purpose Purpose]
+
+Operations on "ordinary" variables are not guaranteed to be atomic.
+This means that with [^int n=0] initially, two threads concurrently
+executing
+
+[c++]
+  
+  void function()
+  {
+    n++;
+  }
+
+might result in [^n==1] instead of 2: Each thread will read the
+old value into a processor register, increment it and write the result
+back. Both threads may therefore write [^1], unaware that the other thread
+is doing likewise.
+
+Declaring [^atomic<int> n=0] instead, the same operation on
+this variable will always result in [^n==2] as each operation on this
+variable is ['atomic]: This means that each operation is strictly
+in order without interference and completes before a new operation
+is begun.
+
+Such atomic variables are useful as a faster alternative to
+using a "lock" for access to simple variables. They can also
+be used to coordinate multiple threads that want to access a
+larger shared data structure. This has some benefits over
+"mutual exclusion" as true concurrent access becomes possible,
+instead of being sequentialized by a lock. The downside of
+such custom coordination protocols is complexity, so
+you should take a look at the [link atomic.usage_examples examples] section
+for common patterns.
+
+[endsect]
+
 [endsect]
 
 [section:interface Programming interface]
 
-Atomic operations are applied to instances of `boost::atomic<T>`,
+Atomic variables are declared as instances of `boost::atomic<T>`
 where `T` is an integral or suitable user-defined type. Operations
-to be performed on a variable are implemented as member functions
-of this class. For each operation, the programmer specifies
-the order in which other operations performed by the same
-thread become "visible" to different threads. Specifying
-correct constraints is important in preventing other threads
-from possibly seeing incorrect data.
+to be performed on such a variable are implemented as member functions
+of this type.
 
-[section:interface_memory_order Memory order]
+In addition to atomic variables, the library also provides a mechanism
+for ensuring ordered access to shared data structures, using either
+the free-standing [funcref boost::atomic_thread_fence atomic_thread_fence]
+function, or specified along with an operation on an atomic variable.
 
-While a programmer may write operations accessing variables in a
-specific order (henceforth called the ['program order]),
-the compiler, the processor and the memory system may alter
-this order in unpredictable ways. Algorithms relying on a
-specific ['execution order] for correctness must therefore
-communicate these ordering constraints to the compiler.
-
-[* Boost.Atomic] provides such a mechanism by allowing
-the programmer to specify a ['memory order] argument to
-every atomic operation that expresses the required
-constraints. Programmers who wish to use atomic variables
-are strongly encourage to make themselves familiar with
-the these constraints and also have a look at section
-[link atomic.usage Using atomic operations].
-
-Each of the following ordering memory_order constraints
-limits how operations before or after the atomic operation
-(in program order) become visible to other threads with
-respect to the visibility of the effect of the atomic
-operation in question:
-
-* [^boost::memory_order_relaxed]: Atomic operation and other
-  memory operations may be reordered freely. Informally
-  speaking, following operations may be moved before,
-  preceding operations may be moved after the atomic
-  operation. This constraint is suitable only when
-  ['either]: a) no code in this thread depends on the
-  outcome of the atomic operation, or b) other
-  mechanisms are used to enforce ordering.
-  See section [link usage_atomic_counter Atomic counters].
-
-* [^boost::memory_order_release]: Atomic operation becomes visible
-  after all operations preciding in memory order become
-  visible. Informally speaking, preceding operations may not
-  be moved after the atomic operation. This constraint
-  is suitable when the thread wants to hand over an
-  object to another thread. See section [link usage_thread_coordination].
-
-* [^boost::memory_order_acquire]: Atomic operation becomes
-  visible before any operation following in memory order
-  becomes visible. Informally speaking, following operations
-  may not be moved before the atomic operation. This
-  constraint is suitable when the thread receives an
-  object from another thread. See section [link usage_thread_coordination].
-
-* [^boost::memory_order_consume]: Atomic operation becomes
-  visible before any operation computationally dependent
-  on the value returned for the atomic variable. Informally
-  speaking, this prevents operations depending on the value
-  of an atomic variable to be performed speculatively.
-  This is a weaker form of [^boost::memory_order_acquire], see
-  section [link usage_thread_coordination] for a discussion.
-
-* [^boost::memory_order_acq_rel]: Combines the constraints of
-  [^boost::memory_order_acquire] and [^boost::memory_order_release].
-
-* [^boost::memory_order_seq_cst]: Behaves like
-  [^boost::memory_order_seq_cst],
-  but additionally requires that there exists a total order for all operations qualified with [^memory_order_seq_cst].
-
-[endsect]
+[section:interface_atomic_object Atomic objects]
 
 [section:interface_atomic_generic [^boost::atomic<['T]>] template class]
 
-[^boost::atomic<['T]>] provides methods for atomically accessing
+[classref boost::atomic boost::atomic<['T]>] provides methods for atomically accessing
 variables of a suitable type [^['T]]. The type is suitable if
-it satisfys one of the following constraints:
+it satisfies one of the following constraints:
 
 * it is an integer, boolean, enum or pointer type
 * it is any other data-type ([^class] or [^struct]) that has
-  a non-throwing default constructor and that is copyable via
-  [^memcpy]
+  a non-throwing default constructor, that is copyable via
+  [^memcpy] and comparable via [^memcmp].
 
 Note that all classes having a trivial default constructor,
 no destructor and no virtual methods satisfy the second condition
 according to C++98. On a given platform, other data-types ['may]
-also satisfy this constraint, however programmers should exercise
-caution as the behaviour becomes implementation-defined.
+also satisfy this constraint, however you should exercise
+caution as the behaviour becomes implementation-defined. Also be warned
+that structures with "padding" between data members may compare
+non-equal via [^memcmp] even though all members are equal.
 
 Each atomic object supports the following operations:
 
@@ -135,45 +115,251 @@ Each atomic object supports the following operations:
   variable to an unspecified value
 * [^atomic(T initial_value)]: Initializes the atomic
   variable to the given value
-* [^T load(memory_order order=memory_order_seq_cst)]: Reads the
+* [memberref boost::atomic::load load]: Reads the
   current value of the atomic variable
-* [void store(T new_value, memory_order order=memory_order_seq_cst)]:
+* [memberref boost::atomic::store store]:
   Stores a new value for the atomic variable
-* T exchange(T new_value, memory_order order=memory_order_seq_cst)]:
-  Exchanges the value of the atomic variable with [^new_value]
-  and returns the old value
+* [memberref boost::atomic::exchange exchange]:
+  Exchanges the value of the atomic variable with a new
+  value and returns the old value
+* [memberref boost::atomic::compare_exchange_weak compare_exchange_weak]:
+  Tests if the value of the atomic variable with an
+  "expected" value, and if it matches, exchanges it
+  with a new value (allows for spurious failures).
+* [memberref boost::atomic::compare_exchange_strong compare_exchange_strong]:
+  Tests if the value of the atomic variable with an
+  "expected" value, and if it matches, exchanges it
+  with a new value.
+
+In addition to these explicit operations, each
+[classref boost::atomic atomic<['T]>] object also supports
+implicit [^store] and [^load] through the use of "assignment"
+and "conversion to [^T]" operators. Avoid using these operators,
+as they do not allow explicit specification of a memory ordering
+constraint.
 
 [endsect]
 
 [section:interface_atomic_integral [^boost::atomic<['integral]>] template class]
+
+In addition to the operations listed in the previous section,
+[classref boost::atomic boost::atomic<['I]>] for integral
+types [^['I]] supports the following operations:
+
+* [memberref boost::atomic::fetch_add fetch_add]: Adds value
+  to atomic variable and returns old value
+* [memberref boost::atomic::fetch_sub fetch_sub]: Subtracts value
+  from atomic variable and returns old value
+* [memberref boost::atomic::fetch_sub fetch_and]: Combines
+  atomic variable bitwise "and" with operand and returns old value
+* [memberref boost::atomic::fetch_sub fetch_or]: Combines
+  atomic variable bitwise "or" with operand and returns old value
+* [memberref boost::atomic::fetch_sub fetch_xor]: Combines
+  atomic variable bitwise "xor" with operand and returns old value
+
+In addition to these explicit operations, each
+[classref boost::atomic boost::atomic<['I]>] object also
+supports implicit pre-/post- increment/decrement, as well
+as the operators [^+=], [^-=], [^&=], [^|=] and [^^=].
+Avoid using these operators,
+as they do not allow explicit specification of a memory ordering
+constraint.
+
+[endsect]
+
+[endsect]
+
+[section:interface_memory_order Memory order]
+
+When implementing custom thread coordination protocols,
+atomic variables can be used to prevent two threads from
+performing ['conflicting] access to shared data. At the
+very least, any write to a non-atomic variable must be
+considered to conflict with any other read or write to
+the same variable, depending on the use case other types
+of concurrent access may conflict as well.
+
+[section:interface_acq_rel Release/acquire consistency]
+
+[^Boost.Atomic] provides one basic mechanism to
+guarantee that an operation A in thread #1
+['happens before] an operation B in thread #2
+(thus operations A and B are not executed
+concurrently):
+
+* thread #1 performs operation A
+
+* thread #1 performs a ['release] operation
+
+* thread #1 writes an atomic variable
+
+* thread #2 reads the value written by thread #1 from
+  the atomic variable (or any "updated" value)
+
+* thread #2 performs an ['acquire] operation
+
+* thread #2 performs operation B
+
+(The ['happens before] relation is transitive).
+['Release] and ['Acquire] operations may be performed
+calling the free-standing function
+[funcref boost::atomic_thread_fence atomic_thread_fence]
+with [^memory_order_release] and [^memory_order_acquire]
+parameter, respectively. The implementation also
+provides a mechanism for specifying a memory ordering
+constraints together with an atomic operation, so that
+in most cases the above sequence will be written as:
+
+* thread #1 performs operation A
+
+* thread #1 writes an atomic variable with ['release]
+  memory ordering constraint
+
+* thread #2 reads the value written by thread #1 from
+  the atomic variable (or any "updated" value) with
+  ['acquire] memory ordering constraint
+
+* thread #2 performs operation B
+
+Note that in itself, both ['acquire] and ['release]
+are meaningless, the guarantee only holds
+if both threads access the same atomic variable,
+and it does not hold for non-atomic variables.
+
+Refer to [link atomic.usage_examples this] section for examples
+demonstrating correct usage of ['acquire] and ['release]
+operations.
+
+[endsect]
+
+[section:interface_consume Release/consume consistency]
+
+It is sometimes permissible to use a ['consume] operation
+instead of ['acquire] as in the previous section. This
+is possible if (and only if) ['the operation B
+computationally depends on the value read from the
+atomic variable]. This is satisfied if:
+
+* the atomic variable is a pointer, and the operation B
+  is a dereference of this pointer
+
+* the atomic variable is an integral type that is used
+  to compute an address that is dereferenced by B (e.g.
+  index into an array)
+
+Use ['acquire] in all other cases[footnote
+Nominally, ['consume] should also be applicable
+if B is an arithmetic expression depending on the
+atomic value. Due to optimizations that might
+eliminate this dependence this can however not
+be guaranteed without compiler support. Therefore,
+avoid using this constraint for anything
+else but pointer dereferences]. If the
+above requirement is met, then the following
+sequence
+
+* thread #1 performs operation A
+
+* thread #1 performs a ['release] operation
+
+* thread #1 writes an atomic variable
+
+* thread #2 reads the value written by thread #1 from
+  the atomic variable (or any "updated" value)
+
+* thread #2 performs an ['consume] operation
+
+* thread #2 performs operation B
+
+also guarantees that A ['happens before] B. (The
+relationship is transitive and may also be written
+in the same short-hand notation, as before).
+
+See the [link boost_atomic.usage_examples.mp_queue wait-free queue] and
+[link boost_atomic.usage_examples.singleton singleton pattern] for valid
+uses of ['consume].
+
+[endsect]
+
+[section:interface_memory_order_constraints Permissible constraints]
+
+The following memory ordering constraints can be
+specified with atomic operations or as parameter to
+the free-standing [funcref boost::atomic_thread_fence atomic_thread_fence]
+function:
+
+* [^boost::memory_order_relaxed]: No ordering is implied.
+  Informally speaking, following operations may be moved before,
+  preceding operations may be moved after the atomic
+  operation. This constraint is suitable only when
+  either a) further operations do not depend on the outcome
+  of the atomic operation or b) ordering is enforced through
+  other mechanisms (e.g. [funcref boost::atomic_thread_fence atomic_thread_fence]).
+
+* [^boost::memory_order_release]: Forces all earlier operations performed
+  by this thread in program order to become visible to another thread
+  that has read the value written by this atomic operation. Used
+  in conjunction with [^boost::memory_order_acquire] to enforce
+  inter-thread ordering of operations.
+
+* [^boost::memory_order_acquire]: Forces all later operations performed by
+  this thread in program order to "happen after" the corresponding
+  release operation(s). Used in conjunction with [^boost::memory_order_release]
+  to enforce inter-thread ordering of operations.
+
+* [^boost::memory_order_consume]: Forces all later operations performed by
+  this thread in program order that computationally depend on the value obtained
+  from the atomic variable to "happen after" the corresponding
+  release operation(s). This is a weaker (and more efficient) form of
+  "acquire" that is suitable in certain situations. See the discussion in
+  section FIXME.
+
+* [^boost::memory_order_acq_rel]: Combines the constraints of
+  [^boost::memory_order_acquire] and [^boost::memory_order_release].
+
+* [^boost::memory_order_seq_cst]: Behaves like
+  [^boost::memory_order_acq_rel],
+  but additionally requires that there exists a total order for all
+  operations qualified with [^memory_order_seq_cst].
+
+The default ordering constraint (if none is specified) of
+every atomic operation is [^boost::memory_order_seq_cst]
+which implies both "release" and an "acquire". This means that,
+failing to specify any other constraint, each operation on
+an atomic variable already acts as ['release] and ['acquire]
+operation.
+
 [endsect]
 
 [endsect]
 
-[section:usage Using atomic operations]
-
-bla bla
-
-[section:usage_atomic_counters Atomic counters]
 [endsect]
 
-[section:usage_thread_coordination]
-[endsect]
+[section:usage_examples Usage examples]
+
+[include examples.qbk]
 
 [endsect]
 
 [section:platform_support Implementing support for additional platforms]
+
+[include platform.qbk]
+
 [endsect]
 
-
-
+[xinclude autodoc.xml]
 
 [section:tested_compilers Tested compilers]
 
-[*Boost.Atomic] has been tested on the following compilers/platforms:
+[*Boost.Atomic] has been tested on and is known to work on
+the following compilers/platforms:
 
-*  GCC 4.3.2/Linux x86_32 (aka i386), x86_64 (aka amd64), ppc32, alpha
-*  GCC 4.3.2/FreeBSD x86_32 (aka i386)
+* GCC 4.3.2/Linux x86_32 (aka i386), x86_64 (aka amd64), ppc32, alpha
+* GCC 4.3.2/FreeBSD x86_32 (aka i386)
+* Visual Studio Express 2008/Windows XP, x86_32 (aka i386)
+
+If you have an unsupported platform, contact me and I will
+work to add support for it.
 
 [endsect]
 

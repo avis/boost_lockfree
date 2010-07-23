@@ -9,6 +9,15 @@
 
 
 import quickbook ;
+import doxygen ;
+
+doxygen autodoc
+	:
+		[ glob atomic.hpp ]
+	:
+	<doxygen:param>HIDE_UNDOC_MEMBERS=YES
+	;
+	
 
 xml atomic : atomic.qbk ;
 
@@ -16,8 +25,9 @@ boostbook standalone
    :
       atomic
    :
-        <xsl:param>boost.root=../../../..
-        <xsl:param>boost.libraries=../../../../libs/libraries.htm
-        <xsl:param>generate.section.toc.level=3
-        <xsl:param>chunk.first.sections=1
+	<xsl:param>boost.root=../../../..
+	<xsl:param>boost.libraries=../../../../libs/libraries.htm
+	<xsl:param>generate.section.toc.level=3
+	<xsl:param>chunk.first.sections=1
+	<dependency>autodoc
    ;

@@ -1,3 +1,12 @@
+#ifndef BOOST_DETAIL_ATOMIC_INTERLOCKED_HPP
+#define BOOST_DETAIL_ATOMIC_INTERLOCKED_HPP
+
+//  Copyright (c) 2009 Helge Bahmann
+//
+//  Distributed under the Boost Software License, Version 1.0.
+//  See accompanying file LICENSE_1_0.txt or copy at
+//  http://www.boost.org/LICENSE_1_0.txt)
+
 #include <boost/detail/interlocked.hpp>
 
 #include <boost/atomic/detail/base.hpp>
@@ -7,32 +16,27 @@ namespace boost {
 namespace detail {
 namespace atomic {
 
-static inline void __fence_before(memory_order order)
+static inline void full_fence(void)
+{
+	long tmp;
+	BOOST_INTERLOCKED_EXCHANGE(&tmp, 0);
+}
+
+template<>
+void platform_atomic_thread_fence(memory_order order)
 {
 	switch(order) {
-		case memory_order_consume:
-		case memory_order_release:
-		case memory_order_acq_rel:
 		case memory_order_seq_cst:
+			full_fence();
 		default:;
 	}
 }
 
-static inline void __fence_after(memory_order order)
-{
-	switch(order) {
-		case memory_order_acquire:
-		case memory_order_acq_rel:
-		case memory_order_seq_cst:
-		default:;
-	}
-}
-static inline void __fence_after_load(memory_order order)
+static inline void fence_after_load(memory_order order)
 {
 	switch(order) {
 		case memory_order_seq_cst:
-			long tmp;
-			BOOST_INTERLOCKED_EXCHANGE(&tmp, 0);
+			full_fence();
 		case memory_order_acquire:
 		case memory_order_acq_rel:
 		default:;
@@ -48,13 +52,12 @@ public:
 	T load(memory_order order=memory_order_seq_cst) const volatile
 	{
 		T v=*reinterpret_cast<volatile const T *>(&i);
-		__fence_after_load(order);
+		fence_after_load(order);
 		return v;
 	}
 	void store(T v, memory_order order=memory_order_seq_cst) volatile
 	{
 		if (order!=memory_order_seq_cst) {
-			__fence_before(order);
 			*reinterpret_cast<volatile T *>(&i)=v;
 		} else {
 			exchange(v);
@@ -124,3 +127,5 @@ public:
 }
 }
 }
+
+#endif

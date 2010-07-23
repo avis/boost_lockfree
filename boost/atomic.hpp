@@ -1,6 +1,12 @@
 #ifndef BOOST_ATOMIC_HPP
 #define BOOST_ATOMIC_HPP
 
+//  Copyright (c) 2009 Helge Bahmann
+//
+//  Distributed under the Boost Software License, Version 1.0.
+//  See accompanying file LICENSE_1_0.txt or copy at
+//  http://www.boost.org/LICENSE_1_0.txt)
+
 #include <cstddef>
 
 #include <boost/memory_order.hpp>
@@ -187,6 +193,11 @@ typedef atomic<unsigned long long> atomic_ullong;
 typedef atomic<long long> atomic_llong;
 typedef atomic<void*> atomic_address;
 typedef atomic<bool> atomic_bool;
+
+static inline void atomic_thread_fence(memory_order order)
+{
+	detail::atomic::platform_atomic_thread_fence<memory_order>(order);
+}
 
 }
 

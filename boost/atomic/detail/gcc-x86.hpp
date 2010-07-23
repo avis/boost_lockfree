@@ -1,6 +1,12 @@
 #ifndef BOOST_DETAIL_ATOMIC_GCC_X86_HPP
 #define BOOST_DETAIL_ATOMIC_GCC_X86_HPP
 
+//  Copyright (c) 2009 Helge Bahmann
+//
+//  Distributed under the Boost Software License, Version 1.0.
+//  See accompanying file LICENSE_1_0.txt or copy at
+//  http://www.boost.org/LICENSE_1_0.txt)
+
 #include <boost/atomic/detail/base.hpp>
 #include <boost/atomic/detail/builder.hpp>
 
@@ -31,13 +37,38 @@ static inline void fence_after(memory_order order)
 	}
 }
 
+static inline void full_fence(void)
+{
+#if defined(__amd64__)
+			__asm__ __volatile__("mfence" ::: "memory");
+#else
+			/* could use mfence iff i686, but it does not appear to matter much */
+			__asm__ __volatile__("lock; addl $0, (%%esp)"  ::: "memory");
+#endif
+}
+
 static inline void fence_after_load(memory_order order)
 {
 	switch(order) {
 		case memory_order_seq_cst:
-			__asm__ __volatile__("lock addl $0, (%%esp)" ::: "memory");
+			full_fence();
 		case memory_order_acquire:
 		case memory_order_acq_rel:
+			__asm__ __volatile__ ("" ::: "memory");
+		default:;
+	}
+}
+
+template<>
+void platform_atomic_thread_fence(memory_order order)
+{
+	switch(order) {
+		case memory_order_seq_cst:
+			full_fence();
+		case memory_order_acquire:
+		case memory_order_consume:
+		case memory_order_acq_rel:
+		case memory_order_release:
 			__asm__ __volatile__ ("" ::: "memory");
 		default:;
 	}
@@ -71,7 +102,7 @@ public:
 	{
 		fence_before(success_order);
 		T prev=expected;
-		__asm__ __volatile__("lock cmpxchgb %1, %2\n" : "=a" (prev) : "q" (desired), "m" (i), "a" (expected) : "memory");
+		__asm__ __volatile__("lock; cmpxchgb %1, %2\n" : "=a" (prev) : "q" (desired), "m" (i), "a" (expected) : "memory");
 		bool success=(prev==expected);
 		if (success) fence_after(success_order);
 		else fence_after(failure_order);
@@ -88,12 +119,12 @@ public:
 	}
 	T exchange(T r, memory_order order=memory_order_seq_cst) volatile
 	{
-		__asm__ __volatile__("xchgb %0, %1\n" : "=r" (r) : "m"(i), "0" (r) : "memory");
+		__asm__ __volatile__("xchgb %0, %1\n" : "=q" (r) : "m"(i), "0" (r) : "memory");
 		return r;
 	}
 	T fetch_add(T c, memory_order order=memory_order_seq_cst) volatile
 	{
-		__asm__ __volatile__("lock xaddb %0, %1" : "+r" (c), "+m" (i) :: "memory");
+		__asm__ __volatile__("lock; xaddb %0, %1" : "+q" (c), "+m" (i) :: "memory");
 		return c;
 	}
 	
@@ -140,7 +171,7 @@ public:
 	{
 		fence_before(success_order);
 		T prev=expected;
-		__asm__ __volatile__("lock cmpxchgw %1, %2\n" : "=a" (prev) : "q" (desired), "m" (i), "a" (expected) : "memory");
+		__asm__ __volatile__("lock; cmpxchgw %1, %2\n" : "=a" (prev) : "q" (desired), "m" (i), "a" (expected) : "memory");
 		bool success=(prev==expected);
 		if (success) fence_after(success_order);
 		else fence_after(failure_order);
@@ -162,7 +193,7 @@ public:
 	}
 	T fetch_add(T c, memory_order order=memory_order_seq_cst) volatile
 	{
-		__asm__ __volatile__("lock xaddw %0, %1" : "+r" (c), "+m" (i) :: "memory");
+		__asm__ __volatile__("lock; xaddw %0, %1" : "+r" (c), "+m" (i) :: "memory");
 		return c;
 	}
 	
@@ -209,7 +240,7 @@ public:
 	{
 		fence_before(success_order);
 		T prev=expected;
-		__asm__ __volatile__("lock cmpxchgl %1, %2\n" : "=a" (prev) : "q" (desired), "m" (i), "a" (expected) : "memory");
+		__asm__ __volatile__("lock; cmpxchgl %1, %2\n" : "=a" (prev) : "q" (desired), "m" (i), "a" (expected) : "memory");
 		bool success=(prev==expected);
 		if (success) fence_after(success_order);
 		else fence_after(failure_order);
@@ -231,7 +262,7 @@ public:
 	}
 	T fetch_add(T c, memory_order order=memory_order_seq_cst) volatile
 	{
-		__asm__ __volatile__("lock xaddl %0, %1" : "+r" (c), "+m" (i) :: "memory");
+		__asm__ __volatile__("lock; xaddl %0, %1" : "+r" (c), "+m" (i) :: "memory");
 		return c;
 	}
 	
@@ -279,7 +310,7 @@ public:
 	{
 		fence_before(success_order);
 		T prev=expected;
-		__asm__ __volatile__("lock cmpxchgq %1, %2\n" : "=a" (prev) : "q" (desired), "m" (i), "a" (expected) : "memory");
+		__asm__ __volatile__("lock; cmpxchgq %1, %2\n" : "=a" (prev) : "q" (desired), "m" (i), "a" (expected) : "memory");
 		bool success=(prev==expected);
 		if (success) fence_after(success_order);
 		else fence_after(failure_order);
@@ -301,7 +332,7 @@ public:
 	}
 	T fetch_add(T c, memory_order order=memory_order_seq_cst) volatile
 	{
-		__asm__ __volatile__("lock xaddq %0, %1" : "+r" (c), "+m" (i) :: "memory");
+		__asm__ __volatile__("lock; xaddq %0, %1" : "+r" (c), "+m" (i) :: "memory");
 		return c;
 	}
 	
@@ -330,7 +361,7 @@ public:
 	{
 		fence_before(success_order);
 		T prev=expected;
-		__asm__ __volatile__("lock cmpxchg8b %3\n" :
+		__asm__ __volatile__("lock; cmpxchg8b %3\n" :
 			"=A" (prev) : "b" ((long)desired), "c" ((long)(desired>>32)), "m" (i), "0" (prev) : "memory");
 		bool success=(prev==expected);
 		if (success) fence_after(success_order);

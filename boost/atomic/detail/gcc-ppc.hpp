@@ -1,6 +1,12 @@
 #ifndef BOOST_DETAIL_ATOMIC_GCC_PPC_HPP
 #define BOOST_DETAIL_ATOMIC_GCC_PPC_HPP
 
+//  Copyright (c) 2009 Helge Bahmann
+//
+//  Distributed under the Boost Software License, Version 1.0.
+//  See accompanying file LICENSE_1_0.txt or copy at
+//  http://www.boost.org/LICENSE_1_0.txt)
+
 #include <boost/atomic/detail/base.hpp>
 #include <boost/atomic/detail/builder.hpp>
 
@@ -16,22 +22,42 @@ namespace boost {
 namespace detail {
 namespace atomic {
 
-static inline void __fence_before(memory_order order)
+static inline void fence_before(memory_order order)
 {
 	switch(order) {
 		case memory_order_release:
 		case memory_order_acq_rel:
 #if defined(__powerpc64__)
 			__asm__ __volatile__ ("lwsync" ::: "memory");
-#else
-			__asm__ __volatile__ ("sync" ::: "memory");
-#endif
 			break;
+#endif
 		case memory_order_seq_cst:
 			__asm__ __volatile__ ("sync" ::: "memory");
 		default:;
 	}
 }
+
+/* Note on the barrier instructions used by fence_after and
+atomic_thread_fence: the "isync" instruction normally does
+not wait for memory-accessing operations to complete, the
+"trick" is to introduce a conditional branch that formally
+depends on the memory-accessing instruction -- isync waits
+until the branch can be resolved and thus implicitly until
+the memory access completes.
+
+This means that the load(memory_order_relaxed) instruction
+includes this branch, even though no barrier would be required
+here, but as a consequence atomic_thread_fence(memory_order_acquire)
+would have to be implemented using "sync" instead of "isync".
+The following simple cost-analysis provides the rationale
+for this decision:
+
+- isync: about ~12 cycles
+- sync: about ~50 cycles
+- "spurious" branch after load: 1-2 cycles
+- making the right decision: priceless
+
+*/
 
 static inline void fence_after(memory_order order)
 {
@@ -46,28 +72,25 @@ static inline void fence_after(memory_order order)
 	}
 }
 
-template<typename T>
-static inline void fence_after_load(memory_order order, T value)
+template<>
+void platform_atomic_thread_fence(memory_order order)
 {
 	switch(order) {
 		case memory_order_acquire:
+			__asm__ __volatile__ ("isync" ::: "memory");
+			break;
+		case memory_order_release:
 		case memory_order_acq_rel:
+#if defined(__powerpc64__)
+			__asm__ __volatile__ ("lwsync" ::: "memory");
+			break;
+#endif
 		case memory_order_seq_cst:
-			/* perform a "fake" branch formally depending
-			on the value loaded from memory; this will
-			cause the subsequent "isync" to delay
-			subsequent instructions until the load
-			has finished */
-			__asm__ __volatile__ (
-				"cmpw %0, %0\n"
-				"bne- 1f\n"
-				"1f: isync\n"
-				: "+b"(value));
-		case memory_order_consume:
-			__asm__ __volatile__ ("" ::: "memory");
+			__asm__ __volatile__ ("sync" ::: "memory");
 		default:;
 	}
 }
+
 
 /* note: the __asm__ constraint "b" instructs gcc to use any register
 except r0; this is required because r0 is not allowed in
@@ -84,12 +107,17 @@ public:
 	T load(memory_order order=memory_order_seq_cst) const volatile
 	{
 		T v=*reinterpret_cast<volatile const T *>(&i);
-		fence_after_load(order, v);
+		__asm__ __volatile__ (
+			"cmpw %0, %0\n"
+			"bne- 1f\n"
+			"1f:\n"
+			: "+b"(v));
+		fence_after(order);
 		return v;
 	}
 	void store(T v, memory_order order=memory_order_seq_cst) volatile
 	{
-		__fence_before(order);
+		fence_before(order);
 		*reinterpret_cast<volatile T *>(&i)=v;
 	}
 	bool compare_exchange_weak(
@@ -98,7 +126,7 @@ public:
 		memory_order success_order,
 		memory_order failure_order) volatile
 	{
-		__fence_before(success_order);
+		fence_before(success_order);
 		int success;
 		__asm__ __volatile__(
 			"lwarx %0,0,%2\n"
@@ -125,7 +153,7 @@ public:
 protected:
 	inline T fetch_add_var(T c, memory_order order) volatile
 	{
-		__fence_before(order);
+		fence_before(order);
 		T original, tmp;
 		__asm__ __volatile__(
 			"1: lwarx %0,0,%2\n"
@@ -140,7 +168,7 @@ protected:
 	}
 	inline T fetch_inc(memory_order order) volatile
 	{
-		__fence_before(order);
+		fence_before(order);
 		T original, tmp;
 		__asm__ __volatile__(
 			"1: lwarx %0,0,%2\n"
@@ -155,7 +183,7 @@ protected:
 	}
 	inline T fetch_dec(memory_order order) volatile
 	{
-		__fence_before(order);
+		fence_before(order);
 		T original, tmp;
 		__asm__ __volatile__(
 			"1: lwarx %0,0,%2\n"
@@ -185,12 +213,17 @@ public:
 	T load(memory_order order=memory_order_seq_cst) const volatile
 	{
 		T v=*reinterpret_cast<volatile const T *>(&i);
-		fence_after_load(order, v);
+		__asm__ __volatile__ (
+			"cmpw %0, %0\n"
+			"bne- 1f\n"
+			"1f:\n"
+			: "+b"(v));
+		fence_after(order);
 		return v;
 	}
 	void store(T v, memory_order order=memory_order_seq_cst) volatile
 	{
-		__fence_before(order);
+		fence_before(order);
 		*reinterpret_cast<volatile T *>(&i)=v;
 	}
 	bool compare_exchange_weak(
@@ -199,7 +232,7 @@ public:
 		memory_order success_order,
 		memory_order failure_order) volatile
 	{
-		__fence_before(success_order);
+		fence_before(success_order);
 		int success;
 		__asm__ __volatile__(
 			"ldarx %0,0,%2\n"
@@ -227,7 +260,7 @@ public:
 protected:
 	inline T fetch_add_var(T c, memory_order order) volatile
 	{
-		__fence_before(order);
+		fence_before(order);
 		T original, tmp;
 		__asm__ __volatile__(
 			"1: ldarx %0,0,%2\n"
@@ -242,7 +275,7 @@ protected:
 	}
 	inline T fetch_inc(memory_order order) volatile
 	{
-		__fence_before(order);
+		fence_before(order);
 		T original, tmp;
 		__asm__ __volatile__(
 			"1: ldarx %0,0,%2\n"
@@ -257,7 +290,7 @@ protected:
 	}
 	inline T fetch_dec(memory_order order) volatile
 	{
-		__fence_before(order);
+		fence_before(order);
 		T original, tmp;
 		__asm__ __volatile__(
 			"1: ldarx %0,0,%2\n"
