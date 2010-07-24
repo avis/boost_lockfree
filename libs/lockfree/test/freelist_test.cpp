@@ -22,31 +22,31 @@ class dummy
 template <typename freelist_type>
 void run_test(void)
 {
-    freelist_type fl(1024);
+    freelist_type fl(8);
 
     std::vector<dummy*> nodes;
 
-    for (int i = 0; i != 128; ++i)
+    for (int i = 0; i != 4; ++i)
         nodes.push_back(fl.allocate());
 
     BOOST_FOREACH(dummy * d, nodes)
         fl.deallocate(d);
 
     nodes.clear();
-    for (int i = 0; i != 128; ++i)
+    for (int i = 0; i != 4; ++i)
         nodes.push_back(fl.allocate());
 
     BOOST_FOREACH(dummy * d, nodes)
         fl.deallocate(d);
 
-    for (int i = 0; i != 128; ++i)
+    for (int i = 0; i != 4; ++i)
         nodes.push_back(fl.allocate());
 }
 
 BOOST_AUTO_TEST_CASE( freelist_tests )
 {
-    run_test<boost::lockfree::caching_freelist<dummy> >();
-    run_test<boost::lockfree::static_freelist<dummy> >();
+    run_test<boost::lockfree::detail::freelist_stack<dummy, true> >();
+    run_test<boost::lockfree::detail::freelist_stack<dummy, false> >();
 }
 
 template <typename freelist_type>
@@ -95,21 +95,10 @@ struct freelist_tester
 
 BOOST_AUTO_TEST_CASE( caching_freelist_test )
 {
-    freelist_tester<boost::lockfree::caching_freelist<dummy> > tester();
+    freelist_tester<boost::lockfree::detail::freelist_stack<dummy, true> > tester();
 }
 
 BOOST_AUTO_TEST_CASE( static_freelist_test )
 {
-    freelist_tester<boost::lockfree::static_freelist<dummy> > tester();
+    freelist_tester<boost::lockfree::detail::freelist_stack<dummy, true> > tester();
 }
-
-/* using namespace boost; */
-/* using namespace boost::mpl; */
-
-/* BOOST_STATIC_ASSERT((is_same<lockfree::detail::select_freelist<int, std::allocator<int>, lockfree::caching_freelist_t>, */
-/*                      lockfree::caching_freelist<int, std::allocator<int> > */
-/*                      >::value)); */
-
-/* BOOST_STATIC_ASSERT((is_same<lockfree::detail::select_freelist<int, std::allocator<int>, lockfree::static_freelist_t>, */
-/*                      lockfree::static_freelist<int, std::allocator<int> > */
-/*                      >::value)); */

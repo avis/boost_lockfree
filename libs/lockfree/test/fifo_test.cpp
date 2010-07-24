@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_CASE( simple_fifo_test )
 
 BOOST_AUTO_TEST_CASE( fifo_specialization_test )
 {
-    fifo<int*> f;
+    fifo<int*> f(128);
     BOOST_REQUIRE(f.empty());
     f.enqueue(new int(1));
     f.enqueue(new int(2));
@@ -96,7 +96,9 @@ struct fifo_tester
 
     fifo_tester(void):
         fifo_cnt(0), received_nodes(0)
-    {}
+    {
+        sf.reserve(128);
+    }
 
     void add(void)
     {

@@ -26,7 +26,9 @@ struct stack_tester
 
     stack_tester(void):
         push_count(0), pop_count(0)
-    {}
+    {
+        stk.reserve(128);
+    }
 
     void add_items(void)
     {

@@ -34,8 +34,6 @@ namespace lockfree
  *  from the operating system, and struct static_freelist_t uses a fixed-sized freelist. With a fixed-sized
  *  freelist, the push operation may fail, while with a caching freelist, the push operation may block.
  *
- *  \b Limitation: The stack class is limited to PODs
- *
  * */
 template <typename T,
           typename freelist_t = caching_freelist_t,
@@ -62,11 +60,10 @@ private:
     typedef tagged_ptr<node> tagged_ptr_t;
 
     typedef typename Alloc::template rebind<node>::other node_allocator;
-/*     typedef typename detail::select_freelist<node, node_allocator, freelist_t>::type pool_t; */
 
     typedef typename boost::mpl::if_<boost::is_same<freelist_t, caching_freelist_t>,
-                                     caching_freelist<node, node_allocator>,
-                                     static_freelist<node, node_allocator>
+                                     detail::freelist_stack<node, true, node_allocator>,
+                                     detail::freelist_stack<node, false, node_allocator>
                                      >::type pool_t;
 
 public:
@@ -76,15 +73,23 @@ public:
         return tos.is_lock_free();
     }
 
-    //! Construct stack with 128 of initially allocated stack nodes.
+    //! Construct stack.
     stack(void):
-        tos(tagged_ptr_t(NULL, 0)), pool(128)
+        tos(tagged_ptr_t(NULL, 0))
     {}
 
-    //! Construct stack with a number of initially allocated stack nodes.
+    //! Construct stack, allocate n nodes for the freelist
     explicit stack(std::size_t n):
-        tos(tagged_ptr_t(NULL, 0)), pool(n)
-    {}
+        tos(tagged_ptr_t(NULL, 0))
+    {
+        pool.reserve(n);
+    }
+
+    //! Allocate n nodes for freelist
+    void reserve(std::size_t n)
+    {
+        pool.reserve(n);
+    }
 
     /** Destroys stack, free all nodes from freelist.
      *

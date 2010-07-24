@@ -67,11 +67,10 @@ private:
     typedef tagged_ptr<node> tagged_ptr_t;
 
     typedef typename Alloc::template rebind<node>::other node_allocator;
-/*     typedef typename select_freelist<node, node_allocator, freelist_t>::type pool_t; */
 
     typedef typename boost::mpl::if_<boost::is_same<freelist_t, caching_freelist_t>,
-                                     caching_freelist<node, node_allocator>,
-                                     static_freelist<node, node_allocator>
+                                     detail::freelist_stack<node, true, node_allocator>,
+                                     detail::freelist_stack<node, false, node_allocator>
                                      >::type pool_t;
 
     void initialize(void)
@@ -94,18 +93,24 @@ public:
         return head_.is_lock_free();
     }
 
-    //! Construct fifo, initially allocates 128 nodes
-    fifo(void):
-        pool(128)
+    //! Construct fifo.
+    fifo(void)
     {
+        pool.reserve(1);
         initialize();
     }
 
-    //! Construct fifo with a number of initially allocated fifo nodes.
-    explicit fifo(std::size_t initial_nodes):
-        pool(initial_nodes)
+    //! Construct fifo, allocate n nodes for the freelist.
+    explicit fifo(std::size_t n)
     {
+        pool.reserve(n+1);
         initialize();
+    }
+
+    //! Allocate n nodes for freelist.
+    void reserve(std::size_t n)
+    {
+        pool.reserve(n);
     }
 
     /** Destroys fifo, free all nodes from freelist.
@@ -268,13 +273,13 @@ class fifo:
     public detail::fifo<T, freelist_t, Alloc>
 {
 public:
-    //! Construct fifo, initially allocates 128 nodes
+    //! Construct fifo.
     fifo(void)
     {}
 
-    //! Construct fifo with a number of initially allocated fifo nodes.
-    explicit fifo(std::size_t initial_nodes):
-        detail::fifo<T, freelist_t, Alloc>(initial_nodes)
+    //! Construct fifo, allocate n nodes for the freelist.
+    explicit fifo(std::size_t n):
+        detail::fifo<T, freelist_t, Alloc>(n)
     {}
 };
 
@@ -303,13 +308,13 @@ class fifo<T*, freelist_t, Alloc>:
 #endif
 
 public:
-    //! Construct fifo, initially allocates 128 nodes
+    //! Construct fifo.
     fifo(void)
     {}
 
-    //! Construct fifo with a number of initially allocated fifo nodes.
-    explicit fifo(std::size_t initial_nodes):
-        fifo_t(initial_nodes)
+    //! Construct fifo, allocate n nodes for the freelist.
+    explicit fifo(std::size_t n):
+        fifo_t(n)
     {}
 
     //! \copydoc detail::fifo::dequeue
