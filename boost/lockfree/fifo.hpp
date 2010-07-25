@@ -4,7 +4,7 @@
 //
 //  implementation for c++
 //
-//  Copyright (C) 2008 Tim Blechmann
+//  Copyright (C) 2008, 2009, 2010 Tim Blechmann
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -20,7 +20,7 @@
 #include <boost/lockfree/detail/freelist.hpp>
 
 #include <boost/static_assert.hpp>
-#include <boost/type_traits/is_pod.hpp>
+#include <boost/type_traits/has_trivial_assign.hpp>
 
 #include <memory>               /* std::auto_ptr */
 #include <boost/scoped_ptr.hpp>
@@ -86,7 +86,9 @@ public:
     /**
      * \return true, if implementation is lock-free.
      *
-     * \warning \b Warning: It only checks, if the fifo head node is lockfree. on most platforms, this should be sufficient, though
+     * \warning \b Warning: It only checks, if the fifo head node is lockfree. On most platforms, the whole implementation is
+     *                      lockfree, if this is true. Using c++0x-style atomics, there is no possibility to provide a completely
+     *                      accurate implementation, though.
      * */
     const bool is_lock_free (void) const
     {
@@ -114,9 +116,6 @@ public:
     }
 
     /** Destroys fifo, free all nodes from freelist.
-     *
-     *  \warning not threadsafe
-     *
      * */
     ~fifo(void)
     {
@@ -135,7 +134,7 @@ public:
     /**
      * \return true, if fifo is empty.
      *
-     * \warning Not thread-safe, use for debugging purposes only
+     * \warning Not thread-safe. Other threads access the fifo during this call, the result is undefined.
      * */
     bool empty(void)
     {
@@ -260,20 +259,20 @@ private:
 
 /** The fifo class provides a multi-writer/multi-reader fifo, enqueueing and dequeueing is lockfree,
  *  construction/destruction has to be synchronized. It uses a freelist for memory management,
- *  freed nodes are pushed to the freelist, but not returned to the os. This may result in leaking memory.
+ *  freed nodes are pushed to the freelist and not returned to the os before the fifo is destroyed.
  *
  *  The memory management of the fifo can be controlled via its freelist_t template argument. Two different
  *  freelists can be used. struct caching_freelist_t selects a caching freelist, which can allocate more nodes
  *  from the operating system, and struct static_freelist_t uses a fixed-sized freelist. With a fixed-sized
  *  freelist, the enqueue operation may fail, while with a caching freelist, the enqueue operation may block.
  *
- *  \b Limitation: The fifo class is limited to PODs
+ *  \b Limitation: The class T is required to have a trivial assignment operator.
  *
  * */
 template <typename T,
           typename freelist_t = caching_freelist_t,
           typename Alloc = std::allocator<T>
-          >
+         >
 class fifo:
     public detail::fifo<T, freelist_t, Alloc>
 {
@@ -289,11 +288,14 @@ public:
 };
 
 
-/** template specialization of the boost::lockfree::fifo class for pointer arguments.
+/** Template specialization of the fifo class for pointer arguments, that supports dequeue operations to
+ *  stl/boost-style smart pointers
  *
- *  it supports dequeue operations to stl/boost-style smart pointers
  * */
-template <typename T, typename freelist_t, typename Alloc>
+template <typename T,
+          typename freelist_t,
+          typename Alloc
+         >
 class fifo<T*, freelist_t, Alloc>:
     public detail::fifo<T*, freelist_t, Alloc>
 {

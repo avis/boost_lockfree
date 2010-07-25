@@ -1,4 +1,4 @@
-//  Copyright (C) 2008 Tim Blechmann
+//  Copyright (C) 2008, 2009, 2010 Tim Blechmann
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -26,8 +26,8 @@ namespace boost
 namespace lockfree
 {
 
-/** It uses a freelist for memory management, freed nodes are pushed to the freelist, but not returned to the os.
- *  This may result in leaking memory.
+/** It uses a freelist for memory management, freed nodes are pushed to the freelist and not returned to
+ *  the os before the stack is destroyed.
  *
  *  The memory management of the stack can be controlled via its freelist_t template argument. Two different
  *  freelists can be used. struct caching_freelist_t selects a caching freelist, which can allocate more nodes
@@ -67,7 +67,13 @@ private:
                                      >::type pool_t;
 
 public:
-    //! \copydoc boost::lockfree::fifo::is_lock_free
+    /**
+     * \return true, if implementation is lock-free.
+     *
+     * \warning \b Warning: It only checks, if the stack root node is lockfree. On most platforms, the whole implementation is
+     *                      lockfree, if this is true. Using c++0x-style atomics, there is no possibility to provide a completely
+     *                      accurate implementation, though.
+     * */
     const bool is_lock_free (void) const
     {
         return tos.is_lock_free();
@@ -168,7 +174,8 @@ public:
     /**
      * \return true, if stack is empty.
      *
-     * \warning Not thread-safe, use for debugging purposes only
+     * \warning The state of the stack can be modified by other threads
+     *
      * */
     bool empty(void) const
     {
