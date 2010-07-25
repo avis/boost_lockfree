@@ -206,7 +206,12 @@ public:
                 }
                 else
                 {
-                    if (next_ptr == 0) /* this check shouldn't be needed, but it crashes without :/ */
+                    if (next_ptr == 0)
+                        /* this check is not part of the original algorithm as published by michael and scott
+                         *
+                         * however we reuse the tagged_ptr part for the and clear the next part during node
+                         * allocation. we can observe a null-pointer here.
+                         * */
                         continue;
                     *ret = next_ptr->data;
                     if (head_.compare_exchange_strong(head, tagged_ptr_t(next_ptr, head.get_tag() + 1)))
