@@ -359,6 +359,14 @@ public:
 		memory_order success_order,
 		memory_order failure_order) volatile
 	{
+#if defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_8) || (__GNUC__ == 4 && __GNUC_MINOR__ == 2)
+		T prev = __sync_val_compare_and_swap_8(&i, expected, desired);
+		bool success=(prev==expected);
+		if (success) fence_after(success_order);
+		else fence_after(failure_order);
+		expected=prev;
+		return success;
+#else
 		fence_before(success_order);
 		T prev=expected;
 		__asm__ __volatile__("lock; cmpxchg8b %3\n" :
@@ -368,6 +376,7 @@ public:
 		else fence_after(failure_order);
 		expected=prev;
 		return success;
+#endif
 	}
 	bool compare_exchange_weak(
 		T &expected,
