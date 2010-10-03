@@ -161,7 +161,8 @@ public:
             tagged_ptr_t next = tail->next.load(memory_order_acquire);
             node * next_ptr = next.get_ptr();
 
-            if (likely(tail == tail_.load(memory_order_acquire)))
+            tagged_ptr_t tail2 = tail_.load(memory_order_acquire);
+            if (likely(tail == tail2))
             {
                 if (next_ptr == 0)
                 {
@@ -195,7 +196,8 @@ public:
             tagged_ptr_t next = head->next.load(memory_order_acquire);
             node * next_ptr = next.get_ptr();
 
-            if (likely(head == head_.load(memory_order_acquire)))
+            tagged_ptr_t head2 = head_.load(memory_order_acquire);
+            if (likely(head == head2))
             {
                 if (head.get_ptr() == tail.get_ptr())
                 {
