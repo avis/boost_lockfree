@@ -90,7 +90,7 @@ public:
      *                      lockfree, if this is true. Using c++0x-style atomics, there is no possibility to provide a completely
      *                      accurate implementation, though.
      * */
-    const bool is_lock_free (void) const
+    bool is_lock_free (void) const
     {
         return head_.is_lock_free();
     }
