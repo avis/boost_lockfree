@@ -20,7 +20,7 @@ struct stack_tester
     static_hashed_set<long, buckets> data;
     boost::array<std::set<long>, buckets> returned;
 
-    atomic_int push_count, pop_count;
+    boost::lockfree::detail::atomic<int> push_count, pop_count;
 
     boost::lockfree::stack<long, freelist_t> stk;
 

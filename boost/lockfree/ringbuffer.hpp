@@ -13,7 +13,7 @@
 
 #ifndef BOOST_LOCKFREE_RINGBUFFER_HPP_INCLUDED
 #define BOOST_LOCKFREE_RINGBUFFER_HPP_INCLUDED
-#include <boost/atomic.hpp>
+#include <boost/lockfree/detail/atomic.hpp>
 #include <boost/array.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/smart_ptr/scoped_array.hpp>

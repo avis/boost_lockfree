@@ -1,5 +1,4 @@
 #include <boost/lockfree/detail/freelist.hpp>
-#include <boost/atomic.hpp>
 #include <boost/thread.hpp>
 
 #include <climits>
@@ -56,7 +55,7 @@ struct freelist_tester
     static const int thread_count = 4;
     static const int loops_per_thread = 1024;
 
-    boost::atomic_int free_nodes;
+    boost::lockfree::detail::atomic<int> free_nodes;
     boost::thread_group threads;
 
     freelist_type fl;

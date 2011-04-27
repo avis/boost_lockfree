@@ -1,12 +1,12 @@
 #include <set>
 #include <boost/array.hpp>
-#include <boost/atomic.hpp>
+#include <boost/lockfree/detail/atomic.hpp>
 #include <boost/thread.hpp>
 
 template <typename int_type>
 int_type generate_id(void)
 {
-    static boost::atomic<int_type> generator(0);
+    static boost::lockfree::detail::atomic<int_type> generator(0);
     return ++generator;
 }
 

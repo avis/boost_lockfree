@@ -9,7 +9,7 @@
 #ifndef BOOST_LOCKFREE_STACK_HPP_INCLUDED
 #define BOOST_LOCKFREE_STACK_HPP_INCLUDED
 
-#include <boost/atomic.hpp>
+#include <boost/lockfree/detail/atomic.hpp>
 #include <boost/checked_delete.hpp>
 
 #include <boost/static_assert.hpp>
@@ -129,7 +129,7 @@ public:
         if (newnode == 0)
             return false;
 
-        tagged_ptr_t old_tos = tos.load(memory_order_relaxed);
+        tagged_ptr_t old_tos = tos.load(detail::memory_order_relaxed);
 
         for (;;)
         {
@@ -152,7 +152,7 @@ public:
      * */
     bool pop(T * ret)
     {
-        tagged_ptr_t old_tos = tos.load(memory_order_consume);
+        tagged_ptr_t old_tos = tos.load(detail::memory_order_consume);
 
         for (;;)
         {
@@ -197,7 +197,7 @@ private:
         pool.deallocate(n);
     }
 
-    atomic<tagged_ptr_t> tos;
+    detail::atomic<tagged_ptr_t> tos;
 
     static const int padding_size = BOOST_LOCKFREE_CACHELINE_BYTES - sizeof(tagged_ptr_t);
     char padding[padding_size];

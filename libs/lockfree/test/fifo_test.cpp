@@ -85,7 +85,7 @@ struct fifo_tester
 {
     fifo<int, freelist_t> sf;
 
-    atomic<long> fifo_cnt, received_nodes;
+    boost::lockfree::detail::atomic<long> fifo_cnt, received_nodes;
 
     static_hashed_set<int, 1<<16 > working_set;
 
