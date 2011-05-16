@@ -9,31 +9,30 @@
 #ifndef BOOST_LOCKFREE_STACK_HPP_INCLUDED
 #define BOOST_LOCKFREE_STACK_HPP_INCLUDED
 
-#include <boost/lockfree/detail/atomic.hpp>
 #include <boost/checked_delete.hpp>
-
+#include <boost/noncopyable.hpp>
 #include <boost/static_assert.hpp>
+#include <boost/type_traits/has_trivial_assign.hpp>
 #include <boost/type_traits/is_base_of.hpp>
 
-#include <boost/lockfree/detail/tagged_ptr.hpp>
+#include <boost/lockfree/detail/atomic.hpp>
 #include <boost/lockfree/detail/freelist.hpp>
-#include <boost/noncopyable.hpp>
+#include <boost/lockfree/detail/tagged_ptr.hpp>
 
 
-namespace boost
-{
+namespace boost {
+namespace lockfree {
 
-namespace lockfree
-{
-
-/** It uses a freelist for memory management, freed nodes are pushed to the freelist and not returned to
- *  the os before the stack is destroyed.
+/** The stack class provides a multi-writer/multi-reader stack, pushing and poping is lockfree,
+ *  construction/destruction has to be synchronized. It uses a freelist for memory management,
+ *  freed nodes are pushed to the freelist and not returned to the os before the stack is destroyed.
  *
  *  The memory management of the stack can be controlled via its freelist_t template argument. Two different
  *  freelists can be used. struct caching_freelist_t selects a caching freelist, which can allocate more nodes
  *  from the operating system, and struct static_freelist_t uses a fixed-sized freelist. With a fixed-sized
  *  freelist, the push operation may fail, while with a caching freelist, the push operation may block.
  *
+ *  \b Limitation: The class T is required to have a trivial assignment operator.
  * */
 template <typename T,
           typename freelist_t = caching_freelist_t,
@@ -43,6 +42,8 @@ class stack:
     boost::noncopyable
 {
 private:
+    BOOST_STATIC_ASSERT(boost::has_trivial_assign<T>::value);
+
 #ifndef BOOST_DOXYGEN_INVOKED
     struct node
     {
@@ -180,7 +181,6 @@ private:
     pool_t pool;
 #endif
 };
-
 
 } /* namespace lockfree */
 } /* namespace boost */

@@ -15,25 +15,21 @@
 #ifndef BOOST_LOCKFREE_FIFO_HPP_INCLUDED
 #define BOOST_LOCKFREE_FIFO_HPP_INCLUDED
 
+#include <memory>               /* std::auto_ptr */
+
+#include <boost/noncopyable.hpp>
+#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/static_assert.hpp>
+#include <boost/type_traits/has_trivial_assign.hpp>
+
 #include <boost/lockfree/detail/atomic.hpp>
 #include <boost/lockfree/detail/tagged_ptr.hpp>
 #include <boost/lockfree/detail/freelist.hpp>
 
-#include <boost/static_assert.hpp>
-#include <boost/type_traits/has_trivial_assign.hpp>
-
-#include <memory>               /* std::auto_ptr */
-#include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/noncopyable.hpp>
-
-namespace boost
-{
-namespace lockfree
-{
-
-namespace detail
-{
+namespace boost {
+namespace lockfree {
+namespace detail {
 
 template <typename T, typename freelist_t, typename Alloc>
 class fifo:
@@ -244,6 +240,8 @@ template <typename T,
 class fifo:
     public detail::fifo<T, freelist_t, Alloc>
 {
+    BOOST_STATIC_ASSERT(boost::has_trivial_assign<T>::value);
+
 public:
     //! Construct fifo.
     fifo(void)
@@ -344,6 +342,5 @@ public:
 
 } /* namespace lockfree */
 } /* namespace boost */
-
 
 #endif /* BOOST_LOCKFREE_FIFO_HPP_INCLUDED */
