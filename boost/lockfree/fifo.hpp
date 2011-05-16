@@ -95,21 +95,27 @@ public:
     //! Construct fifo.
     fifo(void)
     {
-        pool.reserve(1);
+        pool.reserve_unsafe(1);
         initialize();
     }
 
     //! Construct fifo, allocate n nodes for the freelist.
     explicit fifo(std::size_t n)
     {
-        pool.reserve(n+1);
+        pool.reserve_unsafe(n+1);
         initialize();
     }
 
-    //! Allocate n nodes for freelist.
+    //! \copydoc boost::lockfree::stack::reserve
     void reserve(std::size_t n)
     {
         pool.reserve(n);
+    }
+
+    //! \copydoc boost::lockfree::stack::reserve_unsafe
+    void reserve_unsafe(std::size_t n)
+    {
+        pool.reserve_unsafe(n);
     }
 
     /** Destroys fifo, free all nodes from freelist.
@@ -118,7 +124,7 @@ public:
     {
         if (!empty()) {
             T dummy;
-            while(dequeue(dummy))
+            while(dequeue_unsafe(dummy))
                 ;
         }
         pool.destruct(head_.load(memory_order_relaxed).get_ptr());
@@ -166,6 +172,36 @@ public:
         }
     }
 
+    /** Enqueues object t to the fifo. Enqueueing may fail, if the freelist is not able to allocate a new fifo node.
+     *
+     * \returns true, if the enqueue operation is successful.
+     *
+     * \note Not thread-safe
+     * \warning \b Warning: May block if node needs to be allocated from the operating system
+     * */
+    bool enqueue_unsafe(T const & t)
+    {
+        node * n = pool.construct_unsafe(t);
+
+        if (n == NULL)
+            return false;
+
+        for (;;)
+        {
+            tagged_node_ptr tail = tail_.load(memory_order_relaxed);
+            tagged_node_ptr next = tail->next.load(memory_order_relaxed);
+            node * next_ptr = next.get_ptr();
+
+            if (next_ptr == 0) {
+                tail->next.store(tagged_node_ptr(n, next.get_tag() + 1), memory_order_relaxed);
+                tail_.store(tagged_node_ptr(n, tail.get_tag() + 1), memory_order_relaxed);
+                return true;
+            }
+            else
+                tail_.store(tagged_node_ptr(next_ptr, tail.get_tag() + 1), memory_order_relaxed);
+        }
+    }
+
     /** Dequeue object from fifo.
      *
      * if dequeue operation is successful, object is written to memory location denoted by ret.
@@ -206,6 +242,45 @@ public:
             }
         }
     }
+
+    /** Dequeue object from fifo.
+     *
+     * if dequeue operation is successful, object is written to memory location denoted by ret.
+     *
+     * \returns true, if the dequeue operation is successful, false if fifo was empty.
+     *
+     * \note Not thread-safe
+     *
+     * */
+    bool dequeue_unsafe (T & ret)
+    {
+        for (;;) {
+            tagged_node_ptr head = head_.load(memory_order_relaxed);
+            tagged_node_ptr tail = tail_.load(memory_order_relaxed);
+            tagged_node_ptr next = head->next.load(memory_order_relaxed);
+            node * next_ptr = next.get_ptr();
+
+            tagged_node_ptr head2 = head_.load(memory_order_relaxed);
+            if (head.get_ptr() == tail.get_ptr()) {
+                if (next_ptr == 0)
+                    return false;
+                tail_.store(tagged_node_ptr(next_ptr, tail.get_tag() + 1), memory_order_relaxed);
+            } else {
+                if (next_ptr == 0)
+                    /* this check is not part of the original algorithm as published by michael and scott
+                     *
+                     * however we reuse the tagged_ptr part for the and clear the next part during node
+                     * allocation. we can observe a null-pointer here.
+                     * */
+                    continue;
+                ret = next_ptr->data;
+                head_.store(tagged_node_ptr(next_ptr, head.get_tag() + 1), memory_order_relaxed);
+                pool.destruct_unsafe(head.get_ptr());
+                return true;
+            }
+        }
+    }
+
 
 private:
 #ifndef BOOST_DOXYGEN_INVOKED

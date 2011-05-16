@@ -85,7 +85,7 @@ public:
     explicit stack(std::size_t n):
         tos(tagged_node_ptr(NULL, 0))
     {
-        pool.reserve(n);
+        pool.reserve_unsafe(n);
     }
 
     //! Allocate n nodes for freelist
@@ -94,16 +94,26 @@ public:
         pool.reserve(n);
     }
 
+    /** \copydoc boost::lockfree::stack::reserve
+     *
+     *  \note not thread-safe
+     *
+     * */
+    void reserve_unsafe(std::size_t n)
+    {
+        pool.reserve_unsafe(n);
+    }
+
     /** Destroys stack, free all nodes from freelist.
      *
-     *  \warning not threadsafe
+     *  \note not thread-safe
      *
      * */
     ~stack(void)
     {
         if (!empty()) {
             T dummy;
-            while(pop(dummy))
+            while(pop_unsafe(dummy))
                 ;
         }
     }
@@ -133,6 +143,30 @@ public:
         }
     }
 
+    /** Pushes object t to the fifo. May fail, if the freelist is not able to allocate a new fifo node.
+     *
+     * \returns true, if the push operation is successful.
+     *
+     * \note Not thread-safe
+     * \warning \b Warning: May block if node needs to be allocated from the operating system
+     * */
+    bool push_unsafe(T const & v)
+    {
+        node * newnode = pool.construct_unsafe(v);
+
+        if (newnode == 0)
+            return false;
+
+        tagged_node_ptr old_tos = tos.load(detail::memory_order_relaxed);
+
+        tagged_node_ptr new_tos (newnode, old_tos.get_tag());
+        newnode->next.set_ptr(old_tos.get_ptr());
+
+        tos.store(new_tos, memory_order_relaxed);
+        return true;
+    }
+
+
     /** Pops object from stack.
      *
      * If pop operation is successful, object is written to memory location denoted by ret.
@@ -161,7 +195,35 @@ public:
         }
     }
 
-    /** Check if the stack was empty
+    /** Pops object from stack.
+     *
+     * If pop operation is successful, object is written to memory location denoted by ret.
+     *
+     * \returns true, if the pop operation is successful, false if stack was empty.
+     *
+     * \note Not thread-safe
+     *
+     * */
+    bool pop_unsafe(T & ret)
+    {
+        tagged_node_ptr old_tos = tos.load(detail::memory_order_relaxed);
+
+        if (!old_tos.get_ptr())
+            return false;
+
+        node * new_tos_ptr = old_tos->next.get_ptr();
+        tagged_node_ptr new_tos(new_tos_ptr, old_tos.get_tag() + 1);
+
+        tos.store(new_tos, memory_order_relaxed);
+        ret = old_tos->v;
+        pool.destruct_unsafe(old_tos.get_ptr());
+        return true;
+    }
+
+    /**
+     * \return true, if stack is empty.
+     *
+     * \warning The state of the stack can be modified by other threads
      *
      * \note While this function is thread-safe, it only guarantees that at some point during the execution of the function the
      *       stack has been empty

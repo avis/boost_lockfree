@@ -19,7 +19,8 @@ class dummy
     int foo[64];
 };
 
-template <typename freelist_type>
+template <typename freelist_type,
+          bool threadsafe>
 void run_test(void)
 {
     freelist_type fl(8);
@@ -27,26 +28,37 @@ void run_test(void)
     std::vector<dummy*> nodes;
 
     for (int i = 0; i != 4; ++i)
-        nodes.push_back(fl.allocate());
+        nodes.push_back(threadsafe ? fl.allocate()
+                                   : fl.allocate_unsafe());
 
     BOOST_FOREACH(dummy * d, nodes)
-        fl.deallocate(d);
+        if (threadsafe)
+            fl.deallocate(d);
+        else
+            fl.deallocate_unsafe(d);
 
     nodes.clear();
     for (int i = 0; i != 4; ++i)
-        nodes.push_back(fl.allocate());
+        nodes.push_back(threadsafe ? fl.allocate()
+                                   : fl.allocate_unsafe());
 
     BOOST_FOREACH(dummy * d, nodes)
-        fl.deallocate(d);
+        if (threadsafe)
+            fl.deallocate(d);
+        else
+            fl.deallocate_unsafe(d);
 
     for (int i = 0; i != 4; ++i)
-        nodes.push_back(fl.allocate());
+        nodes.push_back(threadsafe ? fl.allocate()
+                                   : fl.allocate_unsafe());
 }
 
 BOOST_AUTO_TEST_CASE( freelist_tests )
 {
-    run_test<boost::lockfree::detail::freelist_stack<dummy, true> >();
-    run_test<boost::lockfree::detail::freelist_stack<dummy, false> >();
+    run_test<boost::lockfree::detail::freelist_stack<dummy, true>, true >();
+    run_test<boost::lockfree::detail::freelist_stack<dummy, false>, true >();
+    run_test<boost::lockfree::detail::freelist_stack<dummy, true>, false >();
+    run_test<boost::lockfree::detail::freelist_stack<dummy, false>, false >();
 }
 
 template <typename freelist_type>

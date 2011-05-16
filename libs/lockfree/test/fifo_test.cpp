@@ -36,6 +36,16 @@ BOOST_AUTO_TEST_CASE( simple_fifo_test )
     BOOST_REQUIRE(f.dequeue(i2));
     BOOST_REQUIRE_EQUAL(i2, 2);
     BOOST_REQUIRE(f.empty());
+
+    f.enqueue_unsafe(1);
+    f.enqueue_unsafe(2);
+
+    BOOST_REQUIRE(f.dequeue(i1));
+    BOOST_REQUIRE_EQUAL(i1, 1);
+
+    BOOST_REQUIRE(f.dequeue(i2));
+    BOOST_REQUIRE_EQUAL(i2, 2);
+    BOOST_REQUIRE(f.empty());
 }
 
 

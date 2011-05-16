@@ -10,6 +10,26 @@
 #include <boost/thread.hpp>
 #include <iostream>
 
+
+BOOST_AUTO_TEST_CASE( simple_stack_test )
+{
+    boost::lockfree::stack<long> stk;
+
+    stk.push(1);
+    stk.push(2);
+    long out;
+    BOOST_REQUIRE(stk.pop(out)); BOOST_REQUIRE_EQUAL(out, 2);
+    BOOST_REQUIRE(stk.pop(out)); BOOST_REQUIRE_EQUAL(out, 1);
+    BOOST_REQUIRE(!stk.pop(out));
+
+    stk.push_unsafe(1);
+    stk.push_unsafe(2);
+    BOOST_REQUIRE(stk.pop_unsafe(out)); BOOST_REQUIRE_EQUAL(out, 2);
+    BOOST_REQUIRE(stk.pop_unsafe(out)); BOOST_REQUIRE_EQUAL(out, 1);
+    BOOST_REQUIRE(!stk.pop_unsafe(out));
+}
+
+
 using namespace boost;
 using namespace std;
 
@@ -106,7 +126,6 @@ struct stack_tester
         BOOST_REQUIRE_EQUAL(push_count, writer_threads * node_count);
     }
 };
-
 
 BOOST_AUTO_TEST_CASE( stack_test_caching )
 {
