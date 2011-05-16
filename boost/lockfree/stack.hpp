@@ -1,4 +1,4 @@
-//  Copyright (C) 2008, 2009, 2010 Tim Blechmann
+//  Copyright (C) 2008, 2009, 2010, 2011 Tim Blechmann
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -104,11 +104,9 @@ public:
      * */
     ~stack(void)
     {
-        if (!empty())
-        {
+        if (!empty()) {
             T dummy;
-            for(;;)
-            {
+            for(;;) {
                 if (!pop(&dummy))
                     break;
             }
@@ -124,15 +122,14 @@ public:
      * */
     bool push(T const & v)
     {
-        node * newnode = alloc_node(v);
+        node * newnode = pool.construct(v);
 
         if (newnode == 0)
             return false;
 
         tagged_ptr_t old_tos = tos.load(detail::memory_order_relaxed);
 
-        for (;;)
-        {
+        for (;;) {
             tagged_ptr_t new_tos (newnode, old_tos.get_tag());
             newnode->next.set_ptr(old_tos.get_ptr());
 
@@ -154,18 +151,16 @@ public:
     {
         tagged_ptr_t old_tos = tos.load(detail::memory_order_consume);
 
-        for (;;)
-        {
+        for (;;) {
             if (!old_tos.get_ptr())
                 return false;
 
             node * new_tos_ptr = old_tos->next.get_ptr();
             tagged_ptr_t new_tos(new_tos_ptr, old_tos.get_tag() + 1);
 
-            if (tos.compare_exchange_strong(old_tos, new_tos))
-            {
+            if (tos.compare_exchange_strong(old_tos, new_tos)) {
                 *ret = old_tos->v;
-                dealloc_node(old_tos.get_ptr());
+                pool.destruct(old_tos.get_ptr());
                 return true;
             }
         }
@@ -184,19 +179,6 @@ public:
 
 private:
 #ifndef BOOST_DOXYGEN_INVOKED
-    node * alloc_node(T const & t)
-    {
-        node * chunk = pool.allocate();
-        new(chunk) node(t);
-        return chunk;
-    }
-
-    void dealloc_node(node * n)
-    {
-        n->~node();
-        pool.deallocate(n);
-    }
-
     detail::atomic<tagged_ptr_t> tos;
 
     static const int padding_size = BOOST_LOCKFREE_CACHELINE_BYTES - sizeof(tagged_ptr_t);

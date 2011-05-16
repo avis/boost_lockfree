@@ -4,7 +4,7 @@
 //
 //  implementation for c++
 //
-//  Copyright (C) 2008, 2009, 2010 Tim Blechmann
+//  Copyright (C) 2008, 2009, 2010, 2011 Tim Blechmann
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -75,7 +75,7 @@ private:
 
     void initialize(void)
     {
-        node * n = alloc_node();
+        node * n = pool.construct();
         tagged_ptr_t dummy_node(n, 0);
         head_.store(dummy_node, memory_order_relaxed);
         tail_.store(dummy_node, memory_order_release);
@@ -119,16 +119,14 @@ public:
      * */
     ~fifo(void)
     {
-        if (!empty())
-        {
+        if (!empty()) {
             T dummy;
-            for(;;)
-            {
+            for(;;) {
                 if (!dequeue(&dummy))
                     break;
             }
         }
-        dealloc_node(head_.load(memory_order_relaxed).get_ptr());
+        pool.destruct(head_.load(memory_order_relaxed).get_ptr());
     }
 
     /**
@@ -150,24 +148,20 @@ public:
      * */
     bool enqueue(T const & t)
     {
-        node * n = alloc_node(t);
+        node * n = pool.construct(t);
 
         if (n == NULL)
             return false;
 
-        for (;;)
-        {
+        for (;;) {
             tagged_ptr_t tail = tail_.load(memory_order_acquire);
             tagged_ptr_t next = tail->next.load(memory_order_acquire);
             node * next_ptr = next.get_ptr();
 
             tagged_ptr_t tail2 = tail_.load(memory_order_acquire);
-            if (likely(tail == tail2))
-            {
-                if (next_ptr == 0)
-                {
-                    if ( tail->next.compare_exchange_strong(next, tagged_ptr_t(n, next.get_tag() + 1)) )
-                    {
+            if (likely(tail == tail2)) {
+                if (next_ptr == 0) {
+                    if ( tail->next.compare_exchange_strong(next, tagged_ptr_t(n, next.get_tag() + 1)) ) {
                         tail_.compare_exchange_strong(tail, tagged_ptr_t(n, tail.get_tag() + 1));
                         return true;
                     }
@@ -189,24 +183,19 @@ public:
      * */
     bool dequeue (T * ret)
     {
-        for (;;)
-        {
+        for (;;) {
             tagged_ptr_t head = head_.load(memory_order_acquire);
             tagged_ptr_t tail = tail_.load(memory_order_acquire);
             tagged_ptr_t next = head->next.load(memory_order_acquire);
             node * next_ptr = next.get_ptr();
 
             tagged_ptr_t head2 = head_.load(memory_order_acquire);
-            if (likely(head == head2))
-            {
-                if (head.get_ptr() == tail.get_ptr())
-                {
+            if (likely(head == head2)) {
+                if (head.get_ptr() == tail.get_ptr()) {
                     if (next_ptr == 0)
                         return false;
                     tail_.compare_exchange_strong(tail, tagged_ptr_t(next_ptr, tail.get_tag() + 1));
-                }
-                else
-                {
+                } else {
                     if (next_ptr == 0)
                         /* this check is not part of the original algorithm as published by michael and scott
                          *
@@ -215,9 +204,8 @@ public:
                          * */
                         continue;
                     *ret = next_ptr->data;
-                    if (head_.compare_exchange_strong(head, tagged_ptr_t(next_ptr, head.get_tag() + 1)))
-                    {
-                        dealloc_node(head.get_ptr());
+                    if (head_.compare_exchange_strong(head, tagged_ptr_t(next_ptr, head.get_tag() + 1))) {
+                        pool.destruct(head.get_ptr());
                         return true;
                     }
                 }
@@ -227,26 +215,6 @@ public:
 
 private:
 #ifndef BOOST_DOXYGEN_INVOKED
-    node * alloc_node(void)
-    {
-        node * chunk = pool.allocate();
-        new(chunk) node();
-        return chunk;
-    }
-
-    node * alloc_node(T const & t)
-    {
-        node * chunk = pool.allocate();
-        new(chunk) node(t);
-        return chunk;
-    }
-
-    void dealloc_node(node * n)
-    {
-        n->~node();
-        pool.deallocate(n);
-    }
-
     atomic<tagged_ptr_t> head_;
     static const int padding_size = BOOST_LOCKFREE_CACHELINE_BYTES - sizeof(tagged_ptr_t);
     char padding1[padding_size];

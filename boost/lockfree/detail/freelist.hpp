@@ -53,20 +53,41 @@ public:
 
     void reserve (std::size_t count)
     {
-        for (std::size_t i = 0; i != count; ++i)
-        {
+        for (std::size_t i = 0; i != count; ++i) {
             T * node = Alloc::allocate(1);
             deallocate(node);
         }
     }
 
+    T * construct (void)
+    {
+        T * node = allocate();
+        if (node)
+            new(node) T();
+        return node;
+    }
+
+    template <typename ArgumentType>
+    T * construct (ArgumentType const & arg)
+    {
+        T * node = allocate();
+        if (node)
+            new(node) T(arg);
+        return node;
+    }
+
+    void destruct (T * n)
+    {
+        n->~T();
+        deallocate(n);
+    }
+
     T * allocate (void)
     {
         tagged_ptr old_pool = pool_.load(memory_order_consume);
-        for(;;)
-        {
-            if (!old_pool.get_ptr())
-            {
+
+        for(;;) {
+            if (!old_pool.get_ptr()) {
                 if (allocate_may_allocate)
                     return Alloc::allocate(1);
                 else
@@ -89,8 +110,7 @@ public:
         tagged_ptr old_pool = pool_.load(memory_order_consume);
         freelist_node * new_pool_ptr = reinterpret_cast<freelist_node*>(node);
 
-        for(;;)
-        {
+        for(;;) {
             tagged_ptr new_pool (new_pool_ptr, old_pool.get_tag());
             new_pool->next.set_ptr(old_pool.get_ptr());
 
@@ -103,8 +123,7 @@ public:
     {
         tagged_ptr current (pool_);
 
-        while (current)
-        {
+        while (current) {
             freelist_node * current_ptr = current.get_ptr();
             if (current_ptr)
                 current = current_ptr->next;
