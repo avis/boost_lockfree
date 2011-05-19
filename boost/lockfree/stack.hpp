@@ -69,14 +69,10 @@ private:
 public:
     /**
      * \return true, if implementation is lock-free.
-     *
-     * \warning \b Warning: It only checks, if the stack root node is lockfree. On most platforms, the whole implementation is
-     *                      lockfree, if this is true. Using c++0x-style atomics, there is no possibility to provide a completely
-     *                      accurate implementation, though.
      * */
     bool is_lock_free (void) const
     {
-        return tos.is_lock_free();
+        return tos.is_lock_free() && pool.is_lock_free();
     }
 
     //! Construct stack.

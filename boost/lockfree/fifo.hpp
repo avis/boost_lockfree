@@ -92,7 +92,7 @@ public:
      * */
     bool is_lock_free (void) const
     {
-        return head_.is_lock_free();
+        return head_.is_lock_free() && pool.is_lock_free();
     }
 
     //! Construct fifo.

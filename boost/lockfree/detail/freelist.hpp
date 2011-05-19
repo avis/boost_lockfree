@@ -131,6 +131,11 @@ public:
         }
     }
 
+    bool is_lock_free(void) const
+    {
+        return pool_.is_lock_free();
+    }
+
 private:
     atomic<tagged_node_ptr> pool_;
 };

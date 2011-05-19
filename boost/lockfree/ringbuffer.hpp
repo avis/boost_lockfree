@@ -187,7 +187,7 @@ public:
         return empty(write_index_.load(memory_order_relaxed), read_index_.load(memory_order_relaxed));
     }
 
-    //! \copydoc boost::lockfree::fifo::is_lock_free
+    //! \copydoc boost::lockfree::stack::is_lock_free
     bool is_lock_free(void) const
     {
         return write_index_.is_lock_free() && read_index_.is_lock_free();
