@@ -46,18 +46,18 @@ private:
 #ifndef BOOST_DOXYGEN_INVOKED
     struct node
     {
-        typedef detail::tagged_ptr<node> tagged_ptr_t;
+        typedef detail::tagged_ptr<node> tagged_node_ptr;
 
         node(T const & v):
             v(v)
         {}
 
-        tagged_ptr_t next;
+        tagged_node_ptr next;
         T v;
     };
 #endif
 
-    typedef detail::tagged_ptr<node> tagged_ptr_t;
+    typedef detail::tagged_ptr<node> tagged_node_ptr;
 
     typedef typename Alloc::template rebind<node>::other node_allocator;
 
@@ -77,12 +77,12 @@ public:
 
     //! Construct stack.
     stack(void):
-        tos(tagged_ptr_t(NULL, 0))
+        tos(tagged_node_ptr(NULL, 0))
     {}
 
     //! Construct stack, allocate n nodes for the freelist
     explicit stack(std::size_t n):
-        tos(tagged_ptr_t(NULL, 0))
+        tos(tagged_node_ptr(NULL, 0))
     {
         pool.reserve(n);
     }
@@ -123,10 +123,10 @@ public:
         if (newnode == 0)
             return false;
 
-        tagged_ptr_t old_tos = tos.load(detail::memory_order_relaxed);
+        tagged_node_ptr old_tos = tos.load(detail::memory_order_relaxed);
 
         for (;;) {
-            tagged_ptr_t new_tos (newnode, old_tos.get_tag());
+            tagged_node_ptr new_tos (newnode, old_tos.get_tag());
             newnode->next.set_ptr(old_tos.get_ptr());
 
             if (tos.compare_exchange_strong(old_tos, new_tos))
@@ -145,14 +145,14 @@ public:
      * */
     bool pop(T * ret)
     {
-        tagged_ptr_t old_tos = tos.load(detail::memory_order_consume);
+        tagged_node_ptr old_tos = tos.load(detail::memory_order_consume);
 
         for (;;) {
             if (!old_tos.get_ptr())
                 return false;
 
             node * new_tos_ptr = old_tos->next.get_ptr();
-            tagged_ptr_t new_tos(new_tos_ptr, old_tos.get_tag() + 1);
+            tagged_node_ptr new_tos(new_tos_ptr, old_tos.get_tag() + 1);
 
             if (tos.compare_exchange_strong(old_tos, new_tos)) {
                 *ret = old_tos->v;
@@ -175,9 +175,9 @@ public:
 
 private:
 #ifndef BOOST_DOXYGEN_INVOKED
-    detail::atomic<tagged_ptr_t> tos;
+    detail::atomic<tagged_node_ptr> tos;
 
-    static const int padding_size = BOOST_LOCKFREE_CACHELINE_BYTES - sizeof(tagged_ptr_t);
+    static const int padding_size = BOOST_LOCKFREE_CACHELINE_BYTES - sizeof(tagged_node_ptr);
     char padding[padding_size];
 
     pool_t pool;

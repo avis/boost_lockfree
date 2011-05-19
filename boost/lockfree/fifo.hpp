@@ -45,26 +45,26 @@ private:
 
     struct BOOST_LOCKFREE_CACHELINE_ALIGNMENT node
     {
-        typedef tagged_ptr<node> tagged_ptr_t;
+        typedef tagged_ptr<node> tagged_node_ptr;
 
         node(T const & v):
             data(v)
         {
             /* increment tag to avoid ABA problem */
-            tagged_ptr_t old_next = next.load(memory_order_relaxed);
-            tagged_ptr_t new_next (NULL, old_next.get_tag()+1);
+            tagged_node_ptr old_next = next.load(memory_order_relaxed);
+            tagged_node_ptr new_next (NULL, old_next.get_tag()+1);
             next.store(new_next, memory_order_release);
         }
 
         node (void):
-            next(tagged_ptr_t(NULL, 0))
+            next(tagged_node_ptr(NULL, 0))
         {}
 
-        atomic<tagged_ptr_t> next;
+        atomic<tagged_node_ptr> next;
         T data;
     };
 
-    typedef tagged_ptr<node> tagged_ptr_t;
+    typedef tagged_ptr<node> tagged_node_ptr;
 
     typedef typename Alloc::template rebind<node>::other node_allocator;
 
@@ -76,7 +76,7 @@ private:
     void initialize(void)
     {
         node * n = pool.construct();
-        tagged_ptr_t dummy_node(n, 0);
+        tagged_node_ptr dummy_node(n, 0);
         head_.store(dummy_node, memory_order_relaxed);
         tail_.store(dummy_node, memory_order_release);
     }
@@ -154,20 +154,20 @@ public:
             return false;
 
         for (;;) {
-            tagged_ptr_t tail = tail_.load(memory_order_acquire);
-            tagged_ptr_t next = tail->next.load(memory_order_acquire);
+            tagged_node_ptr tail = tail_.load(memory_order_acquire);
+            tagged_node_ptr next = tail->next.load(memory_order_acquire);
             node * next_ptr = next.get_ptr();
 
-            tagged_ptr_t tail2 = tail_.load(memory_order_acquire);
+            tagged_node_ptr tail2 = tail_.load(memory_order_acquire);
             if (likely(tail == tail2)) {
                 if (next_ptr == 0) {
-                    if ( tail->next.compare_exchange_strong(next, tagged_ptr_t(n, next.get_tag() + 1)) ) {
-                        tail_.compare_exchange_strong(tail, tagged_ptr_t(n, tail.get_tag() + 1));
+                    if ( tail->next.compare_exchange_strong(next, tagged_node_ptr(n, next.get_tag() + 1)) ) {
+                        tail_.compare_exchange_strong(tail, tagged_node_ptr(n, tail.get_tag() + 1));
                         return true;
                     }
                 }
                 else
-                    tail_.compare_exchange_strong(tail, tagged_ptr_t(next_ptr, tail.get_tag() + 1));
+                    tail_.compare_exchange_strong(tail, tagged_node_ptr(next_ptr, tail.get_tag() + 1));
             }
         }
     }
@@ -184,17 +184,17 @@ public:
     bool dequeue (T * ret)
     {
         for (;;) {
-            tagged_ptr_t head = head_.load(memory_order_acquire);
-            tagged_ptr_t tail = tail_.load(memory_order_acquire);
-            tagged_ptr_t next = head->next.load(memory_order_acquire);
+            tagged_node_ptr head = head_.load(memory_order_acquire);
+            tagged_node_ptr tail = tail_.load(memory_order_acquire);
+            tagged_node_ptr next = head->next.load(memory_order_acquire);
             node * next_ptr = next.get_ptr();
 
-            tagged_ptr_t head2 = head_.load(memory_order_acquire);
+            tagged_node_ptr head2 = head_.load(memory_order_acquire);
             if (likely(head == head2)) {
                 if (head.get_ptr() == tail.get_ptr()) {
                     if (next_ptr == 0)
                         return false;
-                    tail_.compare_exchange_strong(tail, tagged_ptr_t(next_ptr, tail.get_tag() + 1));
+                    tail_.compare_exchange_strong(tail, tagged_node_ptr(next_ptr, tail.get_tag() + 1));
                 } else {
                     if (next_ptr == 0)
                         /* this check is not part of the original algorithm as published by michael and scott
@@ -204,7 +204,7 @@ public:
                          * */
                         continue;
                     *ret = next_ptr->data;
-                    if (head_.compare_exchange_strong(head, tagged_ptr_t(next_ptr, head.get_tag() + 1))) {
+                    if (head_.compare_exchange_strong(head, tagged_node_ptr(next_ptr, head.get_tag() + 1))) {
                         pool.destruct(head.get_ptr());
                         return true;
                     }
@@ -215,10 +215,10 @@ public:
 
 private:
 #ifndef BOOST_DOXYGEN_INVOKED
-    atomic<tagged_ptr_t> head_;
-    static const int padding_size = BOOST_LOCKFREE_CACHELINE_BYTES - sizeof(tagged_ptr_t);
+    atomic<tagged_node_ptr> head_;
+    static const int padding_size = BOOST_LOCKFREE_CACHELINE_BYTES - sizeof(tagged_node_ptr);
     char padding1[padding_size];
-    atomic<tagged_ptr_t> tail_;
+    atomic<tagged_node_ptr> tail_;
     char padding2[padding_size];
 
     pool_t pool;
