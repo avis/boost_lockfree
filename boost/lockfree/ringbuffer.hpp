@@ -214,6 +214,7 @@ public:
      *
      * \return true, if the enqueue operation is successful.
      *
+     * \note Thread-safe and non-blocking
      * */
     bool enqueue(T const & t)
     {
@@ -226,6 +227,7 @@ public:
      *
      * \return true, if the dequeue operation is successful, false if ringbuffer was empty.
      *
+     * \note Thread-safe and non-blocking
      */
     bool dequeue(T * ret)
     {
@@ -251,6 +253,7 @@ public:
      *
      * \return number of dequeued items
      *
+     * \note Thread-safe and non-blocking
      * */
     size_t dequeue(T * ret, size_t size)
     {
@@ -276,6 +279,7 @@ public:
      *
      * \return true, if the enqueue operation is successful.
      *
+     * \note Thread-safe and non-blocking
      * */
     bool enqueue(T const & t)
     {
@@ -288,6 +292,7 @@ public:
      *
      * \return true, if the dequeue operation is successful, false if ringbuffer was empty.
      *
+     * \note Thread-safe and non-blocking
      */
     bool dequeue(T * ret)
     {
@@ -313,6 +318,7 @@ public:
      *
      * \return number of dequeued items
      *
+     * \note Thread-safe and non-blocking
      * */
     size_t dequeue(T * ret, size_t size)
     {
