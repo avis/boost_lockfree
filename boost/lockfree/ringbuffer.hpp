@@ -74,7 +74,7 @@ protected:
 
     bool enqueue(T const & t, T * buffer, size_t max_size)
     {
-        size_t write_index = write_index_.load(memory_order_acquire);
+        size_t write_index = write_index_.load(memory_order_relaxed);  // only written from dequeue thread
         size_t next = next_index(write_index, max_size);
 
         if (next == read_index_.load(memory_order_acquire))
@@ -90,7 +90,7 @@ protected:
     bool dequeue (T * ret, T * buffer, size_t max_size)
     {
         size_t write_index = write_index_.load(memory_order_acquire);
-        size_t read_index  = read_index_.load(memory_order_acquire);
+        size_t read_index  = read_index_.load(memory_order_relaxed); // only written from dequeue thread
         if (empty(write_index, read_index))
             return false;
 
@@ -102,7 +102,7 @@ protected:
 
     size_t enqueue(const T * input_buffer, size_t input_count, T * internal_buffer, size_t max_size)
     {
-        size_t write_index = write_index_.load(memory_order_acquire);
+        size_t write_index = write_index_.load(memory_order_relaxed);  // only written from dequeue thread
         const size_t read_index  = read_index_.load(memory_order_acquire);
         const size_t avail = write_available(write_index, read_index, max_size);
 
@@ -113,17 +113,14 @@ protected:
 
         size_t new_write_index = write_index + input_count;
 
-        if (write_index + input_count > max_size)
-        {
+        if (write_index + input_count > max_size) {
             /* copy data in two sections */
             size_t count0 = max_size - write_index;
 
             std::copy(input_buffer, input_buffer + count0, internal_buffer + write_index);
             std::copy(input_buffer + count0, input_buffer + input_count, internal_buffer);
             new_write_index -= max_size;
-        }
-        else
-        {
+        } else {
             std::copy(input_buffer, input_buffer + input_count, internal_buffer + write_index);
 
             if (new_write_index == max_size)
@@ -137,7 +134,7 @@ protected:
     size_t dequeue (T * output_buffer, size_t output_count, const T * internal_buffer, size_t max_size)
     {
         const size_t write_index = write_index_.load(memory_order_acquire);
-        size_t read_index = read_index_.load(memory_order_acquire);
+        size_t read_index = read_index_.load(memory_order_relaxed); // only written from dequeue thread
 
         const size_t avail = read_available(write_index, read_index, max_size);
 
@@ -148,8 +145,7 @@ protected:
 
         size_t new_read_index = read_index + output_count;
 
-        if (read_index + output_count > max_size)
-        {
+        if (read_index + output_count > max_size) {
             /* copy data in two sections */
             size_t count0 = max_size - read_index;
             size_t count1 = output_count - count0;
@@ -158,9 +154,7 @@ protected:
             std::copy(internal_buffer, internal_buffer + count1, output_buffer + count0);
 
             new_read_index -= max_size;
-        }
-        else
-        {
+        } else {
             std::copy(internal_buffer + read_index, internal_buffer + read_index + output_count, output_buffer);
             if (new_read_index == max_size)
                 new_read_index = 0;
