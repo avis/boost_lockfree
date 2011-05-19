@@ -138,7 +138,7 @@ struct fifo_tester
             return false;
     }
 
-    volatile bool running;
+    boost::atomic<bool> running;
 
     void get(void)
     {

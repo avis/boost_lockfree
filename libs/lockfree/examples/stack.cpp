@@ -26,7 +26,7 @@ void producer(void)
     }
 }
 
-volatile bool done = false;
+boost::atomic<bool> done = false;
 
 void consumer(void)
 {

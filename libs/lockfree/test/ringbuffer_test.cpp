@@ -137,7 +137,7 @@ struct ringbuffer_tester
             return false;
     }
 
-    volatile bool running;
+    boost::atomic<bool> running;
 
     void get(void)
     {
@@ -241,7 +241,7 @@ struct ringbuffer_tester_buffering
             return false;
     }
 
-    volatile bool running;
+    boost::atomic<bool> running;
 
     void get(void)
     {

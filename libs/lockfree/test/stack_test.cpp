@@ -45,7 +45,7 @@ struct stack_tester
         }
     }
 
-    volatile bool running;
+    boost::atomic<bool> running;
 
     void get_items(void)
     {
@@ -61,7 +61,7 @@ struct stack_tester
                 ++pop_count;
             }
             else
-                if (not running)
+                if (not running.load())
                     return;
         }
     }
@@ -70,7 +70,7 @@ struct stack_tester
     {
         BOOST_WARN(stk.is_lock_free());
 
-        running = true;
+        running.store(true);
 
         thread_group writer;
         thread_group reader;
