@@ -32,7 +32,7 @@ namespace detail
 
 struct freelist_node
 {
-    lockfree::tagged_ptr<freelist_node> next;
+    tagged_ptr<freelist_node> next;
 };
 
 template <typename T,
@@ -42,11 +42,11 @@ template <typename T,
 class freelist_stack:
     Alloc
 {
-    typedef lockfree::tagged_ptr<freelist_node> tagged_ptr;
+    typedef tagged_ptr<freelist_node> tagged_node_ptr;
 
 public:
     freelist_stack (std::size_t n = 0):
-        pool_(tagged_ptr(NULL))
+        pool_(tagged_node_ptr(NULL))
     {
         reserve(n);
     }
@@ -84,7 +84,7 @@ public:
 
     T * allocate (void)
     {
-        tagged_ptr old_pool = pool_.load(memory_order_consume);
+        tagged_node_ptr old_pool = pool_.load(memory_order_consume);
 
         for(;;) {
             if (!old_pool.get_ptr()) {
@@ -95,7 +95,7 @@ public:
             }
 
             freelist_node * new_pool_ptr = old_pool->next.get_ptr();
-            tagged_ptr new_pool (new_pool_ptr, old_pool.get_tag() + 1);
+            tagged_node_ptr new_pool (new_pool_ptr, old_pool.get_tag() + 1);
 
             if (pool_.compare_exchange_strong(old_pool, new_pool)) {
                 void * ptr = old_pool.get_ptr();
@@ -107,11 +107,11 @@ public:
     void deallocate (T * n)
     {
         void * node = n;
-        tagged_ptr old_pool = pool_.load(memory_order_consume);
+        tagged_node_ptr old_pool = pool_.load(memory_order_consume);
         freelist_node * new_pool_ptr = reinterpret_cast<freelist_node*>(node);
 
         for(;;) {
-            tagged_ptr new_pool (new_pool_ptr, old_pool.get_tag());
+            tagged_node_ptr new_pool (new_pool_ptr, old_pool.get_tag());
             new_pool->next.set_ptr(old_pool.get_ptr());
 
             if (pool_.compare_exchange_strong(old_pool, new_pool))
@@ -121,7 +121,7 @@ public:
 
     ~freelist_stack(void)
     {
-        tagged_ptr current (pool_);
+        tagged_node_ptr current (pool_);
 
         while (current) {
             freelist_node * current_ptr = current.get_ptr();
@@ -132,7 +132,7 @@ public:
     }
 
 private:
-    atomic<tagged_ptr> pool_;
+    atomic<tagged_node_ptr> pool_;
 };
 
 

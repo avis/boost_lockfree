@@ -46,7 +46,7 @@ private:
 #ifndef BOOST_DOXYGEN_INVOKED
     struct node
     {
-        typedef tagged_ptr<node> tagged_ptr_t;
+        typedef detail::tagged_ptr<node> tagged_ptr_t;
 
         node(T const & v):
             v(v)
@@ -57,7 +57,7 @@ private:
     };
 #endif
 
-    typedef tagged_ptr<node> tagged_ptr_t;
+    typedef detail::tagged_ptr<node> tagged_ptr_t;
 
     typedef typename Alloc::template rebind<node>::other node_allocator;
 

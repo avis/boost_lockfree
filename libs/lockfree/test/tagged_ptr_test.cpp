@@ -6,7 +6,7 @@
 
 BOOST_AUTO_TEST_CASE( tagged_ptr_test )
 {
-    using namespace boost::lockfree;
+    using namespace boost::lockfree::detail;
     int a(1), b(2);
 
     {
