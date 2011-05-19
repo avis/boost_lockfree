@@ -102,10 +102,8 @@ public:
     {
         if (!empty()) {
             T dummy;
-            for(;;) {
-                if (!pop(&dummy))
-                    break;
-            }
+            while(pop(&dummy))
+                ;
         }
     }
 

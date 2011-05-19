@@ -121,10 +121,8 @@ public:
     {
         if (!empty()) {
             T dummy;
-            for(;;) {
-                if (!dequeue(&dummy))
-                    break;
-            }
+            while(dequeue(&dummy))
+                ;
         }
         pool.destruct(head_.load(memory_order_relaxed).get_ptr());
     }
