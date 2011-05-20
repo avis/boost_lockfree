@@ -32,7 +32,7 @@ namespace detail
 {
 
 template <typename T>
-class ringbuffer_internal:
+class ringbuffer_base:
     boost::noncopyable
 {
 #ifndef BOOST_DOXYGEN_INVOKED
@@ -43,7 +43,7 @@ class ringbuffer_internal:
     atomic<size_t> read_index_;
 
 protected:
-    ringbuffer_internal(void):
+    ringbuffer_base(void):
         write_index_(0), read_index_(0)
     {}
 
@@ -204,7 +204,7 @@ private:
 
 template <typename T, size_t max_size>
 class ringbuffer:
-    public detail::ringbuffer_internal<T>
+    public detail::ringbuffer_base<T>
 {
     typedef std::size_t size_t;
     boost::array<T, max_size> array_;
@@ -218,7 +218,7 @@ public:
      * */
     bool enqueue(T const & t)
     {
-        return detail::ringbuffer_internal<T>::enqueue(t, array_.c_array(), max_size);
+        return detail::ringbuffer_base<T>::enqueue(t, array_.c_array(), max_size);
     }
 
     /** Dequeue object from ringbuffer.
@@ -231,7 +231,7 @@ public:
      */
     bool dequeue(T & ret)
     {
-        return detail::ringbuffer_internal<T>::dequeue(ret, array_.c_array(), max_size);
+        return detail::ringbuffer_base<T>::dequeue(ret, array_.c_array(), max_size);
     }
 
     /** Enqueues size objects from the array t to the ringbuffer.
@@ -244,7 +244,7 @@ public:
      */
     size_t enqueue(T const * t, size_t size)
     {
-        return detail::ringbuffer_internal<T>::enqueue(t, size, array_.c_array(), max_size);
+        return detail::ringbuffer_base<T>::enqueue(t, size, array_.c_array(), max_size);
     }
 
     /** Dequeue a maximum of size objects from ringbuffer.
@@ -257,13 +257,13 @@ public:
      * */
     size_t dequeue(T * ret, size_t size)
     {
-        return detail::ringbuffer_internal<T>::dequeue(ret, size, array_.c_array(), max_size);
+        return detail::ringbuffer_base<T>::dequeue(ret, size, array_.c_array(), max_size);
     }
 };
 
 template <typename T>
 class ringbuffer<T, 0>:
-    public detail::ringbuffer_internal<T>
+    public detail::ringbuffer_base<T>
 {
     typedef std::size_t size_t;
     size_t max_size_;
@@ -283,7 +283,7 @@ public:
      * */
     bool enqueue(T const & t)
     {
-        return detail::ringbuffer_internal<T>::enqueue(t, array_.get(), max_size_);
+        return detail::ringbuffer_base<T>::enqueue(t, array_.get(), max_size_);
     }
 
     /** Dequeue object from ringbuffer.
@@ -296,7 +296,7 @@ public:
      */
     bool dequeue(T & ret)
     {
-        return detail::ringbuffer_internal<T>::dequeue(ret, array_.get(), max_size_);
+        return detail::ringbuffer_base<T>::dequeue(ret, array_.get(), max_size_);
     }
 
     /** Enqueues size objects from the array t to the ringbuffer.
@@ -309,7 +309,7 @@ public:
      */
     size_t enqueue(T const * t, size_t size)
     {
-        return detail::ringbuffer_internal<T>::enqueue(t, size, array_.get(), max_size_);
+        return detail::ringbuffer_base<T>::enqueue(t, size, array_.get(), max_size_);
     }
 
     /** Dequeue a maximum of size objects from ringbuffer.
@@ -322,7 +322,7 @@ public:
      * */
     size_t dequeue(T * ret, size_t size)
     {
-        return detail::ringbuffer_internal<T>::dequeue(ret, size, array_.get(), max_size_);
+        return detail::ringbuffer_base<T>::dequeue(ret, size, array_.get(), max_size_);
     }
 };
 
