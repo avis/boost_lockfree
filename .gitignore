@@ -5,3 +5,7 @@ config.log
 .sconsign.dblite
 .sconf_temp
 *~
+/build*
+/bin.v2
+*patch
+/libs/lockfree/doc/html

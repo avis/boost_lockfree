@@ -62,67 +62,8 @@ The following data structures are provided:
 The [classref boost::lockfree::fifo boost::lockfree::fifo] class implements a multi-writer/multi-reader fifo queue. The
 following example shows how integer values are produced and consumed by 2 threads each:
 
-``
-#include <boost/thread/thread.hpp>
-#include <boost/atomic.hpp>
-#include <boost/lockfree/fifo.hpp>
-#include <iostream>
-
-boost::atomic_int producer_count(0);
-boost::atomic_int consumer_count(0);
-
-boost::lockfree::fifo<int> fifo;
-
-const int iterations = 10000000;
-const int producer_thread_count = 4;
-const int consumer_thread_count = 4;
-
-void producer(void)
-{
-    for (int i = 0; i != iterations; ++i) {
-        int value = ++producer_count;
-        fifo.enqueue(value);
-    }
-}
-
-volatile bool done = false;
-void consumer(void)
-{
-    int value;
-    while (!done) {
-        while (fifo.dequeue(&value))
-            ++consumer_count;
-    }
-
-    while (fifo.dequeue(&value))
-        ++consumer_count;
-}
-
-int main(int argc, char* argv[])
-{
-    using namespace std;
-    cout << "boost::lockfree::fifo is ";
-    if (!fifo.is_lock_free())
-        cout << "not ";
-    cout << "lockfree" << endl;
-
-    boost::thread_group producer_threads, consumer_threads;
-
-    for (int i = 0; i != producer_thread_count; ++i)
-        producer_threads.create_thread(producer);
-
-    for (int i = 0; i != consumer_thread_count; ++i)
-        consumer_threads.create_thread(consumer);
-
-    producer_threads.join_all();
-    done = true;
-
-    consumer_threads.join_all();
-
-    cout << "produced " << producer_count << " objects." << endl;
-    cout << "consumed " << consumer_count << " objects." << endl;
-}
-``
+[import ../examples/fifo.cpp]
+[fifo_example]
 
 The program output is:
 
@@ -137,68 +78,10 @@ consumed 40000000 objects.
 The [classref boost::lockfree::stack boost::lockfree::stack] class implements a multi-writer/multi-reader stack. The
 following example shows how integer values are produced and consumed by 2 threads each:
 
-``
-#include <boost/thread/thread.hpp>
-#include <boost/atomic.hpp>
-#include <boost/lockfree/stack.hpp>
-#include <iostream>
+[import ../examples/stack.cpp]
+[stack_example]
 
-boost::atomic_int producer_count(0);
-boost::atomic_int consumer_count(0);
 
-boost::lockfree::stack<int> stack;
-
-const int iterations = 1000000;
-const int producer_thread_count = 4;
-const int consumer_thread_count = 4;
-
-void producer(void)
-{
-    for (int i = 0; i != iterations; ++i) {
-        int value = ++producer_count;
-        stack.push(value);
-    }
-}
-
-volatile bool done = false;
-
-void consumer(void)
-{
-    int value;
-    while (!done) {
-        while (stack.pop(&value))
-            ++consumer_count;
-    }
-
-    while (stack.pop(&value))
-        ++consumer_count;
-}
-
-int main(int argc, char* argv[])
-{
-    using namespace std;
-    cout << "boost::lockfree::stack is ";
-    if (!stack.is_lock_free())
-        cout << "not ";
-    cout << "lockfree" << endl;
-
-    boost::thread_group producer_threads, consumer_threads;
-
-    for (int i = 0; i != producer_thread_count; ++i)
-        producer_threads.create_thread(producer);
-
-    for (int i = 0; i != consumer_thread_count; ++i)
-        consumer_threads.create_thread(consumer);
-
-    producer_threads.join_all();
-    done = true;
-
-    consumer_threads.join_all();
-
-    cout << "produced " << producer_count << " objects." << endl;
-    cout << "consumed " << consumer_count << " objects." << endl;
-}
-``
 The program output is:
 
 [pre

@@ -6,4 +6,5 @@ enable_testing()
 include_directories(.)
 
 add_subdirectory (libs/lockfree/doc)
+add_subdirectory (libs/lockfree/examples)
 add_subdirectory (libs/lockfree/test)

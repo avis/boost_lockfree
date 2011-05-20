@@ -4,6 +4,7 @@
 //  accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
 
+//[stack_example
 #include <boost/thread/thread.hpp>
 #include <boost/atomic.hpp>
 #include <boost/lockfree/stack.hpp>
@@ -26,7 +27,7 @@ void producer(void)
     }
 }
 
-boost::atomic<bool> done = false;
+boost::atomic<bool> done (false);
 
 void consumer(void)
 {
@@ -64,3 +65,4 @@ int main(int argc, char* argv[])
     cout << "produced " << producer_count << " objects." << endl;
     cout << "consumed " << consumer_count << " objects." << endl;
 }
+//]
