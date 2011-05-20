@@ -74,7 +74,7 @@ protected:
 
     bool enqueue(T const & t, T * buffer, size_t max_size)
     {
-        size_t write_index = write_index_.load(memory_order_relaxed);  // only written from dequeue thread
+        size_t write_index = write_index_.load(memory_order_relaxed);  // only written from enqueue thread
         size_t next = next_index(write_index, max_size);
 
         if (next == read_index_.load(memory_order_acquire))
@@ -87,22 +87,9 @@ protected:
         return true;
     }
 
-    bool dequeue (T & ret, T * buffer, size_t max_size)
-    {
-        size_t write_index = write_index_.load(memory_order_acquire);
-        size_t read_index  = read_index_.load(memory_order_relaxed); // only written from dequeue thread
-        if (empty(write_index, read_index))
-            return false;
-
-        ret = buffer[read_index];
-        size_t next = next_index(read_index, max_size);
-        read_index_.store(next, memory_order_release);
-        return true;
-    }
-
     size_t enqueue(const T * input_buffer, size_t input_count, T * internal_buffer, size_t max_size)
     {
-        size_t write_index = write_index_.load(memory_order_relaxed);  // only written from dequeue thread
+        size_t write_index = write_index_.load(memory_order_relaxed);  // only written from enqueue thread
         const size_t read_index  = read_index_.load(memory_order_acquire);
         const size_t avail = write_available(write_index, read_index, max_size);
 
@@ -129,6 +116,59 @@ protected:
 
         write_index_.store(new_write_index, memory_order_release);
         return input_count;
+    }
+
+    template <typename ConstIterator>
+    ConstIterator enqueue(ConstIterator begin, ConstIterator end, T * internal_buffer, size_t max_size)
+    {
+        // FIXME: avoid std::distance and std::advance
+
+        size_t write_index = write_index_.load(memory_order_relaxed);  // only written from enqueue thread
+        const size_t read_index  = read_index_.load(memory_order_acquire);
+        const size_t avail = write_available(write_index, read_index, max_size);
+
+        if (avail == 0)
+            return begin;
+
+        size_t input_count = std::distance(begin, end);
+        input_count = std::min(input_count, avail);
+
+        size_t new_write_index = write_index + input_count;
+
+        ConstIterator last = begin;
+        std::advance(last, input_count);
+
+        if (write_index + input_count > max_size) {
+            /* copy data in two sections */
+            size_t count0 = max_size - write_index;
+            ConstIterator midpoint = begin;
+            std::advance(midpoint, count0);
+
+            std::copy(begin, midpoint, internal_buffer + write_index);
+            std::copy(midpoint, last, internal_buffer);
+            new_write_index -= max_size;
+        } else {
+            std::copy(begin, last, internal_buffer + write_index);
+
+            if (new_write_index == max_size)
+                new_write_index = 0;
+        }
+
+        write_index_.store(new_write_index, memory_order_release);
+        return last;
+    }
+
+    bool dequeue (T & ret, T * buffer, size_t max_size)
+    {
+        size_t write_index = write_index_.load(memory_order_acquire);
+        size_t read_index  = read_index_.load(memory_order_relaxed); // only written from dequeue thread
+        if (empty(write_index, read_index))
+            return false;
+
+        ret = buffer[read_index];
+        size_t next = next_index(read_index, max_size);
+        read_index_.store(next, memory_order_release);
+        return true;
     }
 
     size_t dequeue (T * output_buffer, size_t output_count, const T * internal_buffer, size_t max_size)
@@ -242,9 +282,31 @@ public:
      *
      * \note Thread-safe and non-blocking
      */
+    /* @{ */
     size_t enqueue(T const * t, size_t size)
     {
         return detail::ringbuffer_base<T>::enqueue(t, size, array_.c_array(), max_size);
+    }
+
+    template <size_t size>
+    size_t enqueue(T const (&t)[size])
+    {
+        return enqueue(t, size);
+    }
+    /* @} */
+
+    /** Enqueues size objects from the iterator range [begin, end[ to the ringbuffer.
+     *
+     *  Enqueueing may fail, if the ringbuffer is full.
+     *
+     * \return iterator to the first element, which has not been enqueued
+     *
+     * \note Thread-safe and non-blocking
+     */
+    template <typename ConstIterator>
+    ConstIterator enqueue(ConstIterator begin, ConstIterator end)
+    {
+        return detail::ringbuffer_base<T>::enqueue(begin, end, array_.c_array(), max_size);
     }
 
     /** Dequeue a maximum of size objects from ringbuffer.
@@ -307,10 +369,33 @@ public:
      *
      * \note Thread-safe and non-blocking
      */
+    /* @{ */
     size_t enqueue(T const * t, size_t size)
     {
         return detail::ringbuffer_base<T>::enqueue(t, size, array_.get(), max_size_);
     }
+
+    template <size_t size>
+    size_t enqueue(T const (&t)[size])
+    {
+        return enqueue(t, size);
+    }
+    /* @} */
+
+    /** Enqueues size objects from the iterator range [begin, end[ to the ringbuffer.
+     *
+     *  Enqueueing may fail, if the ringbuffer is full.
+     *
+     * \return iterator to the first element, which has not been enqueued
+     *
+     * \note Thread-safe and non-blocking
+     */
+    template <typename ConstIterator>
+    ConstIterator enqueue(ConstIterator begin, ConstIterator end)
+    {
+        return detail::ringbuffer_base<T>::enqueue(begin, end, array_.get(), max_size_);
+    }
+    /* @} */
 
     /** Dequeue a maximum of size objects from ringbuffer.
      *

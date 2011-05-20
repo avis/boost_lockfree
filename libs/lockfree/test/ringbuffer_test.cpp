@@ -35,58 +35,119 @@ BOOST_AUTO_TEST_CASE( simple_ringbuffer_test )
     BOOST_REQUIRE(f.empty());
 }
 
-BOOST_AUTO_TEST_CASE( simple_ringbuffer_buffer_test )
-{
-    const size_t xqueue_size = 6;
 
-    ringbuffer<int, 16> f;
+enum {
+    pointer_and_size,
+    reference_to_array,
+    iterator_pair
+};
+
+
+template <int EnqueueMode>
+void ringbuffer_buffer_enqueue_return_value(void)
+{
+    const size_t xqueue_size = 64;
+    const size_t buffer_size = 100;
+    ringbuffer<int, 100> rb;
 
     int data[xqueue_size];
-
     for (size_t i = 0; i != xqueue_size; ++i)
         data[i] = i*2;
 
-    BOOST_REQUIRE(f.empty());
-    BOOST_REQUIRE_EQUAL(f.enqueue(data, xqueue_size), xqueue_size);
+    switch (EnqueueMode) {
+    case pointer_and_size:
+        BOOST_REQUIRE_EQUAL(rb.enqueue(data, xqueue_size), xqueue_size);
+        break;
 
-    int out[xqueue_size];
+    case reference_to_array:
+        BOOST_REQUIRE_EQUAL(rb.enqueue(data), xqueue_size);
+        break;
 
-    BOOST_REQUIRE_EQUAL(f.dequeue(out, xqueue_size), xqueue_size);
+    case iterator_pair:
+        BOOST_REQUIRE_EQUAL(rb.enqueue(data, data + xqueue_size), data + xqueue_size);
+        break;
 
+    default:
+        assert(false);
+    }
+
+    switch (EnqueueMode) {
+    case pointer_and_size:
+        BOOST_REQUIRE_EQUAL(rb.enqueue(data, xqueue_size), buffer_size - xqueue_size - 1);
+        break;
+
+    case reference_to_array:
+        BOOST_REQUIRE_EQUAL(rb.enqueue(data), buffer_size - xqueue_size - 1);
+        break;
+
+    case iterator_pair:
+        BOOST_REQUIRE_EQUAL(rb.enqueue(data, data + xqueue_size), data + buffer_size - xqueue_size - 1);
+        break;
+
+    default:
+        assert(false);
+    }
+}
+
+BOOST_AUTO_TEST_CASE( ringbuffer_buffer_enqueue_return_value_test )
+{
+    ringbuffer_buffer_enqueue_return_value<pointer_and_size>();
+    ringbuffer_buffer_enqueue_return_value<reference_to_array>();
+    ringbuffer_buffer_enqueue_return_value<iterator_pair>();
+}
+
+template <int EnqueueMode,
+          int ElementCount,
+          int BufferSize,
+          int NumberOfIterations
+         >
+void ringbuffer_buffer_enqueue(void)
+{
+    const size_t xqueue_size = ElementCount;
+    ringbuffer<int, BufferSize> rb;
+
+    int data[xqueue_size];
     for (size_t i = 0; i != xqueue_size; ++i)
-        BOOST_REQUIRE_EQUAL(data[i], out[i]);
+        data[i] = i*2;
+
+    for (int i = 0; i != NumberOfIterations; ++i) {
+        BOOST_REQUIRE(rb.empty());
+        switch (EnqueueMode) {
+        case pointer_and_size:
+            BOOST_REQUIRE_EQUAL(rb.enqueue(data, xqueue_size), xqueue_size);
+            break;
+
+        case reference_to_array:
+            BOOST_REQUIRE_EQUAL(rb.enqueue(data), xqueue_size);
+            break;
+
+        case iterator_pair:
+            BOOST_REQUIRE_EQUAL(rb.enqueue(data, data + xqueue_size), data + xqueue_size);
+            break;
+
+        default:
+            assert(false);
+        }
+
+        int out[xqueue_size];
+        BOOST_REQUIRE_EQUAL(rb.dequeue(out, xqueue_size), xqueue_size);
+        for (size_t i = 0; i != xqueue_size; ++i)
+            BOOST_REQUIRE_EQUAL(data[i], out[i]);
+    }
+}
+
+BOOST_AUTO_TEST_CASE( ringbuffer_buffer_enqueue_test )
+{
+    ringbuffer_buffer_enqueue<pointer_and_size, 6, 16, 64>();
+    ringbuffer_buffer_enqueue<reference_to_array, 6, 16, 64>();
+    ringbuffer_buffer_enqueue<iterator_pair, 6, 16, 64>();
 }
 
 BOOST_AUTO_TEST_CASE( simple_ringbuffer_buffer_test_2 )
 {
-    const size_t xqueue_size = 15;
-
-    ringbuffer<int, 16> f;
-
-    int data[xqueue_size];
-
-    for (size_t i = 0; i != xqueue_size; ++i)
-        data[i] = i*2;
-
-    BOOST_REQUIRE(f.empty());
-    BOOST_REQUIRE_EQUAL(f.enqueue(data, xqueue_size), xqueue_size);
-
-    int out[xqueue_size];
-
-    BOOST_REQUIRE_EQUAL(f.dequeue(out, xqueue_size), xqueue_size);
-
-    for (size_t i = 0; i != xqueue_size; ++i)
-        BOOST_REQUIRE_EQUAL(data[i], out[i]);
-
-    BOOST_REQUIRE(f.empty());
-    BOOST_REQUIRE_EQUAL(f.enqueue(data, xqueue_size), xqueue_size);
-
-    BOOST_REQUIRE_EQUAL(f.dequeue(out, xqueue_size), xqueue_size);
-
-    for (size_t i = 0; i != xqueue_size; ++i)
-        BOOST_REQUIRE_EQUAL(data[i], out[i]);
-
-    BOOST_REQUIRE(f.empty());
+    ringbuffer_buffer_enqueue<pointer_and_size, 15, 16, 64>();
+    ringbuffer_buffer_enqueue<reference_to_array, 15, 16, 64>();
+    ringbuffer_buffer_enqueue<iterator_pair, 15, 16, 64>();
 }
 
 
@@ -174,7 +235,7 @@ struct ringbuffer_tester
 
 BOOST_AUTO_TEST_CASE( ringbuffer_test_caching )
 {
-    ringbuffer_tester test1;
+//     ringbuffer_tester test1;
     //test1.run();
 }
 
