@@ -13,7 +13,7 @@ template <typename freelist_t>
 struct stack_tester
 {
     static const unsigned int buckets = 1<<10;
-    static const long node_count = 1000000;
+    static const long node_count = 200000;
     static const int reader_threads = 4;
     static const int writer_threads = 4;
 
