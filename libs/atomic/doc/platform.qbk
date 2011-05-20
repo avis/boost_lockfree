@@ -1,6 +1,6 @@
 [section:template_organization Organization of class template layers]
 
-The implementation uses multiple layers of template classes that
+The implementation uses multiple layers of class templates that
 inherit from the next lower level each and refine or adapt the respective
 underlying class:
 
