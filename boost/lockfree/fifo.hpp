@@ -121,7 +121,7 @@ public:
     {
         if (!empty()) {
             T dummy;
-            while(dequeue(&dummy))
+            while(dequeue(dummy))
                 ;
         }
         pool.destruct(head_.load(memory_order_relaxed).get_ptr());
@@ -179,7 +179,7 @@ public:
      * \note Thread-safe and non-blocking
      *
      * */
-    bool dequeue (T * ret)
+    bool dequeue (T & ret)
     {
         for (;;) {
             tagged_node_ptr head = head_.load(memory_order_acquire);
@@ -201,7 +201,7 @@ public:
                          * allocation. we can observe a null-pointer here.
                          * */
                         continue;
-                    *ret = next_ptr->data;
+                    ret = next_ptr->data;
                     if (head_.compare_exchange_strong(head, tagged_node_ptr(next_ptr, head.get_tag() + 1))) {
                         pool.destruct(head.get_ptr());
                         return true;
@@ -274,7 +274,7 @@ class fifo<T*, freelist_t, Alloc>:
     bool dequeue_smart_ptr(smart_ptr & ptr)
     {
         T * result = 0;
-        bool success = fifo_t::dequeue(&result);
+        bool success = fifo_t::dequeue(result);
 
         if (success)
             ptr.reset(result);
@@ -293,7 +293,7 @@ public:
     {}
 
     //! \copydoc detail::fifo::dequeue
-    bool dequeue (T ** ret)
+    bool dequeue (T * & ret)
     {
         return fifo_t::dequeue(ret);
     }
@@ -324,7 +324,7 @@ public:
     bool dequeue (boost::scoped_ptr<T> & ret)
     {
         BOOST_STATIC_ASSERT(sizeof(boost::scoped_ptr<T>) == sizeof(T*));
-        return dequeue(reinterpret_cast<T**>((void*)&ret));
+        return dequeue(reinterpret_cast<T*&>(ret));
     }
 
     /** Dequeue object from fifo to boost::shared_ptr

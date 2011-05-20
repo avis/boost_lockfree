@@ -32,11 +32,11 @@ void consumer(void)
 {
     int value;
     while (!done) {
-        while (fifo.dequeue(&value))
+        while (fifo.dequeue(value))
             ++consumer_count;
     }
 
-    while (fifo.dequeue(&value))
+    while (fifo.dequeue(value))
         ++consumer_count;
 }
 

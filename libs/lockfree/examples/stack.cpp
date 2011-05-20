@@ -33,11 +33,11 @@ void consumer(void)
 {
     int value;
     while (!done) {
-        while (stack.pop(&value))
+        while (stack.pop(value))
             ++consumer_count;
     }
 
-    while (stack.pop(&value))
+    while (stack.pop(value))
         ++consumer_count;
 }
 

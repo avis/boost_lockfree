@@ -27,10 +27,10 @@ BOOST_AUTO_TEST_CASE( simple_ringbuffer_test )
 
     int i1(0), i2(0);
 
-    BOOST_REQUIRE(f.dequeue(&i1));
+    BOOST_REQUIRE(f.dequeue(i1));
     BOOST_REQUIRE_EQUAL(i1, 1);
 
-    BOOST_REQUIRE(f.dequeue(&i2));
+    BOOST_REQUIRE(f.dequeue(i2));
     BOOST_REQUIRE_EQUAL(i2, 2);
     BOOST_REQUIRE(f.empty());
 }
@@ -123,7 +123,7 @@ struct ringbuffer_tester
     {
         int data;
 
-        bool success = sf.dequeue(&data);
+        bool success = sf.dequeue(data);
 
         if (success)
         {

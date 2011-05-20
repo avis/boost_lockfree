@@ -102,7 +102,7 @@ public:
     {
         if (!empty()) {
             T dummy;
-            while(pop(&dummy))
+            while(pop(dummy))
                 ;
         }
     }
@@ -141,7 +141,7 @@ public:
      * \note Thread-safe and non-blocking
      *
      * */
-    bool pop(T * ret)
+    bool pop(T & ret)
     {
         tagged_node_ptr old_tos = tos.load(detail::memory_order_consume);
 
@@ -153,7 +153,7 @@ public:
             tagged_node_ptr new_tos(new_tos_ptr, old_tos.get_tag() + 1);
 
             if (tos.compare_exchange_strong(old_tos, new_tos)) {
-                *ret = old_tos->v;
+                ret = old_tos->v;
                 pool.destruct(old_tos.get_ptr());
                 return true;
             }

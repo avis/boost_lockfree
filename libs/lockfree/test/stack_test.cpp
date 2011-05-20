@@ -53,7 +53,7 @@ struct stack_tester
         {
             long id;
 
-            bool got = stk.pop(&id);
+            bool got = stk.pop(id);
             if (got)
             {
                 bool erased = data.erase(id);

@@ -87,14 +87,14 @@ protected:
         return true;
     }
 
-    bool dequeue (T * ret, T * buffer, size_t max_size)
+    bool dequeue (T & ret, T * buffer, size_t max_size)
     {
         size_t write_index = write_index_.load(memory_order_acquire);
         size_t read_index  = read_index_.load(memory_order_relaxed); // only written from dequeue thread
         if (empty(write_index, read_index))
             return false;
 
-        *ret = buffer[read_index];
+        ret = buffer[read_index];
         size_t next = next_index(read_index, max_size);
         read_index_.store(next, memory_order_release);
         return true;
@@ -229,7 +229,7 @@ public:
      *
      * \note Thread-safe and non-blocking
      */
-    bool dequeue(T * ret)
+    bool dequeue(T & ret)
     {
         return detail::ringbuffer_internal<T>::dequeue(ret, array_.c_array(), max_size);
     }
@@ -294,7 +294,7 @@ public:
      *
      * \note Thread-safe and non-blocking
      */
-    bool dequeue(T * ret)
+    bool dequeue(T & ret)
     {
         return detail::ringbuffer_internal<T>::dequeue(ret, array_.get(), max_size_);
     }

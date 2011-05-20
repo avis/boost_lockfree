@@ -29,10 +29,10 @@ BOOST_AUTO_TEST_CASE( simple_fifo_test )
 
     int i1(0), i2(0);
 
-    BOOST_REQUIRE(f.dequeue(&i1));
+    BOOST_REQUIRE(f.dequeue(i1));
     BOOST_REQUIRE_EQUAL(i1, 1);
 
-    BOOST_REQUIRE(f.dequeue(&i2));
+    BOOST_REQUIRE(f.dequeue(i2));
     BOOST_REQUIRE_EQUAL(i2, 2);
     BOOST_REQUIRE(f.empty());
 }
@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE( fifo_specialization_test )
     {
         int * i1;
 
-        BOOST_REQUIRE(f.dequeue(&i1));
+        BOOST_REQUIRE(f.dequeue(i1));
         BOOST_REQUIRE_EQUAL(*i1, 1);
         delete i1;
     }
@@ -124,7 +124,7 @@ struct fifo_tester
     {
         int data;
 
-        bool success = sf.dequeue(&data);
+        bool success = sf.dequeue(data);
 
         if (success)
         {
