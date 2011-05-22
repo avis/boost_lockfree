@@ -97,7 +97,7 @@ public:
             freelist_node * new_pool_ptr = old_pool->next.get_ptr();
             tagged_node_ptr new_pool (new_pool_ptr, old_pool.get_tag() + 1);
 
-            if (pool_.compare_exchange_strong(old_pool, new_pool)) {
+            if (pool_.compare_exchange_weak(old_pool, new_pool)) {
                 void * ptr = old_pool.get_ptr();
                 return reinterpret_cast<T*>(ptr);
             }
@@ -114,7 +114,7 @@ public:
             tagged_node_ptr new_pool (new_pool_ptr, old_pool.get_tag());
             new_pool->next.set_ptr(old_pool.get_ptr());
 
-            if (pool_.compare_exchange_strong(old_pool, new_pool))
+            if (pool_.compare_exchange_weak(old_pool, new_pool))
                 return;
         }
     }

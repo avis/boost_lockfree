@@ -159,7 +159,7 @@ public:
             tagged_node_ptr tail2 = tail_.load(memory_order_acquire);
             if (likely(tail == tail2)) {
                 if (next_ptr == 0) {
-                    if ( tail->next.compare_exchange_strong(next, tagged_node_ptr(n, next.get_tag() + 1)) ) {
+                    if ( tail->next.compare_exchange_weak(next, tagged_node_ptr(n, next.get_tag() + 1)) ) {
                         tail_.compare_exchange_strong(tail, tagged_node_ptr(n, tail.get_tag() + 1));
                         return true;
                     }
@@ -202,7 +202,7 @@ public:
                          * */
                         continue;
                     ret = next_ptr->data;
-                    if (head_.compare_exchange_strong(head, tagged_node_ptr(next_ptr, head.get_tag() + 1))) {
+                    if (head_.compare_exchange_weak(head, tagged_node_ptr(next_ptr, head.get_tag() + 1))) {
                         pool.destruct(head.get_ptr());
                         return true;
                     }

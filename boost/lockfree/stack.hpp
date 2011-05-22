@@ -127,7 +127,7 @@ public:
             tagged_node_ptr new_tos (newnode, old_tos.get_tag());
             newnode->next.set_ptr(old_tos.get_ptr());
 
-            if (tos.compare_exchange_strong(old_tos, new_tos))
+            if (tos.compare_exchange_weak(old_tos, new_tos))
                 return true;
         }
     }
@@ -152,7 +152,7 @@ public:
             node * new_tos_ptr = old_tos->next.get_ptr();
             tagged_node_ptr new_tos(new_tos_ptr, old_tos.get_tag() + 1);
 
-            if (tos.compare_exchange_strong(old_tos, new_tos)) {
+            if (tos.compare_exchange_weak(old_tos, new_tos)) {
                 ret = old_tos->v;
                 pool.destruct(old_tos.get_ptr());
                 return true;
