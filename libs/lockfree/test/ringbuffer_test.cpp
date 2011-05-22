@@ -39,7 +39,8 @@ BOOST_AUTO_TEST_CASE( simple_ringbuffer_test )
 enum {
     pointer_and_size,
     reference_to_array,
-    iterator_pair
+    iterator_pair,
+    output_iterator
 };
 
 
@@ -110,6 +111,8 @@ void ringbuffer_buffer_enqueue(void)
     for (size_t i = 0; i != xqueue_size; ++i)
         data[i] = i*2;
 
+    std::vector<int> vdata(data, data + xqueue_size);
+
     for (int i = 0; i != NumberOfIterations; ++i) {
         BOOST_REQUIRE(rb.empty());
         switch (EnqueueMode) {
@@ -138,16 +141,67 @@ void ringbuffer_buffer_enqueue(void)
 
 BOOST_AUTO_TEST_CASE( ringbuffer_buffer_enqueue_test )
 {
-    ringbuffer_buffer_enqueue<pointer_and_size, 6, 16, 64>();
-    ringbuffer_buffer_enqueue<reference_to_array, 6, 16, 64>();
-    ringbuffer_buffer_enqueue<iterator_pair, 6, 16, 64>();
+    ringbuffer_buffer_enqueue<pointer_and_size, 7, 16, 64>();
+    ringbuffer_buffer_enqueue<reference_to_array, 7, 16, 64>();
+    ringbuffer_buffer_enqueue<iterator_pair, 7, 16, 64>();
 }
 
-BOOST_AUTO_TEST_CASE( simple_ringbuffer_buffer_test_2 )
+template <int EnqueueMode,
+          int ElementCount,
+          int BufferSize,
+          int NumberOfIterations
+         >
+void ringbuffer_buffer_dequeue(void)
 {
-    ringbuffer_buffer_enqueue<pointer_and_size, 15, 16, 64>();
-    ringbuffer_buffer_enqueue<reference_to_array, 15, 16, 64>();
-    ringbuffer_buffer_enqueue<iterator_pair, 15, 16, 64>();
+    const size_t xqueue_size = ElementCount;
+    ringbuffer<int, BufferSize> rb;
+
+    int data[xqueue_size];
+    for (size_t i = 0; i != xqueue_size; ++i)
+        data[i] = i*2;
+
+    std::vector<int> vdata(data, data + xqueue_size);
+
+    for (int i = 0; i != NumberOfIterations; ++i) {
+        BOOST_REQUIRE(rb.empty());
+        BOOST_REQUIRE_EQUAL(rb.enqueue(data), xqueue_size);
+
+        int out[xqueue_size];
+        vector<int> vout;
+
+        switch (EnqueueMode) {
+        case pointer_and_size:
+            BOOST_REQUIRE_EQUAL(rb.dequeue(out, xqueue_size), xqueue_size);
+            break;
+
+        case reference_to_array:
+            BOOST_REQUIRE_EQUAL(rb.dequeue(out), xqueue_size);
+            break;
+
+        case output_iterator:
+            BOOST_REQUIRE_EQUAL(rb.dequeue(std::back_inserter(vout)), xqueue_size);
+            break;
+
+        default:
+            assert(false);
+        }
+
+        if (EnqueueMode == output_iterator) {
+            BOOST_REQUIRE_EQUAL(vout.size(), xqueue_size);
+            for (size_t i = 0; i != xqueue_size; ++i)
+                BOOST_REQUIRE_EQUAL(data[i], vout[i]);
+        } else {
+            for (size_t i = 0; i != xqueue_size; ++i)
+                BOOST_REQUIRE_EQUAL(data[i], out[i]);
+        }
+    }
+}
+
+BOOST_AUTO_TEST_CASE( ringbuffer_buffer_dequeue_test )
+{
+    ringbuffer_buffer_dequeue<pointer_and_size, 7, 16, 64>();
+    ringbuffer_buffer_dequeue<reference_to_array, 7, 16, 64>();
+    ringbuffer_buffer_dequeue<output_iterator, 7, 16, 64>();
 }
 
 
