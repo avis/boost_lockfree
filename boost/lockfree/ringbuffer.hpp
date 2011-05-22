@@ -17,6 +17,7 @@
 #include <boost/array.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/smart_ptr/scoped_array.hpp>
+#include <boost/range.hpp>
 
 #include "detail/branch_hints.hpp"
 #include "detail/prefix.hpp"
@@ -307,24 +308,30 @@ public:
 
     /** Enqueues size objects from the array t to the ringbuffer.
      *
-     *  Enqueueing may fail, if the ringbuffer is full.
+     *  Will enqueue as many objects as there is space available
      *
-     * \return number of enqueued items
+     * \Returns number of enqueued items
      *
      * \note Thread-safe and non-blocking
      */
-    /* @{ */
     size_t enqueue(T const * t, size_t size)
     {
         return detail::ringbuffer_base<T>::enqueue(t, size, array_.c_array(), max_size);
     }
 
+    /** Enqueues all objects from the array t to the ringbuffer.
+     *
+     *  Will enqueue as many objects as there is space available
+     *
+     * \Returns number of enqueued items
+     *
+     * \note Thread-safe and non-blocking
+     */
     template <size_t size>
     size_t enqueue(T const (&t)[size])
     {
         return enqueue(t, size);
     }
-    /* @} */
 
     /** Enqueues size objects from the iterator range [begin, end[ to the ringbuffer.
      *
@@ -354,12 +361,19 @@ public:
         return detail::ringbuffer_base<T>::dequeue(ret, size, array_.c_array(), max_size);
     }
 
+    /** Enqueues all objects from the array t to the ringbuffer.
+     *
+     *  Will enqueue as many objects as there is space available
+     *
+     * \Returns number of enqueued items
+     *
+     * \note Thread-safe and non-blocking
+     */
     template <size_t size>
     size_t dequeue(T (&t)[size])
     {
         return dequeue(t, size);
     }
-    /* @} */
 
     /** Dequeue objects to the output iterator it
      *
@@ -414,24 +428,30 @@ public:
 
     /** Enqueues size objects from the array t to the ringbuffer.
      *
-     *  Enqueueing may fail, if the ringbuffer is full.
+     *  Will enqueue as many objects as there is space available
      *
      * \Returns number of enqueued items
      *
      * \note Thread-safe and non-blocking
      */
-    /* @{ */
     size_t enqueue(T const * t, size_t size)
     {
         return detail::ringbuffer_base<T>::enqueue(t, size, array_.get(), max_size_);
     }
 
+    /** Enqueues all objects from the array t to the ringbuffer.
+     *
+     *  Will enqueue as many objects as there is space available
+     *
+     * \Returns number of enqueued items
+     *
+     * \note Thread-safe and non-blocking
+     */
     template <size_t size>
     size_t enqueue(T const (&t)[size])
     {
         return enqueue(t, size);
     }
-    /* @} */
 
     /** Enqueues size objects from the iterator range [begin, end[ to the ringbuffer.
      *
@@ -455,18 +475,24 @@ public:
      *
      * \note Thread-safe and non-blocking
      * */
-    /* @{ */
     size_t dequeue(T * ret, size_t size)
     {
         return detail::ringbuffer_base<T>::dequeue(ret, size, array_.get(), max_size_);
     }
 
+    /** Dequeue objects from ringbuffer.
+     *
+     * If dequeue operation is successful, object is written to memory location denoted by ret.
+     *
+     * \return number of dequeued items
+     *
+     * \note Thread-safe and non-blocking
+     * */
     template <size_t size>
     size_t dequeue(T (&t)[size])
     {
         return dequeue(t, size);
     }
-    /* @} */
 
     /** Dequeue objects to the output iterator it
      *
