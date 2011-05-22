@@ -88,7 +88,8 @@ public:
      *
      * \warning \b Warning: It only checks, if the fifo head node is lockfree. On most platforms, the whole implementation is
      *                      lockfree, if this is true. Using c++0x-style atomics, there is no possibility to provide a completely
-     *                      accurate implementation, though.
+     *                      accurate implementation, because one would need to test every internal node, which is impossible
+     *                      if further nodes will be allocated from the operating system.
      * */
     bool is_lock_free (void) const
     {
