@@ -1,6 +1,7 @@
 set(examples
     fifo.cpp
     stack.cpp
+    ringbuffer.cpp
 )
 
 link_libraries(boost_thread)

@@ -23,7 +23,8 @@ void producer(void)
 {
     for (int i = 0; i != iterations; ++i) {
         int value = ++producer_count;
-        fifo.enqueue(value);
+        while (!fifo.enqueue(value))
+            ;
     }
 }
 
