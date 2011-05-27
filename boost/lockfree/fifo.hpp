@@ -128,10 +128,9 @@ public:
         pool.destruct(head_.load(memory_order_relaxed).get_ptr());
     }
 
-    /**
-     * \return true, if fifo is empty.
+    /** Check if the ringbuffer is empty
      *
-     * \warning Not thread-safe. Other threads access the fifo during this call, the result is undefined.
+     * \warning Not thread-safe, use for debugging purposes only
      * */
     bool empty(void)
     {

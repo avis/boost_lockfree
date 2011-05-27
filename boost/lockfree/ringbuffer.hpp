@@ -249,8 +249,7 @@ public:
         read_index_.store(0, memory_order_release);
     }
 
-    /**
-     * \return true, if ringbuffer is empty.
+    /** Check if the ringbuffer is empty
      *
      * \warning Not thread-safe, use for debugging purposes only
      * */

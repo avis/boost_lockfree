@@ -160,11 +160,10 @@ public:
         }
     }
 
-    /**
-     * \return true, if stack is empty.
+    /** Check if the stack was empty
      *
-     * \warning The state of the stack can be modified by other threads
-     *
+     * \note While this function is thread-safe, it only guarantees that at some point during the execution of the function the
+     *       stack has been empty
      * */
     bool empty(void) const
     {
