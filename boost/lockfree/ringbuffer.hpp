@@ -17,7 +17,6 @@
 #include <boost/array.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/smart_ptr/scoped_array.hpp>
-#include <boost/range.hpp>
 
 #include "detail/branch_hints.hpp"
 #include "detail/prefix.hpp"
