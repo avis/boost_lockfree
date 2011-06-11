@@ -10,6 +10,8 @@
 #include <boost/atomic/detail/base.hpp>
 #include <boost/atomic/detail/builder.hpp>
 
+#define __BOOST_AMD_64 defined(__amd64__) || defined(__x86_64__)
+
 namespace boost {
 namespace detail {
 namespace atomic {
@@ -39,7 +41,7 @@ static inline void fence_after(memory_order order)
 
 static inline void full_fence(void)
 {
-#if defined(__amd64__)
+#if __BOOST_AMD_64
 			__asm__ __volatile__("mfence" ::: "memory");
 #else
 			/* could use mfence iff i686, but it does not appear to matter much */
@@ -281,7 +283,7 @@ public:
 	platform_atomic_integral(void) {}
 };
 
-#if defined(__amd64__)
+#if __BOOST_AMD_64
 template<typename T>
 class atomic_x86_64 {
 public:
@@ -366,14 +368,14 @@ public:
 		this object is compiled as "position independent". Since
 		programmers on x86 tend to forget specifying -DPIC or
 		similar, always assume PIC.
-		
+
 		To make this work uniformly even in the non-PIC case,
 		setup register constraints such that ebx can not be
 		used by accident e.g. as base address for the variable
 		to be modified. Accessing "scratch" should always be okay,
 		as it can only be placed on the stack (and therefore
 		accessed through ebp or esp only).
-		
+
 		In theory, could push/pop ebx onto/off the stack, but movs
 		to a prepared stack slot turn out to be faster. */
 		__asm__ __volatile__(
@@ -382,7 +384,7 @@ public:
 			"lock; cmpxchg8b 0(%4)\n"
 			"movl %1, %%ebx\n"
 			: "=A" (prev), "=m" (scratch)
-			: "D" ((long)desired), "c" ((long)(desired>>32)), "S" (&i), "0" (prev)
+			: "D" ((long)desired), "c" ((long)((size_t)desired>>32)), "S" (&i), "0" (prev)
 			: "memory");
 		bool success=(prev==expected);
 		if (success) fence_after(success_order);
@@ -437,7 +439,7 @@ private:
 
 #endif
 
-#if defined(__amd64__) || defined(__i686__)
+#if __BOOST_AMD_64 || defined(__i686__)
 template<typename T>
 class platform_atomic_integral<T, 8> : public build_atomic_from_add<atomic_x86_64<T> >{
 public:
@@ -447,7 +449,7 @@ public:
 };
 #endif
 
-#if defined(__amd64__) && defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_16)
+#if __BOOST_AMD_64 && defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_16)
 template<typename T>
 class atomic_x86_128 {
 public:
@@ -522,5 +524,7 @@ public:
 }
 }
 }
+
+#undef __BOOST_AMD_64
 
 #endif
