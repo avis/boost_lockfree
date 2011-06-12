@@ -1,13 +1,17 @@
 #include <climits>
-#define BOOST_TEST_MODULE lockfree_tests
-#include <boost/test/included/unit_test.hpp>
+#define BOOST_TEST_DYN_LINK
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
 
 #include "test_helpers.hpp"
 
 #include <boost/lockfree/stack.hpp>
 
 #include <boost/thread.hpp>
+#include <iostream>
+
 using namespace boost;
+using namespace std;
 
 template <typename freelist_t>
 struct stack_tester

@@ -1,8 +1,9 @@
 #include <boost/lockfree/ringbuffer.hpp>
 
 #include <climits>
-#define BOOST_TEST_MODULE lockfree_tests
-#include <boost/test/included/unit_test.hpp>
+#define BOOST_TEST_DYN_LINK
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
 
 
 #include <boost/thread.hpp>
