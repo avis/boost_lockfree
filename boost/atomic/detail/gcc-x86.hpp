@@ -361,6 +361,14 @@ public:
 		memory_order success_order,
 		memory_order failure_order) volatile
 	{
+#ifdef __GCC_HAVE_SYNC_COMPARE_AND_SWAP_8
+		T prev = __sync_val_compare_and_swap_8(&i, expected, desired);
+		bool success=(prev==expected);
+		if (success) fence_after(success_order);
+		else fence_after(failure_order);
+		expected=prev;
+		return success;
+#else
 		long scratch;
 		fence_before(success_order);
 		T prev=expected;
@@ -391,6 +399,7 @@ public:
 		else fence_after(failure_order);
 		expected=prev;
 		return success;
+#endif
 	}
 	bool compare_exchange_weak(
 		T &expected,
