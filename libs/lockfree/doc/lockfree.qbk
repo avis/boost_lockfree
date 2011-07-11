@@ -41,7 +41,7 @@ _lockfree_ is NOT a boost library!
 
 [h2 Introduction & Terminology]
 
-he term *non-blocking* denotes concurrent data structures, which do not use traditional synchronization primitives like
+The term *non-blocking* denotes concurrent data structures, which do not use traditional synchronization primitives like
 guards to ensure correctness. According Maurice Herlihy distinguishes between 3 types of non-blocking data structures,
 each having different properties (compare "The Art of Multiprocessor Programming"):
 
@@ -88,7 +88,6 @@ data structures may will be a better choice in order to optimize the latency of 
 which may be necessary in real-time applications.
 
 
-
 [h2 Sources of Blocking Behavior]
 
 Apart from guards (which we are not using in _lockfree_ anyway), there are three other aspects, that could cause a
@@ -97,6 +96,7 @@ natively. A mentioned earlier, they can be emulated in software using locks. A s
 node-based data structures: this makes it impossible to implement true dynamically-sized non-blocking data structures. A
 final possible source is C++ exception handling, but this is easy to avoid.
 
+[endsect]
 
 [section Design & Implementation of _lockfree_]
 
